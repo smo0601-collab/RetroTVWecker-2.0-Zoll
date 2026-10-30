@@ -1,12 +1,15 @@
-# Legt automatisch ein GitHub-Release an, sobald ein Tag "v<Version>" hochgeladen wird.
-# Die Dateien kommen aus dem Ordner releases/<Version>/ (Erstinstallation, Update, Quellcode),
-# der Text aus releases/<Version>/LIESMICH.md.
+# Legt automatisch GitHub-Releases an.
+# Ausloeser: jeder Push auf main, der den Ordner releases/ aendert (oder manueller Start).
+# Fuer jeden Ordner releases/<Version>/ ohne passendes Release wird das Release "v<Version>"
+# erstellt (der Tag wird dabei automatisch gesetzt). Dateien: alle .bin und .zip im Ordner,
+# Text: releases/<Version>/LIESMICH.md. Die neueste Version wird als "Latest" markiert.
 name: Release erstellen
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    paths: ["releases/**"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,20 +20,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Release mit Firmware-Dateien anlegen
+      - name: Releases fuer neue Versionsordner anlegen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          VER="${TAG#v}"
-          DIR="releases/${VER}"
-          test -d "$DIR" || { echo "Ordner $DIR fehlt"; exit 1; }
-          ls -la "$DIR"
-          TITLE="Firmware ${VER}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$DIR"/*.bin "$DIR"/*.zip --clobber
-            gh release edit "$TAG" --title "$TITLE" --notes-file "$DIR/LIESMICH.md"
-          else
-            gh release create "$TAG" "$DIR"/*.bin "$DIR"/*.zip \
-              --title "$TITLE" --notes-file "$DIR/LIESMICH.md" --latest
-          fi
+          LATEST=$(ls -1 releases | sort -V | tail -1)
+          for VER in $(ls -1 releases | sort -V); do
+            DIR="releases/${VER}"
+            TAG="v${VER}"
+            [ -d "$DIR" ] || continue
+            ls "$DIR"/*.bin >/dev/null 2>&1 || { echo "$DIR: keine .bin, uebersprungen"; continue; }
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "$TAG: Release vorhanden, Dateien werden aktualisiert"
+              gh release upload "$TAG" "$DIR"/*.bin "$DIR"/*.zip --clobber
+              gh release edit "$TAG" --title "Firmware ${VER}" --notes-file "$DIR/LIESMICH.md"
+            else
+              echo "$TAG: neues Release"
+              FLAG=""
+              [ "$VER" = "$LATEST" ] && FLAG="--latest"
+              gh release create "$TAG" "$DIR"/*.bin "$DIR"/*.zip \
+                --target "$GITHUB_SHA" --title "Firmware ${VER}" --notes-file "$DIR/LIESMICH.md" $FLAG
+            fi
+          done

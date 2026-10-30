@@ -37,3 +37,5 @@ Gebaut mit arduino-cli, ESP32-Arduino-Core 3.3.12, Board *ESP32C3 Dev Module*, *
 Partitionen: nvs 0x9000, otadata 0xE000, app0 0x10000, app1 0x1F0000 (je 1920 KB), spiffs 0x3D0000, coredump 0x3F0000.
 
 Alle Änderungen: [CHANGELOG](https://github.com/smo0601-collab/RetroTVWecker-2.0-Zoll/blob/main/firmware/WetterUhr/CHANGELOG.md)
+
+_Dieses Release wurde automatisch aus dem Ordner `releases/2026.10.30` erstellt._
