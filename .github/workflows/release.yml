@@ -1,0 +1,36 @@
+# Legt automatisch ein GitHub-Release an, sobald ein Tag "v<Version>" hochgeladen wird.
+# Die Dateien kommen aus dem Ordner releases/<Version>/ (Erstinstallation, Update, Quellcode),
+# der Text aus releases/<Version>/LIESMICH.md.
+name: Release erstellen
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Release mit Firmware-Dateien anlegen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VER="${TAG#v}"
+          DIR="releases/${VER}"
+          test -d "$DIR" || { echo "Ordner $DIR fehlt"; exit 1; }
+          ls -la "$DIR"
+          TITLE="Firmware ${VER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$DIR"/*.bin "$DIR"/*.zip --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file "$DIR/LIESMICH.md"
+          else
+            gh release create "$TAG" "$DIR"/*.bin "$DIR"/*.zip \
+              --title "$TITLE" --notes-file "$DIR/LIESMICH.md" --latest
+          fi
