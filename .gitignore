@@ -1,0 +1,6 @@
+# Arduino / Build-Ausgaben
+build/
+*.elf
+*.map
+*.bin
+.DS_Store
