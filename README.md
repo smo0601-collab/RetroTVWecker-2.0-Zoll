@@ -89,8 +89,8 @@ GPIO 2, 8 und 9 bitte frei lassen (Boot-Pins). Alle Pins lassen sich in
 
 ### 2. Firmware aufspielen (einmalig per USB)
 
-Ordner [`firmware/WetterUhr`](firmware/WetterUhr) herunterladen (oder das Quellcode-Zip aus den
-[Releases](../../releases)), `WetterUhr.ino` in der Arduino IDE öffnen und per USB hochladen.
+Ordner [`firmware/WetterUhr`](firmware/WetterUhr) herunterladen (oder das Quellcode-Zip aus
+[`releases/`](releases)), `WetterUhr.ino` in der Arduino IDE öffnen und per USB hochladen.
 
 ### 3. Einrichten im Browser
 
@@ -104,7 +104,8 @@ Ordner [`firmware/WetterUhr`](firmware/WetterUhr) herunterladen (oder das Quellc
 
 ## Updates über WLAN
 
-Jede neue Version gibt es unter [**Releases**](../../releases) in zwei Formen:
+Jede neue Version liegt im Ordner [**`releases/`**](releases) in zwei Formen
+(aktuell: [`releases/2026.10.30`](releases/2026.10.30)):
 
 | Datei | Wofür |
 |---|---|
@@ -157,6 +158,7 @@ firmware/WetterUhr/        Arduino-Sketch (diesen Ordner in der Arduino IDE öff
   README.md                ausführliche Anleitung
   CHANGELOG.md             Änderungen je Version
 docs/images/               Bilder für diese Seite
+releases/<Version>/        fertige Update-.bin und Quellcode-Zip je Version
 ```
 
 ## Technik in Kürze

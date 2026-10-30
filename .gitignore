@@ -3,4 +3,5 @@ build/
 *.elf
 *.map
 *.bin
+!releases/**/*.bin
 .DS_Store
