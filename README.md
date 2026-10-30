@@ -89,7 +89,13 @@ GPIO 2, 8 und 9 bitte frei lassen (Boot-Pins). Alle Pins lassen sich in
 
 ### 2. Firmware aufspielen (einmalig per USB)
 
-Ordner [`firmware/WetterUhr`](firmware/WetterUhr) herunterladen (oder das Quellcode-Zip aus
+**Ohne Arduino IDE (am einfachsten):** Im Ordner [`releases/`](releases) die Datei
+`WetterUhr_<Version>_erstinstallation.bin` herunterladen, in Chrome oder Edge
+<https://espressif.github.io/esptool-js/> öffnen, ESP32-C3 per USB verbinden (**Connect**), *Flash Address* `0x0`,
+Datei wählen, **Program**. Genaue Schritte stehen in der `LIESMICH.md` der jeweiligen Version.
+Dabei werden vorhandene Einstellungen gelöscht.
+
+**Mit der Arduino IDE:** Ordner [`firmware/WetterUhr`](firmware/WetterUhr) herunterladen (oder das Quellcode-Zip aus
 [`releases/`](releases)), `WetterUhr.ino` in der Arduino IDE öffnen und per USB hochladen.
 
 ### 3. Einrichten im Browser
@@ -104,12 +110,13 @@ Ordner [`firmware/WetterUhr`](firmware/WetterUhr) herunterladen (oder das Quellc
 
 ## Updates über WLAN
 
-Jede neue Version liegt im Ordner [**`releases/`**](releases) in zwei Formen
+Jede neue Version liegt im Ordner [**`releases/`**](releases) in drei Formen
 (aktuell: [`releases/2026.10.30`](releases/2026.10.30)):
 
 | Datei | Wofür |
 |---|---|
-| `WetterUhr_<Version>_update.bin` | fertige Firmware zum Einspielen über WLAN |
+| `WetterUhr_<Version>_erstinstallation.bin` | komplette Firmware für die Erstinstallation per USB (an Adresse `0x0`) |
+| `WetterUhr_<Version>_update.bin` | Update-Datei zum Einspielen über WLAN |
 | `WetterUhr_<Version>_komplett.zip` | kompletter Quellcode für die Arduino IDE |
 
 **Update einspielen:** Browser → *System* → *Firmware-Update über WLAN* → `.bin` wählen → *Update installieren*.
@@ -119,8 +126,9 @@ die alte Firmware weiter. Alle Einstellungen bleiben erhalten. Unter *Status →
 Alternativ in der Arduino IDE unter *Werkzeuge → Port* den Netzwerk-Port **wetteruhr** wählen und normal hochladen.
 
 > **Umstieg von einer älteren Version:** Lief die Uhr bisher mit dem Partitionsschema *Huge APP (No OTA)*,
-> muss die neue Version **einmal per USB** mit *Minimal SPIFFS (1.9MB APP with OTA)* hochgeladen werden.
-> Danach gehen alle Updates per WLAN.
+> muss die neue Version **einmal per USB** installiert werden – entweder mit der `…_erstinstallation.bin`
+> (Einstellungen werden gelöscht) oder aus der Arduino IDE mit *Minimal SPIFFS (1.9MB APP with OTA)*
+> (Einstellungen bleiben). Danach gehen alle Updates per WLAN.
 
 Was sich in jeder Version geändert hat, steht im [CHANGELOG](firmware/WetterUhr/CHANGELOG.md).
 
@@ -158,7 +166,7 @@ firmware/WetterUhr/        Arduino-Sketch (diesen Ordner in der Arduino IDE öff
   README.md                ausführliche Anleitung
   CHANGELOG.md             Änderungen je Version
 docs/images/               Bilder für diese Seite
-releases/<Version>/        fertige Update-.bin und Quellcode-Zip je Version
+releases/<Version>/        Erstinstallations-.bin, Update-.bin und Quellcode-Zip je Version
 ```
 
 ## Technik in Kürze
