@@ -189,3 +189,5 @@ releases/<Version>/        Erstinstallations-.bin, Update-.bin und Quellcode-Zip
 - Flugdaten: adsb.lol, airplanes.live, adsb.fi – nur für private, nicht kommerzielle Nutzung. ISS-Daten: open-notify.org.
   Wetter: Open-Meteo.
 - Alle Figuren und Szenen sind eigene Gestaltungen im Retro-Stil.
+
+- Druckdateien unter https://makerworld.com/de/models/3523932-retro-tv-case-esp32-c3-supermini-2-display#profileId-4028407
