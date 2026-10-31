@@ -367,7 +367,7 @@ static void dimTick(uint32_t now, bool force) {
 }
 
 // Feiertags-Designs, die gerade in ihrem Zeitfenster liegen (HOL_DAYS_BEFORE Tage vorher bis zum Fest):
-//   Weihnachten 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10.,
+//   Weihnachten und Weihnachtself 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10.,
 //   Ostern 10 Tage vor Ostersonntag bis Ostermontag. Wird einmal pro Minute neu berechnet.
 static uint32_t gHolAt = 0;              // 0 = neu berechnen (z. B. nach "Speichern")
 static uint64_t holidayMask() {
@@ -386,7 +386,7 @@ static uint64_t holidayMask() {
     const int e = fc::dayOfYear(y, m1, d1);
     return doy >= e - B && doy <= e + extra;
   };
-  if (win(12, 24, 2))                    m |= 1ULL << XMAS_STYLE;
+  if (win(12, 24, 2))                    m |= (1ULL << XMAS_STYLE) | (1ULL << ELF_STYLE);
   if (win(12, 31, 0) || (mo == 1 && d == 1)) m |= 1ULL << NEWYEAR_STYLE;
   if (win(2, 14, 0))                     m |= 1ULL << VALENTINE_STYLE;
   if (win(10, 31, 0))                    m |= 1ULL << HALLOWEEN_STYLE;

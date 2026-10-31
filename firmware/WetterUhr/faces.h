@@ -58,6 +58,7 @@
 #define ISS_STYLE        (FACE_FIRST_STYLE + 22)   // ISS-Tracker: Index 22 in FACES[]
 #define AQUA_STYLE       (FACE_FIRST_STYLE + 19)   // Aquarium: Index 19 in FACES[]
 #define XMAS_STYLE       (FACE_FIRST_STYLE + 24)   // Weihnachten
+#define ELF_STYLE        (FACE_FIRST_STYLE + 25)   // Weihnachtself
 #define HALLOWEEN_STYLE  (FACE_FIRST_STYLE + 26)   // Halloween
 #define EASTER_STYLE     (FACE_FIRST_STYLE + 27)   // Ostern
 #define VALENTINE_STYLE  (FACE_FIRST_STYLE + 28)   // Valentinstag

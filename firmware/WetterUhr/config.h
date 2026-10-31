@@ -56,7 +56,7 @@
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION           "2026.10.31"
+#define FW_VERSION           "2026.10.31-2"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1

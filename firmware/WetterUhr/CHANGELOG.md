@@ -4,6 +4,12 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.10.31-2 - Weihnachtself im Feiertags-Wechsel
+
+- Der Weihnachtself kommt zusammen mit Weihnachten vom 14. bis 26.12. automatisch in den Design-Wechsel.
+
+Geaenderte Dateien: `WetterUhr.ino`, `faces.h`, `webui.h`, `config.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.10.31 - Feiertage automatisch im Design-Wechsel
 
 - Weihnachten, Silvester, Valentinstag, Halloween und Ostern kommen jeweils 10 Tage vor dem Termin automatisch in den

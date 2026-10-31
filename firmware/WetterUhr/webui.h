@@ -644,7 +644,7 @@ static void handleRoot() {
   p += F("<h2>Extras</h2><label><input type=checkbox name=holauto value=1");
   p += gSet.holAuto ? F(" checked") : F("");
   p += F(">Feiertags-Designs automatisch in den Design-Wechsel aufnehmen (jeweils 10 Tage vorher bis zum Fest: "
-         "Weihnachten, Silvester, Valentinstag, Halloween, Ostern)</label>"
+         "Weihnachten mit Weihnachtself, Silvester, Valentinstag, Halloween, Ostern)</label>"
          "<small>Wirkt, wenn der automatische Design-Wechsel an ist. Die eigene Liste bleibt unver&auml;ndert; "
          "nach dem Fest f&auml;llt das Design von selbst wieder heraus.</small>");
   p += F("<label><input type=checkbox name=nyeauto value=1");

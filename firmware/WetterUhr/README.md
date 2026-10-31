@@ -89,7 +89,7 @@ Ein Klick auf eine Design-Karte zeigt das Design sofort und startet das Interval
 
 **Feiertage automatisch:** Weihnachten, Silvester, Valentinstag, Halloween und Ostern kommen jeweils 10 Tage vor dem
 Termin von selbst in den Wechsel und fallen nach dem Fest wieder heraus - ohne dass die eigene Liste geaendert wird.
-Zeitfenster: Weihnachten 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10., Ostern
+Zeitfenster: Weihnachten und Weihnachtself 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10., Ostern
 10 Tage vor Ostersonntag bis Ostermontag. Abschalten unter *Anzeige > Extras*. Die Status-Seite zeigt beim
 Uhr-Design z. B. "(Wechsel aktiv + Halloween, naechster in 42 s)". Die Zahl der Tage steht in `config.h`
 (`HOL_DAYS_BEFORE`).

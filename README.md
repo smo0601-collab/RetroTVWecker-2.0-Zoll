@@ -16,8 +16,8 @@ neue Firmware kommt per WLAN.
 - **Wetter** von [Open-Meteo](https://open-meteo.com) (kostenlos, ohne Konto): Temperatur, Feuchte, Wind, Vorhersage.
 - **33 Designs**: 2 klassische Uhren (Flip-Karten, Digital mit Sekundenbalken) und 31 animierte Szenen –
   Arcade-Spiele, Tiere, Technik, Himmel und Weltraum, Feiertage.
-- **Automatischer Design-Wechsel** nach Zeitplan durch eine selbst gewählte Liste. Weihnachten, Silvester,
-  Valentinstag, Halloween und Ostern kommen jeweils **10 Tage vor dem Fest von selbst dazu** und danach wieder heraus.
+- **Automatischer Design-Wechsel** nach Zeitplan durch eine selbst gewählte Liste. Weihnachten (mit Weihnachtself),
+  Silvester, Valentinstag, Halloween und Ostern kommen jeweils **10 Tage vor dem Fest von selbst dazu** und danach wieder heraus.
 - **Feiertage mit Countdown**: Weihnachten (mit Adventskranz), Weihnachtself, Halloween, Ostern (echtes Osterdatum),
   Valentinstag, Silvester. An Silvester schaltet die Uhr von 23:30 bis 00:30 von selbst auf **Feuerwerk**.
 - **Echte Daten live**: Flugradar mit Flugzeugen in der Umgebung (offene ADS-B-Dienste), ISS-Tracker mit der echten
@@ -112,7 +112,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases) in drei Formen
-(aktuell: [`releases/2026.10.31`](releases/2026.10.31)), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.10.31-2`](releases/2026.10.31-2)), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
