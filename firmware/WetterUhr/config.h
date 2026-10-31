@@ -45,6 +45,7 @@
 #define DEFAULT_SLEIGH       2         // ISS-Tracker: 0 = ISS, 1 = immer Weihnachtsschlitten, 2 = Schlitten vom 1. bis 26.12.
 #define DEFAULT_NYE_AUTO     1         // Silvester: von 23:30 bis 00:30 automatisch Feuerwerk (0/1)
 #define DEFAULT_HOL_AUTO     1         // Feiertags-Designs 10 Tage vorher automatisch in den Design-Wechsel (0/1)
+#define DEFAULT_LANG         0         // Sprache fuer Display und Browser: 0 Deutsch, 1 English, 2 Francais, 3 Espanol, 4 Italiano
 #define HOL_DAYS_BEFORE      10        // so viele Tage vor dem Termin kommen sie dazu
 
 #define DEFAULT_AUTO_ON      0         // automatischer Design-Wechsel (0/1)
@@ -56,7 +57,7 @@
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION           "2026.10.31-2"
+#define FW_VERSION "2026.10.31-3"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1

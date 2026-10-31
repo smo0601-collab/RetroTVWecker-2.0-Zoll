@@ -121,7 +121,7 @@ static void draw(const FaceCtx& c) {
   drawTime(39, 4, 3, c, cellD);
 
   char b[40];
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txt(5, 27, b, A_DIM);
   if (c.hasWx) tempTxt(FB_W - 6 - tempW(c.temp, 1), 27, c.temp, A_DIM);

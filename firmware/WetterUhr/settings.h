@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include "config.h"
+#include "lang.h"
 
 struct Settings {
   char     ssid[33];
@@ -51,6 +52,7 @@ struct Settings {
   uint8_t  sleigh;     // ISS-Tracker: 0 ISS, 1 Schlitten, 2 Schlitten im Dezember (1.-26.)
   bool     nyeAuto;    // Silvester-Automatik
   bool     holAuto;    // Feiertags-Designs vor dem Termin automatisch im Wechsel
+  uint8_t  lang;       // Sprache: 0 Deutsch, 1 Englisch, 2 Franzoesisch, 3 Spanisch, 4 Italienisch
 };
 
 static Settings    gSet;
@@ -110,6 +112,9 @@ static void settingsLoad() {
   gSet.sleigh  = prefs.getUChar("sled", DEFAULT_SLEIGH);
   gSet.nyeAuto = prefs.getBool("nyeauto", DEFAULT_NYE_AUTO != 0);
   gSet.holAuto = prefs.getBool("holauto", DEFAULT_HOL_AUTO != 0);
+  gSet.lang    = prefs.getUChar("lang", DEFAULT_LANG);
+  if (gSet.lang >= LANG_COUNT) gSet.lang = 0;
+  gLang = gSet.lang;
   const bool hasOld = prefs.isKey("cs") && prefs.getUChar("sver", 1) < STYLE_VERSION;
   prefs.end();
 
@@ -198,6 +203,8 @@ static void settingsSave() {
   prefs.putUChar("sled", gSet.sleigh);
   prefs.putBool("nyeauto", gSet.nyeAuto);
   prefs.putBool("holauto", gSet.holAuto);
+  prefs.putUChar("lang", gSet.lang);
+  gLang = gSet.lang;
   prefs.end();
 }
 

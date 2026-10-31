@@ -19,19 +19,19 @@ static bool      mdnsStarted = false;
 
 struct TzEntry { const char* name; const char* posix; };
 static const TzEntry TZS[] = {
-  {"Europa/Berlin, Paris, Rom (MEZ/MESZ)", "CET-1CEST,M3.5.0,M10.5.0/3"},
-  {"Europa/London, Dublin",                "GMT0BST,M3.5.0/1,M10.5.0"},
-  {"Europa/Lissabon",                      "WET0WEST,M3.5.0/1,M10.5.0"},
-  {"Europa/Athen, Helsinki (OEZ)",         "EET-2EEST,M3.5.0/3,M10.5.0/4"},
-  {"Europa/Moskau",                        "MSK-3"},
-  {"USA Ostkueste (New York)",             "EST5EDT,M3.2.0,M11.1.0"},
-  {"USA Zentral (Chicago)",                "CST6CDT,M3.2.0,M11.1.0"},
-  {"USA Berge (Denver)",                   "MST7MDT,M3.2.0,M11.1.0"},
-  {"USA Westkueste (Los Angeles)",         "PST8PDT,M3.2.0,M11.1.0"},
+  {"Berlin, Paris, Roma, Madrid (CET/CEST)", "CET-1CEST,M3.5.0,M10.5.0/3"},
+  {"London, Dublin (GMT/BST)",                "GMT0BST,M3.5.0/1,M10.5.0"},
+  {"Lisboa, Canarias (WET/WEST)",                      "WET0WEST,M3.5.0/1,M10.5.0"},
+  {"Athina, Helsinki (EET/EEST)",         "EET-2EEST,M3.5.0/3,M10.5.0/4"},
+  {"Moskva (MSK)",                        "MSK-3"},
+  {"New York (EST/EDT)",             "EST5EDT,M3.2.0,M11.1.0"},
+  {"Chicago (CST/CDT)",                "CST6CDT,M3.2.0,M11.1.0"},
+  {"Denver (MST/MDT)",                   "MST7MDT,M3.2.0,M11.1.0"},
+  {"Los Angeles (PST/PDT)",         "PST8PDT,M3.2.0,M11.1.0"},
   {"Dubai",                                "<+04>-4"},
-  {"Indien (Kolkata)",                     "IST-5:30"},
-  {"Japan (Tokio)",                        "JST-9"},
-  {"Australien Ost (Sydney)",              "AEST-10AEDT,M10.1.0,M4.1.0/3"},
+  {"Kolkata (IST)",                     "IST-5:30"},
+  {"Tokyo (JST)",                        "JST-9"},
+  {"Sydney (AEST/AEDT)",              "AEST-10AEDT,M10.1.0,M4.1.0/3"},
   {"UTC",                                  "UTC0"},
 };
 
@@ -96,7 +96,7 @@ static String cleanHost(String h) {
 }
 
 // ---------- Seite ----------
-static const char PAGE_HEAD[] PROGMEM = R"=====(<!doctype html><html lang="de"><head><meta charset="utf-8">
+static const char PAGE_HEAD[] PROGMEM = R"=====(<head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Wetteruhr</title>
 <style>
 body{font-family:system-ui,sans-serif;background:#0d1117;color:#e6edf3;margin:0}
@@ -144,18 +144,18 @@ $('br').oninput=e=>{
     headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'v='+e.target.value}),150);
 };
 async function scan(){
-  const b=$('sb'); b.disabled=true; b.textContent='Suche ...';
+  const b=$('sb'); b.disabled=true; b.textContent=L.scan;
   try{
     for(let i=0;i<12;i++){
       const r=await (await fetch('/scan')).json();
       if(r.state==='done'){
         $('ssids').innerHTML=r.list.map(s=>'<option value="'+s.replace(/"/g,'&quot;')+'">').join('');
-        b.textContent='Gefunden: '+r.list.length; b.disabled=false; return;
+        b.textContent=L.found+r.list.length; b.disabled=false; return;
       }
       await new Promise(r=>setTimeout(r,1500));
     }
   }catch(e){}
-  b.textContent='Netzwerke suchen'; b.disabled=false;
+  b.textContent=L.scanb; b.disabled=false;
 }
 function paint(){
   const ac=document.querySelector('input[name=acc]:checked');
@@ -195,18 +195,8 @@ show(t0);
 
 
 // ---------- Uhr-Designs: Namen und Vorschaubilder (SVG, folgen der Akzentfarbe) ----------
-static const char* const STYLE_NAME[CLOCK_STYLE_COUNT] = {
-  "Flip-Karten", "Digital + Balken",                                                                       // 0-1 klassisch
-  "Abenteuer", "Fallende Bloecke", "Labyrinth", "Huepfwelt", "Neon-Raster", "Asteroiden", "Code-Regen",    // 2-8
-  "Zahnrad-Werk", "Ziegelbrecher", "Froschfurt", "Raketenabwehr", "Neonbrecher",                          // 9-13
-  "Pulsierendes Herz", "Sinuskurve", "Badminton", "Testbild", "Dackelwelpe",                              // 14-18
-  "Flugradar", "Traumsand", "Aquarium", "Blockwelt", "Familie", "ISS-Tracker", "Sonne und Mond",          // 19-25
-  "Weihnachten", "Weihnachtself", "Halloween", "Ostern", "Valentinstag", "Silvester",                     // 26-31 Feiertage
-  "Squishy Dumpling"                                                                                       // 32
-};
-
+// Namen der Designs, Kategorien und Akzentfarben: lang_web.h (W_ST0.., W_CAT0.., W_AC0..)
 #define CAT_COUNT 8
-static const char* const CAT_NAME[CAT_COUNT] = {"Klassische Uhren", "Spiele &amp; Arcade", "Tiere &amp; Natur", "Technik &amp; Retro", "Traum &amp; Gef&uuml;hl", "Heimat &amp; Familie", "Himmel &amp; Weltraum", "Feiertage"};
 static const uint8_t STYLE_CAT[CLOCK_STYLE_COUNT] = {
   0, 0,                                         // 0 Flip-Karten, 1 Digital + Balken
   1, 1, 1, 1, 3, 1, 3, 3, 1, 1, 1, 1,           // 2 Abenteuer .. 13 Neonbrecher (6 Neon-Raster, 8 Code-Regen, 9 Zahnrad-Werk = Technik)
@@ -486,16 +476,21 @@ static const char* const STYLE_SVG[CLOCK_STYLE_COUNT] = {SVG_7, SVG_8,
   SVG_10, SVG_11, SVG_12, SVG_13, SVG_14, SVG_15, SVG_16, SVG_17, SVG_18, SVG_19, SVG_20, SVG_21, SVG_22, SVG_23, SVG_24, SVG_25, SVG_26,
   SVG_30, SVG_31, SVG_33, SVG_35, SVG_36, SVG_38, SVG_39, SVG_40, SVG_41, SVG_42, SVG_43, SVG_44, SVG_45, SVG_46};
 
-static String autoInfo() {
+static String autoInfo() {                     // Ergebnis ist HTML (Design-Namen mit Entities)
   const uint32_t now = millis();
-  if ((int32_t)(now - gAutoHold) < 0)
-    return String(" (Wechsel aktiv, pausiert nach Auswahl noch ") + ((gAutoHold - now) / 1000UL) + " s)";
+  char b[96];
+  if ((int32_t)(now - gAutoHold) < 0) {
+    snprintf(b, sizeof(b), TR(W_AUTO_PAUSE), (unsigned long)((gAutoHold - now) / 1000UL));
+    return String(b);
+  }
   const uint32_t iv = gSet.autoSec * 1000UL, el = now - gStyleSince;
-  String h;
+  String h = TR(W_AUTO_ON);
   const uint64_t hm = holidayMask() & ~gSet.autoMask;
+  bool first = true;
   for (int i = 0; i < CLOCK_STYLE_COUNT; i++)
-    if (hm & (1ULL << i)) { h += h.length() ? ", " : " + "; h += STYLE_NAME[i]; }
-  return String(" (Wechsel aktiv") + h + ", naechster in " + ((el < iv ? iv - el : 0) / 1000UL) + " s)";
+    if (hm & (1ULL << i)) { h += first ? " + " : ", "; first = false; h += TR(W_ST0 + i); }
+  snprintf(b, sizeof(b), TR(W_AUTO_NEXT), (unsigned long)((el < iv ? iv - el : 0) / 1000UL));
+  return h + b;
 }
 
 static void handleRoot() {
@@ -506,76 +501,91 @@ static void handleRoot() {
   String p;
   p.reserve(4096);
   auto fl = [&]() { if (p.length() > 1200) { server.sendContent(p); p = ""; } };
+  auto T  = [&](uint16_t id) { p += TR(id); };                       // Text in der eingestellten Sprache anhaengen
+  auto sel = [&](bool on) { p += on ? F(" selected") : F(""); };
+  auto chk = [&](bool on) { p += on ? F(" checked") : F(""); };
+  p += F("<!doctype html><html lang="); p += LANG_CODE[LANG_IDX]; p += '>';
   p += FPSTR(PAGE_HEAD);
 
   // ---- Navigation (Kategorien) ----
-  p += F("<div class=app><nav id=nav>"
-         "<a data-t=status>Status</a><a data-t=display>Anzeige</a><a data-t=bright>Helligkeit</a><a data-t=ticker>Laufschrift</a><a data-t=sound>Summer &amp; Wecker</a>"
-         "<a data-t=net>WLAN</a><a data-t=time>Zeit &amp; Wetter</a><a data-t=sys>System</a></nav><main>"
-         "<h1>Wetteruhr</h1>");
-  if (server.hasArg("saved")) p += F("<div class=ok>Gespeichert.</div>");
-  if (gSet.webPw[0] == 0)
-    p += F("<div class=warn>Kein Web-Passwort gesetzt: Jeder im Netzwerk kann diese Seite &ouml;ffnen. "
-           "Bitte unter &bdquo;System&ldquo; ein Passwort vergeben.</div>");
+  p += F("<div class=app><nav id=nav><a data-t=status>"); T(W_STATUS);
+  p += F("</a><a data-t=display>");   T(W_DISPLAY);
+  p += F("</a><a data-t=bright>");    T(W_BRIGHT);
+  p += F("</a><a data-t=ticker>");    T(W_TICKER);
+  p += F("</a><a data-t=sound>");     T(W_SOUND);
+  p += F("</a><a data-t=net>");       T(W_WIFI);
+  p += F("</a><a data-t=time>");      T(W_TIMEWX);
+  p += F("</a><a data-t=sys>");       T(W_SYSTEM);
+  p += F("</a></nav><main><h1>");     T(W_TITLE); p += F("</h1>");
+  if (server.hasArg("saved")) { p += F("<div class=ok>"); T(W_SAVED); p += F("</div>"); }
+  if (gSet.webPw[0] == 0) { p += F("<div class=warn>"); T(W_NOPW); p += F("</div>"); }
 
   // Unsichtbarer Standard-Button: Enter in einem Feld soll "Speichern" ausloesen, nicht Standby/Reset
   p += F("<form method=post action=/save><button type=submit class=hid tabindex=-1 aria-hidden=true></button>");
 
   // ================= Status =================
-  auto row = [&](const char* k, const String& v) {
-    p += F("<tr><td>"); p += k; p += F("</td><td>"); p += esc(v); p += F("</td></tr>");
+  auto rowh = [&](uint16_t k, const String& html) {      // Wert ist schon HTML
+    p += F("<tr><td>"); T(k); p += F("</td><td>"); p += html; p += F("</td></tr>");
   };
+  auto row = [&](uint16_t k, const String& v) { rowh(k, esc(v)); };
+  char fb[160];
   fl();
-  p += F("<section class=tab id=t-status><h2>Status</h2><table>");
+  p += F("<section class=tab id=t-status><h2>"); T(W_STATUS); p += F("</h2><table>");
   const bool wf = (WiFi.status() == WL_CONNECTED);
-  row("WLAN", wf ? (String(gSet.ssid) + "  (" + String(WiFi.RSSI()) + " dBm)") : String("nicht verbunden"));
-  row("IP-Adresse", wf ? WiFi.localIP().toString() : String("-"));
-  if (apActive) row("Einrichtungs-AP", String(AP_SSID) + "  " + WiFi.softAPIP().toString());
+  if (wf) row(W_WIFI, String(gSet.ssid) + "  (" + String(WiFi.RSSI()) + " dBm)"); else rowh(W_WIFI, TR(W_NOT_CONN));
+  row(W_R_IP, wf ? WiFi.localIP().toString() : String("-"));
+  if (apActive) row(W_R_AP, String(AP_SSID) + "  " + WiFi.softAPIP().toString());
   if (timeValid()) {
     time_t n = time(nullptr); struct tm t; localtime_r(&n, &t);
-    char tb[32]; strftime(tb, sizeof(tb), "%d.%m.%Y %H:%M:%S", &t);
-    row("Uhrzeit", String(tb) + (gTimeManual ? "  (manuell gesetzt)" : ""));
-  } else row("Uhrzeit", gSet.ntpOn ? "noch nicht synchronisiert" : "nicht gesetzt (NTP aus, bitte unter Zeit & Wetter eingeben)");
-  row("Zeitquelle", gSet.ntpOn ? (String("NTP (") + gSet.ntp + ")") : String("nur manuell"));
+    char tb[16], db[16];
+    strftime(tb, sizeof(tb), "%H:%M:%S", &t);
+    langDateY(db, sizeof(db), t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
+    rowh(W_R_TIME, String(db) + " " + tb + (gTimeManual ? TR(W_MANUAL_SET) : ""));
+  } else rowh(W_R_TIME, TR(gSet.ntpOn ? W_NOT_SYNC : W_NOT_SETT));
+  if (gSet.ntpOn) row(W_R_TSRC, String("NTP (") + gSet.ntp + ")"); else rowh(W_R_TSRC, TR(W_ONLY_MAN));
   Weather w; bool hv = getWeather(w);
   if (hv) {
-    uint32_t am = (millis() - w.fetchedMs) / 60000UL;
-    row("Wetter", String(w.temp, 1) + " C, aktualisiert vor " + String(am) + " min");
-  } else row("Wetter", "noch keine Daten");
-  row("Uhr-Design", String(STYLE_NAME[gStyle < CLOCK_STYLE_COUNT ? gStyle : 0]) + (nyeNow() ? " (Silvester-Automatik)" : (nightTv() ? " (Nachtmodus)" : (autoActive() ? autoInfo() : String("")))) + ", " + ACCENT_NAME[gSet.accent < ACCENT_COUNT ? gSet.accent : 0]);
-  row("Zeitplan-Dimmung", gSet.dimOn ? (String(gDimActive ? "aktiv: " : "wartet: ") + String(gSet.dimLevel) + " % von " + hhmm(gSet.dimStart) + " bis " + hhmm(gSet.dimEnd) + (gSet.dimTv ? ", mit Testbild" : "")) : String("aus"));
-  row("Dimmung", HW_DIM ? "Hardware (PWM am Backlight)" : "Software (Farben abdunkeln, Backlight bleibt an)");
-  row("Display", standby ? "Standby (aus)" : "an");
+    snprintf(fb, sizeof(fb), TR(W_WX_FMT), (double)w.temp, (unsigned long)((millis() - w.fetchedMs) / 60000UL));
+    rowh(W_R_WX, fb);
+  } else rowh(W_R_WX, TR(W_NO_DATA));
+  rowh(W_R_DESIGN, String(TR(W_ST0 + (gStyle < CLOCK_STYLE_COUNT ? gStyle : 0))) +
+                   (nyeNow() ? String(TR(W_NYE_S)) : (nightTv() ? String(TR(W_NIGHT_S)) : (autoActive() ? autoInfo() : String("")))) +
+                   ", " + TR(W_AC0 + (gSet.accent < ACCENT_COUNT ? gSet.accent : 0)));
+  if (gSet.dimOn) {
+    snprintf(fb, sizeof(fb), TR(W_DIM_FMT), (unsigned)gSet.dimLevel, hhmm(gSet.dimStart).c_str(), hhmm(gSet.dimEnd).c_str());
+    rowh(W_R_DIMSCH, String(TR(gDimActive ? W_DIM_ACT : W_DIM_WAIT)) + fb + (gSet.dimTv ? TR(W_WITH_TV) : ""));
+  } else rowh(W_R_DIMSCH, TR(W_OFF));
+  rowh(W_R_DIM, TR(HW_DIM ? W_DIM_HW : W_DIM_SW));
+  rowh(W_R_DISP, TR(standby ? W_STANDBY_S : W_ON));
 #if PIN_TOUCH >= 0
   {
     const bool hi = digitalRead(PIN_TOUCH) == HIGH;
-    String v = String("GPIO ") + PIN_TOUCH + ", Pegel jetzt " + (hi ? "HIGH" : "LOW") +
-               (hi == (TOUCH_ACTIVE_HIGH != 0) ? " (beruehrt)" : " (frei)") +
-               ", erkannt: " + gTouchCount + "x";
-    if (gTouchCount) v += String(", zuletzt vor ") + ((millis() - gTouchLastMs) / 1000UL) + " s";
-    row("Touch-Taster", v);
+    String v = String("GPIO ") + PIN_TOUCH + TR(W_T_LEVEL) + (hi ? "HIGH" : "LOW") +
+               TR(hi == (TOUCH_ACTIVE_HIGH != 0) ? W_TOUCHED : W_FREE) + TR(W_DETECTED) + gTouchCount + "x";
+    if (gTouchCount) { snprintf(fb, sizeof(fb), TR(W_LAST_AGO), (unsigned long)((millis() - gTouchLastMs) / 1000UL)); v += fb; }
+    rowh(W_R_TOUCH, v);
   }
 #else
-  row("Touch-Taster", "nicht aktiviert (PIN_TOUCH = -1 in config.h)");
+  rowh(W_R_TOUCH, TR(W_TOUCH_OFF));
 #endif
-  if (!bz::present()) row("Summer", "nicht verbaut (PIN_BUZZER = -1)");
-  else if (gAlarmRinging) row("Wecker", "klingelt");
+  if (!bz::present()) rowh(W_R_BUZZ, TR(W_BZ_NONE));
+  else if (gAlarmRinging) rowh(W_R_ALARM, TR(W_RINGING));
   else if (gSet.alOn) {
     String d;
     for (int i = 0; i < 7; i++) if (gSet.alDays & (1 << i)) { if (d.length()) d += ' '; d += WEEKDAY2[(i + 1) % 7]; }
-    row("Wecker", hhmm(gSet.alTime) + (d.length() ? String("  ") + d : String("  (kein Tag gewaehlt)")));
-  } else row("Wecker", "aus");
-  row("Freier Speicher", String(ESP.getFreeHeap()) + " Bytes");
-  row("Firmware", String(FW_VERSION) + "  (gebaut " + __DATE__ + " " + __TIME__ + ")");
+    rowh(W_R_ALARM, hhmm(gSet.alTime) + (d.length() ? String("  ") + d : String(TR(W_NO_DAY))));
+  } else rowh(W_R_ALARM, TR(W_OFF));
+  rowh(W_R_LANG, LANG_NAME[LANG_IDX]);
+  row(W_R_HEAP, String(ESP.getFreeHeap()) + " Bytes");
+  row(W_R_FW, String(FW_VERSION) + "  (" + TR(W_BUILT) + " " + __DATE__ + " " + __TIME__ + ")");
   p += F("</table>");
-  if (gAlarmRinging)
-    p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>Wecker abstellen</button>");
+  if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }
   p += F("</section>");
 
   // ================= Anzeige =================
   fl();
-  p += F("<section class=tab id=t-display><h2>Uhr-Design</h2><div class=chips id=cf><a class=on data-c=-1>Alle</a>");
-  for (int k = 0; k < CAT_COUNT; k++) { p += F("<a data-c="); p += String(k); p += F(">"); p += CAT_NAME[k]; p += F("</a>"); }
+  p += F("<section class=tab id=t-display><h2>"); T(W_R_DESIGN); p += F("</h2><div class=chips id=cf><a class=on data-c=-1>"); T(W_ALL); p += F("</a>");
+  for (int k = 0; k < CAT_COUNT; k++) { p += F("<a data-c="); p += String(k); p += F(">"); T(W_CAT0 + k); p += F("</a>"); }
   p += F("</div><div class=cards id=cards>");
   for (int i = 0; i < CLOCK_STYLE_COUNT; i++) {
     fl();
@@ -583,20 +593,18 @@ static void handleRoot() {
     p += String(i);
     p += (gSet.clockStyle == i) ? F(" checked>") : F(">");
     p += FPSTR(STYLE_SVG[i]);
-    p += STYLE_NAME[i];
+    T(W_ST0 + i);
     p += F("</label>");
   }
-  p += F("</div>");
-  p += F("<h2>Akzentfarbe</h2><div>");
+  p += F("</div><h2>"); T(W_H_ACCENT); p += F("</h2><div>");
   for (int i = 0; i < ACCENT_COUNT; i++) {
     char hx[8];
     snprintf(hx, sizeof(hx), "#%02x%02x%02x", ACCENT_RGB[i][0], ACCENT_RGB[i][1], ACCENT_RGB[i][2]);
-    p += F("<label class=sw title=\""); p += ACCENT_NAME[i]; p += F("\" style=\"background:"); p += hx;
+    p += F("<label class=sw title=\""); T(W_AC0 + i); p += F("\" style=\"background:"); p += hx;
     p += F("\"><input type=radio name=acc value="); p += String(i);
     p += (gSet.accent == i) ? F(" checked></label>") : F("></label>");
   }
-  p += F("</div><small>Design und Farbe wirken sofort auf dem Display. Alle anderen Felder &uuml;bernimmst du mit &bdquo;Speichern&ldquo;.</small>");
-  p += F("<script>const accHex=[");
+  p += F("</div><small>"); T(W_LOOK_HINT); p += F("</small><script>const accHex=[");
   for (int i = 0; i < ACCENT_COUNT; i++) {
     char hx[12];
     snprintf(hx, sizeof(hx), "%s\"#%02x%02x%02x\"", i ? "," : "", ACCENT_RGB[i][0], ACCENT_RGB[i][1], ACCENT_RGB[i][2]);
@@ -608,210 +616,164 @@ static void handleRoot() {
     uint32_t sec = gSet.autoSec, unit = 1, val = sec;
     if (sec % 3600 == 0) { unit = 3600; val = sec / 3600; }
     else if (sec % 60 == 0) { unit = 60; val = sec / 60; }
-    p += F("<h2>Automatischer Design-Wechsel</h2><label><input type=checkbox name=auto value=1");
-    p += gSet.autoOn ? F(" checked") : F("");
-    p += F(">Designs nach Zeitplan wechseln</label><label>Wechsel alle</label><div class=row><input type=number name=aint min=1 max=86400 style='width:6em' value=");
-    p += String(val);
-    p += F("><select name=aunit>");
-    p += F("<option value=1");    p += unit == 1    ? F(" selected") : F(""); p += F(">Sekunden</option>");
-    p += F("<option value=60");   p += unit == 60   ? F(" selected") : F(""); p += F(">Minuten</option>");
-    p += F("<option value=3600"); p += unit == 3600 ? F(" selected") : F(""); p += F(">Stunden</option></select></div>");
-    p += F("<label><input type=checkbox name=arnd value=1");
-    p += gSet.autoRnd ? F(" checked") : F("");
-    p += F(">Zuf&auml;llige Reihenfolge</label><label>Diese Designs verwenden (mindestens zwei) &ndash; Kategorie anhaken w&auml;hlt alle darin:</label>");
+    p += F("<h2>"); T(W_H_AUTO); p += F("</h2><label><input type=checkbox name=auto value=1"); chk(gSet.autoOn);
+    p += F(">"); T(W_AUTO_CB); p += F("</label><label>"); T(W_AUTO_EVERY);
+    p += F("</label><div class=row><input type=number name=aint min=1 max=86400 style='width:6em' value="); p += String(val);
+    p += F("><select name=aunit><option value=1"); sel(unit == 1); p += '>'; T(W_SECONDS);
+    p += F("</option><option value=60"); sel(unit == 60); p += '>'; T(W_MINUTES);
+    p += F("</option><option value=3600"); sel(unit == 3600); p += '>'; T(W_HOURS);
+    p += F("</option></select></div><label><input type=checkbox name=arnd value=1"); chk(gSet.autoRnd);
+    p += F(">"); T(W_RANDOM); p += F("</label><label>"); T(W_USE_THESE); p += F("</label>");
     for (int k = 0; k < CAT_COUNT; k++) {
-      p += F("<label class=cg><input type=checkbox class=cgb data-c="); p += String(k); p += F("> "); p += CAT_NAME[k]; p += F("</label>");
+      p += F("<label class=cg><input type=checkbox class=cgb data-c="); p += String(k); p += F("> "); T(W_CAT0 + k); p += F("</label>");
       p += F("<div class=cards style='grid-template-columns:1fr 1fr 1fr'>");
       for (int i = 0; i < CLOCK_STYLE_COUNT; i++) {
         fl();
         if (STYLE_CAT[i] != k) continue;
         p += F("<label style='font-weight:normal'><input type=checkbox class=am data-c="); p += String(k); p += F(" name=am"); p += String(i); p += F(" value=1");
-        p += (gSet.autoMask >> i) & 1 ? F(" checked") : F("");
-        p += F("> "); p += STYLE_NAME[i]; p += F("</label>");
+        chk((gSet.autoMask >> i) & 1);
+        p += F("> "); T(W_ST0 + i); p += F("</label>");
       }
       p += F("</div>");
     }
-    p += F("<p><a href='#' onclick=\"document.querySelectorAll('.am').forEach(c=>c.checked=true);grpSync();return false\">alle</a> &middot; "
-           "<a href='#' onclick=\"document.querySelectorAll('.am').forEach(c=>c.checked=false);grpSync();return false\">keine</a></p>"
+    p += F("<p><a href='#' onclick=\"document.querySelectorAll('.am').forEach(c=>c.checked=true);grpSync();return false\">"); T(W_ALL_L);
+    p += F("</a> &middot; <a href='#' onclick=\"document.querySelectorAll('.am').forEach(c=>c.checked=false);grpSync();return false\">"); T(W_NONE_L);
+    p += F("</a></p>"
            "<script>function grpSync(){document.querySelectorAll('.cgb').forEach(g=>{const m=[...document.querySelectorAll('.am[data-c=\"'+g.dataset.c+'\"]')];const n=m.filter(x=>x.checked).length;g.checked=n===m.length;g.indeterminate=n>0&&n<m.length;});}"
            "document.querySelectorAll('.cgb').forEach(g=>g.onchange=()=>{document.querySelectorAll('.am[data-c=\"'+g.dataset.c+'\"]').forEach(x=>x.checked=g.checked);grpSync();});"
            "document.querySelectorAll('.am').forEach(x=>x.onchange=grpSync);grpSync();"
-           "document.querySelectorAll('#cf a').forEach(a=>a.onclick=()=>{document.querySelectorAll('#cf a').forEach(z=>z.classList.toggle('on',z===a));const c=a.dataset.c;document.querySelectorAll('#cards .card').forEach(k=>k.style.display=(c==='-1'||k.dataset.c===c)?'':'none');});</script>"
-           "<small>Gilt, sobald &bdquo;Speichern&ldquo; gedr&uuml;ckt wird. Ein Klick auf eine Design-Karte oben zeigt es sofort an; der Wechsel l&auml;uft danach weiter. Der Touch-Taster bl&auml;ttert in dieser Liste weiter (ohne Liste durch alle Designs); danach l&auml;uft der Wechsel normal mit vollem Intervall weiter.</small>");
+           "document.querySelectorAll('#cf a').forEach(a=>a.onclick=()=>{document.querySelectorAll('#cf a').forEach(z=>z.classList.toggle('on',z===a));const c=a.dataset.c;document.querySelectorAll('#cards .card').forEach(k=>k.style.display=(c==='-1'||k.dataset.c===c)?'':'none');});</script><small>");
+    T(W_AUTO_HINT); p += F("</small>");
   }
 
-  // Extras: Silvester-Automatik, Weihnachtsschlitten, UFO
-  p += F("<h2>Extras</h2><label><input type=checkbox name=holauto value=1");
-  p += gSet.holAuto ? F(" checked") : F("");
-  p += F(">Feiertags-Designs automatisch in den Design-Wechsel aufnehmen (jeweils 10 Tage vorher bis zum Fest: "
-         "Weihnachten mit Weihnachtself, Silvester, Valentinstag, Halloween, Ostern)</label>"
-         "<small>Wirkt, wenn der automatische Design-Wechsel an ist. Die eigene Liste bleibt unver&auml;ndert; "
-         "nach dem Fest f&auml;llt das Design von selbst wieder heraus.</small>");
-  p += F("<label><input type=checkbox name=nyeauto value=1");
-  p += gSet.nyeAuto ? F(" checked") : F("");
-  p += F(">Silvester-Automatik: am 31.12. von 23:30 bis 00:30 Feuerwerk (Design &bdquo;Silvester&ldquo;)</label>"
-         "<label>ISS-Tracker zeigt</label><select name=sled>");
-  {
-    static const char* const SL[3] = {"die ISS", "immer den Weihnachtsschlitten", "den Weihnachtsschlitten vom 1. bis 26.12."};
-    for (int i = 0; i < 3; i++) {
-      p += F("<option value="); p += String(i); p += (gSet.sleigh == i) ? F(" selected>") : F(">"); p += SL[i]; p += F("</option>");
-    }
-  }
-  p += F("</select><label><input type=checkbox name=ufo value=1");
-  p += gSet.ufoOn ? F(" checked") : F("");
-  p += F(">Flugradar: ab und zu ein UFO erkennen (nur Spa&szlig;)</label>"
-         "<button type=submit class=sec formaction=/ufo formmethod=post formnovalidate>UFO jetzt zeigen</button>"
-         "<small>Der Knopf schaltet auf das Flugradar und l&auml;sst sofort ein UFO auftauchen.</small>"
-         "<label>Aquarium</label><button type=submit class=sec formaction=/feed formmethod=post formnovalidate>Fische f&uuml;ttern</button>"
-         "<button type=submit class=sec formaction=/visit formmethod=post formnovalidate>Besuch: Seeschlange / U-Boot</button>"
-         "<small>Beide Kn&ouml;pfe schalten auf das Aquarium. Der Besuch kommt sonst von selbst alle paar Minuten, abwechselnd Seeschlange und U-Boot.</small>");
+  // Extras: Feiertage, Silvester-Automatik, Weihnachtsschlitten, UFO, Aquarium
+  fl();
+  p += F("<h2>"); T(W_H_EXTRAS); p += F("</h2><label><input type=checkbox name=holauto value=1"); chk(gSet.holAuto);
+  p += F(">"); T(W_HOL_CB); p += F("</label><small>"); T(W_HOL_HINT);
+  p += F("</small><label><input type=checkbox name=nyeauto value=1"); chk(gSet.nyeAuto);
+  p += F(">"); T(W_NYE_CB); p += F("</label><label>"); T(W_ISS_SHOWS); p += F("</label><select name=sled>");
+  for (int i = 0; i < 3; i++) { p += F("<option value="); p += String(i); sel(gSet.sleigh == i); p += '>'; T(W_SL0 + i); p += F("</option>"); }
+  p += F("</select><label><input type=checkbox name=ufo value=1"); chk(gSet.ufoOn);
+  p += F(">"); T(W_UFO_CB); p += F("</label><button type=submit class=sec formaction=/ufo formmethod=post formnovalidate>"); T(W_UFO_BTN);
+  p += F("</button><small>"); T(W_UFO_HINT); p += F("</small><label>"); T(W_AQUA);
+  p += F("</label><button type=submit class=sec formaction=/feed formmethod=post formnovalidate>"); T(W_FEED);
+  p += F("</button><button type=submit class=sec formaction=/visit formmethod=post formnovalidate>"); T(W_VISIT);
+  p += F("</button><small>"); T(W_AQUA_HINT); p += F("</small>");
 
-  p += F("<h2>Darstellung</h2><label><input type=checkbox name=sec value=1");
-  p += gSet.seconds ? F(" checked") : F("");
-  p += F(">Sekunden anzeigen</label><label>Ausrichtung</label><select name=rot><option value=1");
-  p += (gSet.rotation == 1) ? F(" selected") : F("");
-  p += F(">Normal</option><option value=3");
-  p += (gSet.rotation == 3) ? F(" selected") : F("");
-  p += F(">180&deg; gedreht</option></select></section>");
+  p += F("<h2>"); T(W_H_LOOK); p += F("</h2><label>"); T(W_R_LANG);
+  if (gLang != L_EN) p += F(" (Language)");
+  p += F("</label><select name=lang>");
+  for (int i = 0; i < LANG_COUNT; i++) { p += F("<option value="); p += String(i); sel(gSet.lang == i); p += '>'; p += LANG_NAME[i]; p += F("</option>"); }
+  p += F("</select><small>"); T(W_LANG_HINT);
+  p += F("</small><label><input type=checkbox name=sec value=1"); chk(gSet.seconds);
+  p += F(">"); T(W_SHOW_SEC); p += F("</label><label>"); T(W_ORIENT); p += F("</label><select name=rot><option value=1"); sel(gSet.rotation == 1);
+  p += F(">"); T(W_NORMAL); p += F("</option><option value=3"); sel(gSet.rotation == 3);
+  p += F(">"); T(W_ROT180); p += F("</option></select></section>");
 
   // ================= Helligkeit =================
   fl();
-  p += F("<section class=tab id=t-bright><h2>Helligkeit</h2><label>Helligkeit: <span id=bv>");
+  p += F("<section class=tab id=t-bright><h2>"); T(W_BRIGHT); p += F("</h2><label>"); T(W_BRIGHT_LBL); p += F("<span id=bv>");
   p += String(gSet.bright);
   p += F("</span> %</label><input id=br name=b type=range min=5 max=100 value=");
   p += String(gSet.bright);
   p += F(">");
-  if (!HW_DIM)
-    p += F("<small>Ohne Umbau des Displays werden nur die Farben abgedunkelt; "
-           "das Backlight selbst bleibt unver&auml;ndert hell.</small>");
-  p += F("<h2>Display ein/aus</h2><button type=submit formaction=/standby formmethod=post formnovalidate name=v value=");
-  p += standby ? F("0>Display einschalten") : F("1>Display ausschalten (Standby)");
-  p += F("</button>");
-
-  p += F("<h2>Zeitplan-Dimmung</h2><label><input type=checkbox name=dim value=1");
-  p += gSet.dimOn ? F(" checked") : F("");
-  p += F(">Display zu bestimmten Zeiten dimmen</label><label>Dimmen ab</label><input type=time name=dims value=\"");
+  if (!HW_DIM) { p += F("<small>"); T(W_SWDIM_HINT); p += F("</small>"); }
+  p += F("<h2>"); T(W_H_ONOFF); p += F("</h2><button type=submit formaction=/standby formmethod=post formnovalidate name=v value=");
+  p += standby ? F("0>") : F("1>"); T(standby ? W_DISP_ON : W_DISP_OFF);
+  p += F("</button><h2>"); T(W_R_DIMSCH); p += F("</h2><label><input type=checkbox name=dim value=1"); chk(gSet.dimOn);
+  p += F(">"); T(W_DIM_CB); p += F("</label><label>"); T(W_DIM_FROM); p += F("</label><input type=time name=dims value=\"");
   p += hhmm(gSet.dimStart);
-  p += F("\"><label>Zur&uuml;ck zur normalen Helligkeit um</label><input type=time name=dime value=\"");
+  p += F("\"><label>"); T(W_DIM_BACK); p += F("</label><input type=time name=dime value=\"");
   p += hhmm(gSet.dimEnd);
-  p += F("\"><label>Helligkeit w&auml;hrend der Dimmung (5&ndash;100 %)</label><input name=diml type=number min=5 max=100 value=");
+  p += F("\"><label>"); T(W_DIM_LEVEL); p += F("</label><input name=diml type=number min=5 max=100 value=");
   p += String(gSet.dimLevel);
-  p += F("><label><input type=checkbox name=dimtv value=1");
-  p += gSet.dimTv ? F(" checked") : F("");
-  p += F(">Nachtmodus: w&auml;hrend der Dimmung das Testbild zeigen</label>");
-  p += F("<small>Ben&ouml;tigt eine g&uuml;ltige Uhrzeit. Liegt &bdquo;ab&ldquo; sp&auml;ter als &bdquo;um&ldquo;, gilt das Fenster &uuml;ber Mitternacht (z.&nbsp;B. 22:00 bis 07:00). "
-         "W&auml;hrend der Dimmung gilt dieser Wert statt des Schiebereglers. Mit Nachtmodus erscheint im Fenster das Testbild "
-         "statt des gew&auml;hlten Designs (auch bei Design-Wechsel), danach kehrt die Uhr zum gew&auml;hlten Design zur&uuml;ck. Wirkt erst nach &bdquo;Speichern&ldquo;.</small></section>");
+  p += F("><label><input type=checkbox name=dimtv value=1"); chk(gSet.dimTv);
+  p += F(">"); T(W_DIMTV_CB); p += F("</label><small>"); T(W_DIM_HINT); p += F("</small></section>");
 
   // ================= Laufschrift =================
   fl();
-  p += F("<section class=tab id=t-ticker><h2>Laufschrift</h2><label><input type=checkbox name=tkon value=1");
-  p += gSet.tickOn ? F(" checked") : F("");
-  p += F(">Laufschrift aktiv</label><label>Text (Umlaute und Sonderzeichen erlaubt, bis 160 Zeichen)</label><input name=tk maxlength=160 value=\"");
+  p += F("<section class=tab id=t-ticker><h2>"); T(W_TICKER); p += F("</h2><label><input type=checkbox name=tkon value=1"); chk(gSet.tickOn);
+  p += F(">"); T(W_TK_ON); p += F("</label><label>"); T(W_TK_TEXT); p += F("</label><input name=tk maxlength=160 value=\"");
   p += esc(gSet.tick);
   p += F("\"><div style='margin:.4em 0'>");
   static const char* const SC[] = {"&auml;","&ouml;","&uuml;","&Auml;","&Ouml;","&Uuml;","&szlig;","&euro;","&deg;","&hearts;","&rarr;","&larr;","&uarr;","&darr;","&bull;","&plusmn;","&eacute;","&egrave;"};
   for (unsigned i = 0; i < sizeof(SC) / sizeof(SC[0]); i++) {
     p += F("<button type=button class=sm onclick=\"tkIns(this.textContent)\">"); p += SC[i]; p += F("</button> ");
   }
-  p += F("</div><label>Ablauf</label><select name=tkmode><option value=0");
-  p += gSet.tickLoop ? F("") : F(" selected");
-  p += F(">Einmalig (beim Speichern)</option><option value=1");
-  p += gSet.tickLoop ? F(" selected") : F("");
-  p += F(">Dauerschleife</option></select><label>Pause zwischen den Durchl&auml;ufen (Sekunden, nur Schleife)</label><input type=number name=tkpause min=0 max=3600 value=");
+  p += F("</div><label>"); T(W_TK_FLOW); p += F("</label><select name=tkmode><option value=0"); sel(!gSet.tickLoop);
+  p += F(">"); T(W_TK_ONCE); p += F("</option><option value=1"); sel(gSet.tickLoop);
+  p += F(">"); T(W_TK_LOOP); p += F("</option></select><label>"); T(W_TK_PAUSE); p += F("</label><input type=number name=tkpause min=0 max=3600 value=");
   p += String(gSet.tickPause);
-  p += F("><label>Position</label><select name=tkpos>");
-  static const char* const PN[] = {"Oben", "Mitte", "Unten"};
-  for (int i = 0; i < 3; i++) { p += F("<option value="); p += String(i); p += gSet.tickPos == i ? F(" selected>") : F(">"); p += PN[i]; p += F("</option>"); }
-  p += F("</select><label>Schriftgr&ouml;&szlig;e</label><select name=tkbig><option value=0");
-  p += gSet.tickBig ? F("") : F(" selected");
-  p += F(">Mittel</option><option value=1");
-  p += gSet.tickBig ? F(" selected") : F("");
-  p += F(">Gro&szlig;</option></select><label>Farbe</label><select name=tkcol>");
+  p += F("><label>"); T(W_TK_POS); p += F("</label><select name=tkpos>");
+  for (int i = 0; i < 3; i++) { p += F("<option value="); p += String(i); sel(gSet.tickPos == i); p += '>'; T(W_TOP + i); p += F("</option>"); }
+  p += F("</select><label>"); T(W_TK_SIZE); p += F("</label><select name=tkbig><option value=0"); sel(!gSet.tickBig);
+  p += F(">"); T(W_MEDIUM); p += F("</option><option value=1"); sel(gSet.tickBig);
+  p += F(">"); T(W_LARGE); p += F("</option></select><label>"); T(W_COLOR); p += F("</label><select name=tkcol>");
   for (int i = 0; i <= ACCENT_COUNT; i++) {
-    p += F("<option value="); p += String(i); p += gSet.tickColor == i ? F(" selected>") : F(">");
-    p += i < ACCENT_COUNT ? ACCENT_NAME[i] : "Weiss"; p += F("</option>");
+    p += F("<option value="); p += String(i); sel(gSet.tickColor == i); p += '>';
+    T(i < ACCENT_COUNT ? W_AC0 + i : W_WHITE); p += F("</option>");
   }
-  p += F("</select><label>Geschwindigkeit: <span id=tsv>");
+  p += F("</select><label>"); T(W_SPEED); p += F("<span id=tsv>");
   p += String(gSet.tickSpeed);
   p += F("</span></label><input type=range name=tkspd min=1 max=10 value=");
   p += String(gSet.tickSpeed);
-  p += F(" oninput=\"document.getElementById('tsv').textContent=this.value\"><label><input type=checkbox name=tkbg value=1");
-  p += gSet.tickBg ? F(" checked") : F("");
-  p += F(">Dunkles Hintergrundband (bei klassischen Designs immer an)</label>"
-         "<p><button type=button id=tkplay onclick=\"tkPlay()\">Jetzt einmal abspielen</button></p>"
-         "<small>Der Knopf spielt den <b>gespeicherten</b> Text einmal ab. &Auml;nderungen erst mit &bdquo;Speichern&ldquo; &uuml;bernehmen. "
-         "Die Laufschrift liegt &uuml;ber jedem Design und pausiert im Standby.</small></section>");
+  p += F(" oninput=\"document.getElementById('tsv').textContent=this.value\"><label><input type=checkbox name=tkbg value=1"); chk(gSet.tickBg);
+  p += F(">"); T(W_TK_BG); p += F("</label><p><button type=button id=tkplay onclick=\"tkPlay()\">"); T(W_TK_PLAY);
+  p += F("</button></p><small>"); T(W_TK_HINT); p += F("</small></section>");
 
   // ================= Summer & Wecker =================
   fl();
-  p += F("<section class=tab id=t-sound><h2>Summer</h2>");
-  if (!bz::present())
-    p += F("<small><b>Kein Summer konfiguriert.</b> In <code>config.h</code> <code>PIN_BUZZER</code> eintragen "
-           "(z.&nbsp;B. 10) und neu aufspielen. Die Einstellungen werden trotzdem gespeichert.</small>");
-  p += F("<label><input type=checkbox name=bzhr value=1");
-  p += gSet.bzHour ? F(" checked") : F("");
-  p += F(">Stundensignal (zur vollen Stunde zweimal kurz)</label><label><input type=checkbox name=bzq value=1");
-  p += gSet.bzQuiet ? F(" checked") : F("");
-  p += F(">Kein Stundensignal w&auml;hrend der Zeitplan-Dimmung (Nachtruhe)</label>");
+  p += F("<section class=tab id=t-sound><h2>"); T(W_R_BUZZ); p += F("</h2>");
+  if (!bz::present()) { p += F("<small>"); T(W_BZ_NOCFG); p += F("</small>"); }
+  p += F("<label><input type=checkbox name=bzhr value=1"); chk(gSet.bzHour);
+  p += F(">"); T(W_BZ_HOUR); p += F("</label><label><input type=checkbox name=bzq value=1"); chk(gSet.bzQuiet);
+  p += F(">"); T(W_BZ_QUIET); p += F("</label>");
 #if PIN_TOUCH >= 0
-  p += F("<label><input type=checkbox name=bztc value=1");
-  p += gSet.bzTouch ? F(" checked") : F("");
-  p += F(">Klick bei Ber&uuml;hrung des Touch-Tasters</label>");
+  p += F("<label><input type=checkbox name=bztc value=1"); chk(gSet.bzTouch);
+  p += F(">"); T(W_BZ_TOUCH); p += F("</label>");
 #endif
-  p += F("<button type=submit class=sec formaction=/beep formmethod=post formnovalidate>Summer testen</button>");
-
-  p += F("<h2>Wecker</h2><label><input type=checkbox name=alon value=1");
-  p += gSet.alOn ? F(" checked") : F("");
-  p += F(">Wecker aktiv</label><label>Weckzeit</label><input type=time name=alt value=\"");
+  p += F("<button type=submit class=sec formaction=/beep formmethod=post formnovalidate>"); T(W_BZ_TEST);
+  p += F("</button><h2>"); T(W_R_ALARM); p += F("</h2><label><input type=checkbox name=alon value=1"); chk(gSet.alOn);
+  p += F(">"); T(W_AL_ON); p += F("</label><label>"); T(W_AL_TIME); p += F("</label><input type=time name=alt value=\"");
   p += hhmm(gSet.alTime);
-  p += F("\"><label>Tage</label><div class=chips style='flex-wrap:wrap'>");
-  {
-    static const char* const DN[7] = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"};
-    for (int i = 0; i < 7; i++) {
-      p += F("<label style='display:inline-flex;align-items:center;gap:.3em;margin-right:.8em'><input type=checkbox name=ald");
-      p += String(i);
-      p += F(" value=1");
-      p += (gSet.alDays & (1 << i)) ? F(" checked>") : F(">");
-      p += DN[i];
-      p += F("</label>");
-    }
+  p += F("\"><label>"); T(W_AL_DAYS); p += F("</label><div class=chips style='flex-wrap:wrap'>");
+  for (int i = 0; i < 7; i++) {               // Montag zuerst
+    p += F("<label style='display:inline-flex;align-items:center;gap:.3em;margin-right:.8em'><input type=checkbox name=ald");
+    p += String(i);
+    p += F(" value=1");
+    p += (gSet.alDays & (1 << i)) ? F(" checked>") : F(">");
+    p += WEEKDAY2[(i + 1) % 7];
+    p += F("</label>");
   }
   p += F("</div>");
-  if (gAlarmRinging)
-    p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>Wecker abstellen</button>");
-  p += F("<small>Der Wecker piept bis zu 5 Minuten und schaltet ein Display im Standby ein. Abstellen: Touch-Taster "
-         "ber&uuml;hren oder hier bzw. unter Status &bdquo;Wecker abstellen&ldquo;. Ben&ouml;tigt eine g&uuml;ltige Uhrzeit "
-         "(NTP oder manuell). Wirkt erst nach &bdquo;Speichern&ldquo;.</small></section>");
+  if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }
+  p += F("<small>"); T(W_AL_HINT); p += F("</small></section>");
 
   // ================= WLAN =================
   fl();
-  p += F("<section class=tab id=t-net><h2>WLAN</h2><label>Netzwerkname (SSID)</label><input name=ssid list=ssids maxlength=32 value=\"");
+  p += F("<section class=tab id=t-net><h2>"); T(W_WIFI); p += F("</h2><label>"); T(W_SSID); p += F("</label><input name=ssid list=ssids maxlength=32 value=\"");
   p += esc(gSet.ssid);
-  p += F("\"><datalist id=ssids></datalist><button type=button class=sec id=sb onclick=scan()>Netzwerke suchen</button>"
-         "<label>Passwort</label><input name=pass type=password maxlength=64 placeholder=\"(unver&auml;ndert lassen: leer)\" autocomplete=new-password>"
-         "<small>Ein Wechsel des WLANs startet das Ger&auml;t neu.</small></section>");
+  p += F("\"><datalist id=ssids></datalist><button type=button class=sec id=sb onclick=scan()>"); T(W_SCAN);
+  p += F("</button><label>"); T(W_PASS); p += F("</label><input name=pass type=password maxlength=64 placeholder=\""); p += esc(TR(W_PASS_PH));
+  p += F("\" autocomplete=new-password><small>"); T(W_WIFI_HINT); p += F("</small></section>");
 
   // ================= Zeit & Wetter =================
   fl();
-  p += F("<section class=tab id=t-time><h2>Zeit</h2><label>Zeitzone</label><select name=tz>");
+  p += F("<section class=tab id=t-time><h2>"); T(W_H_TIME); p += F("</h2><label>"); T(W_TZ); p += F("</label><select name=tz>");
   bool found = false;
   for (const TzEntry& z : TZS) {
-    bool sel = (strcmp(gSet.tz, z.posix) == 0);
-    found |= sel;
-    p += F("<option value=\""); p += esc(z.posix); p += sel ? F("\" selected>") : F("\">");
+    bool s = (strcmp(gSet.tz, z.posix) == 0);
+    found |= s;
+    p += F("<option value=\""); p += esc(z.posix); p += s ? F("\" selected>") : F("\">");
     p += esc(z.name); p += F("</option>");
   }
-  p += F("</select><label>Eigene Zeitzone (POSIX-String, &uuml;berschreibt die Auswahl)</label>"
-         "<input name=tzc maxlength=63 placeholder=\"z.B. CET-1CEST,M3.5.0,M10.5.0/3\" value=\"");
+  p += F("</select><label>"); T(W_TZC); p += F("</label><input name=tzc maxlength=63 placeholder=\""); p += esc(TR(W_EG));
+  p += F(" CET-1CEST,M3.5.0,M10.5.0/3\" value=\"");
   p += found ? String("") : esc(gSet.tz);
-  p += F("\"><label><input type=checkbox name=ntpon value=1");
-  p += gSet.ntpOn ? F(" checked") : F("");
-  p += F(">Uhrzeit automatisch per NTP (Internet)</label><label>NTP-Server</label><input name=ntp maxlength=47 value=\"");
+  p += F("\"><label><input type=checkbox name=ntpon value=1"); chk(gSet.ntpOn);
+  p += F(">"); T(W_NTP_CB); p += F("</label><label>"); T(W_NTP_SRV); p += F("</label><input name=ntp maxlength=47 value=\"");
   p += esc(gSet.ntp);
-  p += F("\"><small>Ein anderer NTP-Server wird nach einem Neustart genutzt. Ohne Haken holt die Uhr keine Zeit aus dem Internet; "
-         "dann Datum und Uhrzeit unten von Hand setzen.</small>");
-
+  p += F("\"><small>"); T(W_NTP_HINT); p += F("</small>");
   {
     char dv[12] = "", tv[10] = "";
     if (timeValid()) {
@@ -819,77 +781,65 @@ static void handleRoot() {
       strftime(dv, sizeof(dv), "%Y-%m-%d", &t);
       strftime(tv, sizeof(tv), "%H:%M:%S", &t);
     }
-    p += F("<h2>Datum und Uhrzeit manuell</h2><label>Datum</label><input type=date name=mdate min=2024-01-01 max=2099-12-31 value=\"");
+    p += F("<h2>"); T(W_H_MANUAL); p += F("</h2><label>"); T(W_DATE); p += F("</label><input type=date name=mdate min=2024-01-01 max=2099-12-31 value=\"");
     p += dv;
-    p += F("\"><label>Uhrzeit</label><input type=time name=mtime step=1 value=\"");
+    p += F("\"><label>"); T(W_R_TIME); p += F("</label><input type=time name=mtime step=1 value=\"");
     p += tv;
     p += F("\"><div style='margin:.5em 0'>"
            "<button type=button class=sec onclick=\"var d=new Date(),z=n=>('0'+n).slice(-2),f=this.form;"
            "f.mdate.value=d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());"
-           "f.mtime.value=z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds())\">Zeit vom Browser &uuml;bernehmen</button> "
-           "<button type=submit formaction=/settime formmethod=post formnovalidate>Uhrzeit setzen</button></div>"
-           "<small>Gilt in der oben gew&auml;hlten Zeitzone, Sommer-/Winterzeit wird automatisch erkannt. "
-           "&bdquo;Uhrzeit setzen&ldquo; &uuml;bernimmt nur Datum und Uhrzeit, keine anderen Felder. "
-           "Mit NTP wird die Zeit beim n&auml;chsten Abgleich (ca. st&uuml;ndlich) wieder &uuml;berschrieben. "
-           "Die Uhr hat keine Pufferbatterie: Nach Stromausfall muss die Zeit ohne NTP neu gesetzt werden "
-           "(ein Neustart &uuml;ber den Browser beh&auml;lt sie meist).</small>");
+           "f.mtime.value=z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds())\">"); T(W_BROWSER_T);
+    p += F("</button> <button type=submit formaction=/settime formmethod=post formnovalidate>"); T(W_SET_TIME);
+    p += F("</button></div><small>"); T(W_MAN_HINT); p += F("</small>");
   }
-
-  p += F("<h2>Wetter</h2><label>Breitengrad</label><input name=lat inputmode=decimal value=\"");
+  p += F("<h2>"); T(W_R_WX); p += F("</h2><label>"); T(W_LAT); p += F("</label><input name=lat inputmode=decimal value=\"");
   p += String(gSet.lat, 4);
-  p += F("\"><label>L&auml;ngengrad</label><input name=lon inputmode=decimal value=\"");
+  p += F("\"><label>"); T(W_LON); p += F("</label><input name=lon inputmode=decimal value=\"");
   p += String(gSet.lon, 4);
-  p += F("\"><label>Aktualisierung (Minuten, 5&ndash;120)</label><input name=upd type=number min=5 max=120 value=");
+  p += F("\"><label>"); T(W_UPD); p += F("</label><input name=upd type=number min=5 max=120 value=");
   p += String(gSet.updMin);
-  p += F("><h2>Flugradar</h2><label>Radius in km (5&ndash;100)</label><input name=rkm type=number min=5 max=100 value=");
+  p += F("><h2>"); T(W_H_RADAR); p += F("</h2><label>"); T(W_RADIUS); p += F("</label><input name=rkm type=number min=5 max=100 value=");
   p += String(gSet.radarKm);
-  p += F("><small>Das Design &bdquo;Flugradar&ldquo; zeigt echte Flugzeuge rund um den Standort (Breiten- und L&auml;ngengrad von oben). "
-         "Daten: offene ADS-B-Dienste adsb.lol, airplanes.live und adsb.fi, nur f&uuml;r private Nutzung. "
-         "Abgerufen wird nur, solange das Design angezeigt wird.</small></section>");
+  p += F("><small>"); T(W_RADAR_HINT); p += F("</small></section>");
 
   // ================= System =================
   fl();
-  p += F("<section class=tab id=t-sys><h2>Ger&auml;t</h2><label>Ger&auml;tename (erreichbar als <i>name</i>.local)</label><input name=host maxlength=23 value=\"");
+  p += F("<section class=tab id=t-sys><h2>"); T(W_H_DEVICE); p += F("</h2><label>"); T(W_HOST_LBL); p += F("</label><input name=host maxlength=23 value=\"");
   p += esc(gSet.host);
-  p += F("\"><h2>Zugang</h2><label>Web-Passwort (Benutzer: admin; leer = unver&auml;ndert)</label>"
-         "<input name=webpw type=password maxlength=32 autocomplete=new-password>"
-         "<label><input type=checkbox name=rmpw value=1>Web-Passwort entfernen</label>"
-         "<h2>Firmware-Update &uuml;ber WLAN</h2>");
-  p += F("<label>Installiert: <b>");
+  p += F("\"><h2>"); T(W_H_ACCESS); p += F("</h2><label>"); T(W_WEBPW);
+  p += F("</label><input name=webpw type=password maxlength=32 autocomplete=new-password><label><input type=checkbox name=rmpw value=1>"); T(W_RMPW);
+  p += F("</label><h2>"); T(W_H_FW); p += F("</h2><label>"); T(W_INSTALLED); p += F("<b>");
   p += FW_VERSION;
-  p += F("</b> (gebaut "); p += __DATE__; p += ' '; p += __TIME__; p += F(")</label>");
+  p += F("</b> ("); T(W_BUILT); p += ' '; p += __DATE__; p += ' '; p += __TIME__; p += F(")</label>");
   if (!otaPartition()) {
-    p += F("<div class=warn><b>Update &uuml;ber WLAN nicht m&ouml;glich:</b> Das Partitionsschema hat keinen Platz f&uuml;r ein Update "
-           "(z.&nbsp;B. &bdquo;Huge APP (No OTA)&ldquo;). Einmal per USB mit <i>Partition Scheme: Minimal SPIFFS (1.9MB APP with OTA)</i> "
-           "hochladen, danach geht es per WLAN. Die Einstellungen bleiben erhalten.</div>");
+    p += F("<div class=warn>"); T(W_NO_OTA); p += F("</div>");
   } else {
-    p += F("<label>Firmware-Datei (.bin, h&ouml;chstens ");
-    p += String((unsigned long)(otaMaxSize() / 1024));
-    p += F(" KB)</label><input type=file id=fw accept=.bin>"
-           "<button type=button id=fwb onclick=fwUp()>Update installieren</button>"
-           "<div id=fwp style='margin-top:.6em'></div>"
-           "<small>In der Arduino IDE: <i>Sketch &gt; Kompilierte Bin&auml;rdatei exportieren</i>, dann die Datei "
-           "<b>WetterUhr.ino.bin</b> aus dem Sketch-Ordner (Unterordner <i>build</i>) w&auml;hlen &ndash; nicht die "
-           "&bdquo;merged&ldquo;-, &bdquo;bootloader&ldquo;- oder &bdquo;partitions&ldquo;-Datei. Die Uhr pr&uuml;ft die Datei, "
-           "schreibt sie in den freien Bereich und startet nur bei Erfolg neu; sonst l&auml;uft die alte Firmware weiter. "
-           "Einstellungen bleiben erhalten. Alternativ in der Arduino IDE als Port den Netzwerk-Port &bdquo;");
+    snprintf(fb, sizeof(fb), TR(W_FW_FILE), (unsigned long)(otaMaxSize() / 1024));
+    p += F("<label>"); p += fb; p += F("</label><input type=file id=fw accept=.bin><button type=button id=fwb onclick=fwUp()>"); T(W_FW_INST);
+    p += F("</button><div id=fwp style='margin-top:.6em'></div><small>"); T(W_FW_HINT1);
     p += esc(gSet.host);
-    p += F("&ldquo; w&auml;hlen und normal hochladen (Passwort = Web-Passwort).</small>"
-           "<script>function fwUp(){const f=$('fw').files[0],o=$('fwp'),b=$('fwb');"
-           "if(!f){o.textContent='Bitte zuerst eine .bin-Datei w\u00e4hlen.';return;}"
-           "if(!/\\.bin$/i.test(f.name)||/merged|bootloader|partitions/i.test(f.name)){o.textContent='Falsche Datei: bitte WetterUhr.ino.bin w\u00e4hlen.';return;}"
-           "if(!confirm('Firmware \u201e'+f.name+'\u201c installieren? Die Uhr startet danach neu.'))return;"
+    T(W_FW_HINT2);
+    p += F("</small><script>function fwUp(){const f=$('fw').files[0],o=$('fwp'),b=$('fwb');"
+           "if(!f){o.textContent=L.pick;return;}"
+           "if(!/\\.bin$/i.test(f.name)||/merged|bootloader|partitions|erstinstallation/i.test(f.name)){o.textContent=L.wrong;return;}"
+           "if(!confirm(f.name+'\\n'+L.conf))return;"
            "b.disabled=true;const x=new XMLHttpRequest();x.open('POST','/update?size='+f.size);"
-           "x.upload.onprogress=e=>{if(e.lengthComputable)o.textContent='\u00dcbertragen: '+Math.round(e.loaded*100/e.total)+' %';};"
-           "x.onload=()=>{if(x.status==200){o.textContent='Fertig. Die Uhr startet neu, Seite l\u00e4dt in 20 s neu ...';setTimeout(()=>location.href='/',20000);}"
-           "else{o.textContent='Fehler: '+x.responseText;b.disabled=false;}};"
-           "x.onerror=()=>{o.textContent='Verbindung abgebrochen.';b.disabled=false;};"
+           "x.upload.onprogress=e=>{if(e.lengthComputable)o.textContent=L.sent+Math.round(e.loaded*100/e.total)+' %';};"
+           "x.onload=()=>{if(x.status==200){o.textContent=L.done;setTimeout(()=>location.href='/',20000);}"
+           "else{o.textContent=L.err+x.responseText;b.disabled=false;}};"
+           "x.onerror=()=>{o.textContent=L.lost;b.disabled=false;};"
            "const d=new FormData();d.append('firmware',f,f.name);x.send(d);}</script>");
   }
-  p += F("<h2>Zur&uuml;cksetzen</h2><button type=submit class=red formaction=/reset formmethod=post formnovalidate "
-         "onclick=\"return confirm('Alle Einstellungen l&ouml;schen?')\">Werkseinstellungen</button></section>");
+  p += F("<h2>"); T(W_H_RESET); p += F("</h2><button type=submit class=red formaction=/reset formmethod=post formnovalidate "
+         "onclick=\"return confirm(L.reset)\">"); T(W_FACTORY); p += F("</button></section>");
 
-  p += F("<div id=savebar><button type=submit>Speichern</button></div></form></main></div>");
+  p += F("<div id=savebar><button type=submit>"); T(W_SAVE); p += F("</button></div></form></main></div>");
+  // Texte fuer das JavaScript der Seite
+  auto js = [&](const char* k, uint16_t id) { p += k; p += F(":\""); p += jsonEsc(TR(id)); p += F("\","); };
+  p += F("<script>const L={");
+  js("scan", W_SCANNING); js("found", W_FOUND); js("scanb", W_SCAN); js("pick", J_PICK); js("wrong", J_WRONG); js("conf", J_CONFIRM);
+  js("sent", J_SENT); js("done", J_DONE); js("err", J_ERR); js("lost", J_LOST); js("reset", W_RESET_Q);
+  p += F("};</script>");
   p += FPSTR(PAGE_JS);
   server.sendContent(p);
   server.sendContent("");               // Ende der Antwort
@@ -964,6 +914,7 @@ static void handleSave() {
   n.alOn    = server.hasArg("alon");
   n.nyeAuto = server.hasArg("nyeauto");
   n.holAuto = server.hasArg("holauto");
+  { int v = server.arg("lang").toInt(); if (server.hasArg("lang") && v >= 0 && v < LANG_COUNT) n.lang = (uint8_t)v; }
   n.ufoOn   = server.hasArg("ufo");
   { int v = server.arg("sled").toInt(); if (v >= 0 && v <= 2) n.sleigh = (uint8_t)v; }
   { uint16_t v; if (parseHhmm(server.arg("alt"), v)) n.alTime = v; }
@@ -1011,10 +962,8 @@ static void handleSave() {
 
   if (reboot) {
     server.send(200, "text/html; charset=utf-8",
-      F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
-        "<body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'>"
-        "<h2>Gespeichert</h2><p>Das Ger&auml;t startet neu, um die Netzwerk&auml;nderung zu &uuml;bernehmen. "
-        "Danach ist die Seite unter der neuen IP-Adresse (steht auf dem Display) erreichbar.</p></body>"));
+      String(F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+        "<body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'>")) + TR(W_PG_SAVED) + "</body>");
     needReboot = true;
     rebootAt = millis() + 1500;
   } else {
@@ -1026,7 +975,7 @@ static void handleSave() {
 static void handleBrightness() {
   if (!authOk()) return;
   int v = server.arg("v").toInt();
-  if (v < 5 || v > 100) { server.send(400, "text/plain", "ungueltig"); return; }
+  if (v < 5 || v > 100) { server.send(400, "text/plain; charset=utf-8", TR(W_INVALID)); return; }
   setBrightness((uint8_t)v, true);
   server.send(204);
 }
@@ -1036,7 +985,7 @@ static void handleLook() {
   int cs = server.arg("cs").toInt();
   int ac = server.arg("acc").toInt();
   if (cs < 0 || cs >= CLOCK_STYLE_COUNT || ac < 0 || ac >= ACCENT_COUNT) {
-    server.send(400, "text/plain", "ungueltig");
+    server.send(400, "text/plain; charset=utf-8", TR(W_INVALID));
     return;
   }
   gSet.clockStyle = (uint8_t)cs;
@@ -1094,8 +1043,8 @@ static void handleReset() {
   if (!authOk()) return;
   settingsFactoryReset();
   server.send(200, "text/html; charset=utf-8",
-    F("<!doctype html><meta charset=utf-8><body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'>"
-      "<h2>Zur&uuml;ckgesetzt</h2><p>Das Ger&auml;t startet neu und &ouml;ffnet den Einrichtungs-Access-Point.</p></body>"));
+    String(F("<!doctype html><meta charset=utf-8><body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'>")) +
+      TR(W_PG_RESET) + "</body>");
   needReboot = true;
   rebootAt = millis() + 1500;
 }
@@ -1107,7 +1056,7 @@ static void handleSetTime() {
   const bool okD = sscanf(ds.c_str(), "%d-%d-%d", &y, &mo, &d) == 3;
   const int nt = sscanf(ts.c_str(), "%d:%d:%d", &h, &mi, &s);
   if (!okD || nt < 2 || !setLocalTime(y, mo, d, h, mi, nt == 3 ? s : 0)) {
-    server.send(400, "text/plain; charset=utf-8", "Ungueltiges Datum oder Uhrzeit");
+    server.send(400, "text/plain; charset=utf-8", TR(W_BAD_TIME));
     return;
   }
   LOGF("Uhrzeit manuell gesetzt: %s %s\n", ds.c_str(), ts.c_str());
@@ -1162,21 +1111,23 @@ static void handleUpdateUpload() {
   HTTPUpload& up = server.upload();
   if (up.status == UPLOAD_FILE_START) {
     gOtaErr = "";
-    if (gSet.webPw[0] && !server.authenticate("admin", gSet.webPw)) { gOtaErr = "Nicht angemeldet"; return; }
-    if (!otaPartition()) { gOtaErr = "Partitionsschema ohne OTA-Bereich (siehe Hinweis)"; return; }
+    if (gSet.webPw[0] && !server.authenticate("admin", gSet.webPw)) { gOtaErr = TR(W_E_LOGIN); return; }
+    if (!otaPartition()) { gOtaErr = TR(W_E_NOPART); return; }
     gOtaSize = server.hasArg("size") ? (size_t)server.arg("size").toInt() : 0;
     if (gOtaSize > otaMaxSize()) {
-      gOtaErr = String("Datei zu gross (") + (unsigned long)(gOtaSize / 1024) + " KB, Platz " + (unsigned long)(otaMaxSize() / 1024) + " KB)";
+      char e[96];
+      snprintf(e, sizeof(e), TR(W_E_BIG), (unsigned long)(gOtaSize / 1024), (unsigned long)(otaMaxSize() / 1024));
+      gOtaErr = e;
       return;
     }
     LOGF("Update: %s, %u Bytes\n", up.filename.c_str(), (unsigned)gOtaSize);
     gOtaActive = true;
-    otaScreen(0, "Daten werden empfangen ...");
+    otaScreen(0, TR(K_OTA_RECV));
     if (!Update.begin(gOtaSize ? gOtaSize : UPDATE_SIZE_UNKNOWN, U_FLASH)) { gOtaErr = Update.errorString(); otaResume(); }
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (gOtaErr.length()) return;
     if (Update.write(up.buf, up.currentSize) != up.currentSize) {
-      gOtaErr = String("Schreibfehler: ") + Update.errorString();
+      gOtaErr = String(TR(W_E_WRITE)) + Update.errorString();
       Update.abort();
       otaResume();
       return;
@@ -1184,11 +1135,11 @@ static void handleUpdateUpload() {
     if (gOtaSize) otaScreen((int)((uint64_t)Update.progress() * 100 / gOtaSize), nullptr);
   } else if (up.status == UPLOAD_FILE_END) {
     if (gOtaErr.length()) return;
-    if (!Update.end(true)) { gOtaErr = String("Pruefung fehlgeschlagen: ") + Update.errorString(); otaResume(); }
-    else { otaScreen(100, "Fertig - Neustart"); LOGF("Update ok: %u Bytes\n", (unsigned)up.totalSize); }
+    if (!Update.end(true)) { gOtaErr = String(TR(W_E_CHECK)) + Update.errorString(); otaResume(); }
+    else { otaScreen(100, TR(K_OTA_DONE)); LOGF("Update ok: %u Bytes\n", (unsigned)up.totalSize); }
   } else if (up.status == UPLOAD_FILE_ABORTED) {
     Update.abort();
-    gOtaErr = "Uebertragung abgebrochen";
+    gOtaErr = TR(W_E_ABORT);
     otaResume();
   }
 }
@@ -1196,7 +1147,7 @@ static void handleUpdateUpload() {
 static void handleUpdateDone() {
   if (!authOk()) return;
   if (gOtaErr.length() || !Update.isFinished()) {
-    server.send(500, "text/plain; charset=utf-8", gOtaErr.length() ? gOtaErr : String("Keine vollstaendige Datei empfangen"));
+    server.send(500, "text/plain; charset=utf-8", gOtaErr.length() ? gOtaErr : String(TR(W_E_INCOMP)));
     if (gOtaActive) otaResume();
     return;
   }
@@ -1206,7 +1157,7 @@ static void handleUpdateDone() {
 }
 
 static void handleNotFound() {
-  server.send(404, "text/plain", "Nicht gefunden");
+  server.send(404, "text/plain; charset=utf-8", TR(W_NOT_FOUND));
 }
 
 static void webBegin() {

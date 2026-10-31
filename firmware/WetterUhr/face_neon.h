@@ -126,7 +126,7 @@ static void draw(const FaceCtx& c) {
   fb->drawFastHLine(FB_W - 8, 1, 7, N_TXT); fb->drawFastVLine(FB_W - 2, 1, 7, N_TXT);
   fb->drawFastHLine(1, FB_H - 2, 7, N_TXT); fb->drawFastVLine(1, FB_H - 8, 7, N_TXT);
   fb->drawFastHLine(FB_W - 8, FB_H - 2, 7, N_TXT); fb->drawFastVLine(FB_W - 2, FB_H - 8, 7, N_TXT);
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txt(e + 1, 7, b, N_TXT);
   if (c.hasWx) {

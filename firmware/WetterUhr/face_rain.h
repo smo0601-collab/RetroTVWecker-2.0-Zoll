@@ -132,7 +132,7 @@ static void draw(const FaceCtx& c) {
   fb->drawRect(18, 70, 124, 36, R_EDGE);
   int budget = (int)((now - tEnter) / 32);
   char b[32];
-  if (c.timeOk) snprintf(b, sizeof(b), "> %s %02u.%02u.%04u", WD_SHORT[c.wday % 7], c.mday, c.mon, c.year);
+  if (c.timeOk) { char d[16]; langDateY(d, sizeof(d), c.mday, c.mon, c.year); snprintf(b, sizeof(b), "> %s %s", WD_SHORT[c.wday % 7], d); }
   else          snprintf(b, sizeof(b), "> --");
   typed(23, 74, b, R_TXT, budget);
   if (c.hasWx) {

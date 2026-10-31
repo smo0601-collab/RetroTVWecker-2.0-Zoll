@@ -129,7 +129,7 @@ static void draw(const FaceCtx& c) {
 
   // Datum und Temperatur auf der Wiese
   char b[24];
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txt(4, 109, b, A_GOLD);
   if (c.hasWx) tempTxt(FB_W - 8 - tempW(c.temp, 1), 109, c.temp, A_GOLD);

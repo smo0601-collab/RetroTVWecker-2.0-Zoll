@@ -90,7 +90,7 @@ static void draw(const FaceCtx& c) {
 
   // ---- Datum links, Wetter rechts, Name in der Mitte ----
   char b[24];
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   fb->fillRect(0, 107, FB_W, 12, T_SH);
   txt(5, 110, b, T_TXT);

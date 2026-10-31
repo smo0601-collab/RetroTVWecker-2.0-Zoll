@@ -177,7 +177,7 @@ static void draw(const FaceCtx& c) {
   txtc(80, 82, b, M_DIM);
 
   // ---- Kopfzeile ----
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txt(4, 3, b, M_GOLD);
   snprintf(b, sizeof(b), "%05lu", (unsigned long)(score % 100000));

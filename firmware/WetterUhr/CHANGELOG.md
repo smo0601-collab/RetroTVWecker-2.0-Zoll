@@ -4,6 +4,17 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.10.31-3 - Sprachen
+
+- Sprache waehlbar unter Anzeige > Darstellung: Deutsch, English, Francais, Espanol, Italiano.
+- Uebersetzt sind das Display (alle Designs, Wochentage, Datum, Wettertexte, Feiertags-Gruesse, Badminton-Ansagen,
+  Flugradar, ISS, Sonne und Mond, Update-Anzeige) und die komplette Browser-Seite inkl. Design-Namen.
+- Datum ausserhalb von Deutsch als `31/10`; lange Ueberschriften werden automatisch kleiner, damit sie passen.
+- ISS-Tracker: "Lade ISS-Daten" ueberdeckt nicht mehr das Datum.
+
+Geaenderte Dateien: `lang.h` (neu), `lang_web.h` (neu), `WetterUhr.ino`, `webui.h`, `settings.h`, `config.h`, `icons.h`,
+`faces_core.h`, `faces_fx.h`, `pet.h`, alle `face_*.h` mit Text oder Datum, `README.md`, `CHANGELOG.md`
+
 ## 2026.10.31-2 - Weihnachtself im Feiertags-Wechsel
 
 - Der Weihnachtself kommt zusammen mit Weihnachten vom 14. bis 26.12. automatisch in den Design-Wechsel.

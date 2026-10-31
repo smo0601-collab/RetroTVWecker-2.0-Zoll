@@ -25,7 +25,7 @@ Die Seite hat links eine Navigation mit Kategorien (auf dem Handy als Leiste obe
 | Kategorie | Inhalt |
 |---|---|
 | Status | WLAN, IP, Uhrzeit, Wetter, Design, Dimmung, Display, freier Speicher |
-| Anzeige | Uhr-Design (Vorschaukarten), Akzentfarbe, Design-Wechsel, Extras (Silvester-Automatik, Weihnachtsschlitten, UFO), Sekunden, Ausrichtung |
+| Anzeige | Uhr-Design (Vorschaukarten), Akzentfarbe, Design-Wechsel, Extras (Feiertage, Silvester-Automatik, Weihnachtsschlitten, UFO, Aquarium), Sprache, Sekunden, Ausrichtung |
 | Helligkeit | Schieberegler, Display ein/aus (Standby), Zeitplan-Dimmung, Nachtmodus mit Testbild |
 | WLAN | Netzwerkname mit Suche, Passwort |
 | Summer & Wecker | Stundensignal, Nachtruhe, Touch-Klick, Summer testen, Wecker mit Wochentagen |
@@ -344,6 +344,17 @@ einspielen. Die Firmware selbst ist immer eine einzige Datei; das Update ersetzt
 2. `WetterUhr` einmal per USB hochladen (Partitionsschema mit OTA), Einrichtungsablauf wie oben.
 3. Danach Updates per WLAN (siehe "Update ueber WLAN").
 
+## Sprache
+
+Unter Anzeige > Darstellung > **Sprache** stehen Deutsch, English, Francais, Espanol und Italiano zur Wahl.
+Die Sprache gilt fuer das Display (alle Designs, Wochentage, Datum, Wettertexte, Feiertags-Gruesse, Meldungen)
+und fuer die Browser-Seite; sie wirkt sofort nach "Speichern". Datumsformat: Deutsch `31.10.`, sonst `31/10`.
+Voreinstellung fuer neue Geraete: `DEFAULT_LANG` in `config.h`.
+
+Die Pixelschrift der Themen-Designs zeigt Grossbuchstaben ohne Akzente (z. B. NOEL, PAQUES); das spanische N mit
+Tilde wird dargestellt (FELIZ ANO mit Tilde). Alle Texte stehen in `lang.h` (Display) und `lang_web.h` (Browser),
+eine Zeile pro Text mit allen Sprachen nebeneinander; eine weitere Sprache bekommt dort eine zusaetzliche Spalte.
+
 ## Projektdateien
 
 | Datei | Inhalt |
@@ -352,6 +363,7 @@ einspielen. Die Firmware selbst ist immer eine einzige Datei; das Update ersetzt
 | `config.h` | Pins, Standardwerte, feste Optionen |
 | `settings.h` | Dauerhafte Einstellungen (Flash) |
 | `webui.h` | Browser-Einstellungsseite |
+| `lang.h`, `lang_web.h` | Texte in allen Sprachen (Display bzw. Browser-Seite), Wochentage, Datumsformat |
 | `icons.h` | Farben, Akzentfarben, Wettersymbole, Wettercode-Texte |
 | `types.h` | Gemeinsame Typen (Weather, Align) |
 | `faces.h` | Themen-Designs: Verwaltung, Kachel-Ausgabe, Uebergaenge, Liste der Zifferblaetter |

@@ -187,8 +187,8 @@ static void draw(const FaceCtx& c) {
       glyph(cx - 5 * s / 2 + 1, 18, sLeft, s, cellBS);
       glyph(cx - 5 * s / 2, 18, sLeft, s, cellB);
     }
-    snprintf(b, sizeof(b), "BIS %d", nyYear);
-    txtS(cx - txtw(b) / 2, 6, b, N_TXT, N_SH);
+    snprintf(b, sizeof(b), TR(D_UNTIL_YEAR), nyYear);
+    txtSC(cx, 6, b, N_TXT, N_SH);
   } else {
     // ---- Uhrzeit ----
     drawTime(26, 4, 4, c, cellS);
@@ -196,37 +196,38 @@ static void draw(const FaceCtx& c) {
     if (c.showSec && c.timeOk) fb->drawFastHLine(26, 33, (c.ss + 1) * 108 / 60, N_DIM);
 
     if (!c.timeOk) {
-      txtS(cx - txtw("WARTE AUF ZEIT") / 2, 46, "WARTE AUF ZEIT", N_DIM, N_SH);
+      txtSC(cx, 46, TR(D_WAIT_TIME), N_DIM, N_SH);
     } else if (party) {
       const uint8_t a = (uint8_t)(N_R1 + 2 * ((now / 300) % 5));
-      txtS(cx - txtw("PROSIT", 3) / 2, 38, "PROSIT", a, N_SH, 3);
-      snprintf(b, sizeof(b), "NEUJAHR %d", nyYear);
-      txtS(cx - txtw(b, 2) / 2, 62, b, N_GOLD, N_SH, 2);
+      txtSC(cx, 38, TR(D_CHEERS), a, N_SH, 3);
+      snprintf(b, sizeof(b), TR(D_NEWYEAR_Y), nyYear);
+      txtSC(cx, 62, b, N_GOLD, N_SH, 2);
     } else if (jan1) {
-      txtS(cx - txtw("FROHES NEUES", 2) / 2, 40, "FROHES NEUES", N_GOLD, N_SH, 2);
-      snprintf(b, sizeof(b), "JAHR %d", nyYear);
-      txtS(cx - txtw(b, 2) / 2, 58, b, N_TXT, N_SH, 2);
+      txtSC(cx, 40, TR(D_NY_L1), N_GOLD, N_SH, 2);
+      snprintf(b, sizeof(b), TR(D_NY_L2), nyYear);
+      txtSC(cx, 58, b, N_TXT, N_SH, 2);
     } else if (nye) {
-      txtS(cx - txtw("SILVESTER", 2) / 2, 38, "SILVESTER", N_GOLD, N_SH, 2);
+      txtSC(cx, 38, TR(D_NYE), N_GOLD, N_SH, 2);
       snprintf(b, sizeof(b), "%02ld:%02ld:%02ld", toNY / 3600, (toNY % 3600) / 60, toNY % 60);
-      txtS(cx - txtw(b, 2) / 2, 55, b, N_DIG, N_SH, 2);
-      snprintf(b, sizeof(b), "BIS %d", nyYear);
-      txtS(cx - txtw(b) / 2, 71, b, N_DIM, N_SH);
+      txtSC(cx, 55, b, N_DIG, N_SH, 2);
+      snprintf(b, sizeof(b), TR(D_UNTIL_YEAR), nyYear);
+      txtSC(cx, 71, b, N_DIM, N_SH);
     } else {
       const long d = toNY / 86400;
       snprintf(b, sizeof(b), "%ld", d);
-      const char* unit = d == 1 ? "TAG" : "TAGE";
-      const int w = txtw(b, 3) + 6 + txtw(unit, 2), x0 = cx - w / 2;
+      const char* unit = d == 1 ? TR(D_DAY) : TR(D_DAYS);
+      const int us = (txtw(b, 3) + 6 + txtw(unit, 2) > 2 * (cx < FB_W - cx ? cx : FB_W - cx) - 4) ? 1 : 2;   // lange Woerter kleiner
+        const int w = txtw(b, 3) + 6 + txtw(unit, us), x0 = cx - w / 2;
       txtS(x0, 40, b, N_DIG, N_SH, 3);
-      txtS(x0 + txtw(b, 3) + 6, 47, unit, N_TXT, N_SH, 2);
-      snprintf(b, sizeof(b), "BIS %d", nyYear);
-      txtS(cx - txtw(b) / 2, 65, b, N_DIM, N_SH);
+      txtS(x0 + txtw(b, 3) + 6, 47 + (2 - us) * 4, unit, N_TXT, N_SH, us);
+      snprintf(b, sizeof(b), TR(D_UNTIL_YEAR), nyYear);
+      txtSC(cx, 65, b, N_DIM, N_SH);
     }
   }
 
   // ---- Fusszeile ----
   if (c.timeOk) {
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txtS(3, 111, b, N_TXT, N_SH);
   }
   if (c.hasWx) { tempTxt(FB_W - 4 - tempW(c.temp, 1) + 1, 112, c.temp, N_SH); tempTxt(FB_W - 4 - tempW(c.temp, 1), 111, c.temp, N_TXT); }

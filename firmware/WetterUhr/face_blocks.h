@@ -229,7 +229,7 @@ static void draw(const FaceCtx& c) {
   snprintf(b, sizeof(b), "%lu", (unsigned long)lines);
   txt(44, 86, b, K_BRIGHT, 2);
 
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txt(8, 108, b, K_DIM);
 }

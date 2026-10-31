@@ -170,35 +170,36 @@ static void draw(const FaceCtx& c) {
     }
     if (fest) {
       const uint8_t a = ((now / 600) & 1) ? X_GOLD : X_RED;
-      txtS(cx - txtw("FROHE", 3) / 2, 40, "FROHE", a, X_SH, 3);
-      txtS(cx - txtw("WEIHNACHTEN") / 2, 66, "WEIHNACHTEN", X_TXT, X_SH);
+      txtSC(cx, 40, TR(D_MERRY), a, X_SH, 3);
+      txtSC(cx, 66, TR(D_XMAS), X_TXT, X_SH);
     } else {
       long s = secsUntilLocal(c.unixT, ty, 12, 24, 18);
       if (s < 0) s = 0;
       const long days = s / 86400;
       const int hh = (int)((s % 86400) / 3600), mm = (int)((s % 3600) / 60), ss = (int)(s % 60);
       if (days >= 1) {
-        txtS(cx - txtw("BIS HEILIGABEND") / 2, 37, "BIS HEILIGABEND", X_GOLD, X_SH);
+        txtSC(cx, 37, TR(D_TO_XMAS), X_GOLD, X_SH);
         snprintf(b, sizeof(b), "%ld", days);
-        const char* unit = days == 1 ? "TAG" : "TAGE";
-        const int w = txtw(b, 3) + 6 + txtw(unit, 2), x0 = cx - w / 2;
+        const char* unit = days == 1 ? TR(D_DAY) : TR(D_DAYS);
+        const int us = (txtw(b, 3) + 6 + txtw(unit, 2) > 2 * (cx < FB_W - cx ? cx : FB_W - cx) - 4) ? 1 : 2;   // lange Woerter kleiner
+        const int w = txtw(b, 3) + 6 + txtw(unit, us), x0 = cx - w / 2;
         txtS(x0, 47, b, X_DIG, X_SH, 3);
-        txtS(x0 + txtw(b, 3) + 6, 54, unit, X_TXT, X_SH, 2);
+        txtS(x0 + txtw(b, 3) + 6, 54 + (2 - us) * 4, unit, X_TXT, X_SH, us);
         snprintf(b, sizeof(b), "+ %02d:%02d:%02d", hh, mm, ss);
-        txtS(cx - txtw(b) / 2, 71, b, X_DIM, X_SH);
+        txtSC(cx, 71, b, X_DIM, X_SH);
       } else {
-        txtS(cx - txtw("HEUTE IST") / 2, 37, "HEUTE IST", X_GOLD, X_SH);
-        txtS(cx - txtw("HEILIGABEND") / 2, 46, "HEILIGABEND", X_RED, X_SH);
+        txtSC(cx, 37, TR(D_TODAY_IS), X_GOLD, X_SH);
+        txtSC(cx, 46, TR(D_XMAS_EVE), X_RED, X_SH);
         snprintf(b, sizeof(b), "%02d:%02d:%02d", hh, mm, ss);
-        txtS(cx - txtw(b, 2) / 2, 56, b, X_DIG, X_SH, 2);
-        txtS(cx - txtw("BIS ZUR BESCHERUNG") / 2, 72, "BIS ZUR BESCHERUNG", X_DIM, X_SH);
+        txtSC(cx, 56, b, X_DIG, X_SH, 2);
+        txtSC(cx, 72, TR(D_TO_GIFTS), X_DIM, X_SH);
       }
     }
     // Datum links unten, Temperatur rechts unten (auf dem Schnee)
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txt(52, 108, b, X_GTXT);
   } else {
-    txtS(cx - txtw("WARTE AUF ZEIT") / 2, 50, "WARTE AUF ZEIT", X_DIM, X_SH);
+    txtSC(cx, 50, TR(D_WAIT_TIME), X_DIM, X_SH);
   }
   if (c.hasWx) tempTxt(FB_W - 4 - tempW(c.temp, 1), 108, c.temp, X_GTXT);
 

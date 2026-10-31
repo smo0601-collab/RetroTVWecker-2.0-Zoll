@@ -91,14 +91,14 @@ static void moonDisc(int cx, int cy, int R, float elong, bool south) {
 }
 
 static const char* phaseName(float e) {
-  if (e < 12 || e >= 348) return "NEUMOND";
-  if (e < 78) return "ZUNEHMEND";
-  if (e < 102) return "1. VIERTEL";
-  if (e < 168) return "ZUNEHMEND";
-  if (e < 192) return "VOLLMOND";
-  if (e < 258) return "ABNEHMEND";
-  if (e < 282) return "3. VIERTEL";
-  return "ABNEHMEND";
+  if (e < 12 || e >= 348) return TR(D_NEWMOON);
+  if (e < 78) return TR(D_WAXING);
+  if (e < 102) return TR(D_FIRSTQ);
+  if (e < 168) return TR(D_WAXING);
+  if (e < 192) return TR(D_FULLMOON);
+  if (e < 258) return TR(D_WANING);
+  if (e < 282) return TR(D_LASTQ);
+  return TR(D_WANING);
 }
 
 static void draw(const FaceCtx& c) {
@@ -156,21 +156,21 @@ static void draw(const FaceCtx& c) {
   drawTime(4, 3, 3, c, cellD);
   if (c.timeOk) {
     char b[24];
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txtr(FB_W - 4, 4, b, M_DIG);
   }
   if (c.hasWx) tempTxt(FB_W - 4 - tempW(c.temp, 1), 15, c.temp, M_DIM);
 
   // ---- Werte ----
   char b[24];
-  txt(3, 81, "SONNE", M_SUN);
-  snprintf(b, sizeof(b), "AUF %s", sRise); txt(3, 90, b, M_DIG);
-  snprintf(b, sizeof(b), "UNT %s", sSet);  txt(3, 98, b, M_DIG);
-  snprintf(b, sizeof(b), "ALT %d", (int)lroundf(curSunAlt)); txt(3, 106, b, M_DIM);
-  txt(62, 81, "MOND", M_MOON);
-  snprintf(b, sizeof(b), "AUF %s", mRise); txt(62, 90, b, M_DIG);
-  snprintf(b, sizeof(b), "UNT %s", mSet);  txt(62, 98, b, M_DIG);
-  snprintf(b, sizeof(b), "ALT %d", (int)lroundf(curMoonAlt)); txt(62, 106, b, M_DIM);
+  txt(3, 81, TR(D_SUN), M_SUN);
+  snprintf(b, sizeof(b), TR(D_RISE), sRise); txt(3, 90, b, M_DIG);
+  snprintf(b, sizeof(b), TR(D_SET), sSet);  txt(3, 98, b, M_DIG);
+  snprintf(b, sizeof(b), TR(D_ALT), (int)lroundf(curSunAlt)); txt(3, 106, b, M_DIM);
+  txt(62, 81, TR(D_MOON), M_MOON);
+  snprintf(b, sizeof(b), TR(D_RISE), mRise); txt(62, 90, b, M_DIG);
+  snprintf(b, sizeof(b), TR(D_SET), mSet);  txt(62, 98, b, M_DIG);
+  snprintf(b, sizeof(b), TR(D_ALT), (int)lroundf(curMoonAlt)); txt(62, 106, b, M_DIM);
   moonDisc(137, 99, 9, curElong, c.lat < 0);
   snprintf(b, sizeof(b), "%d%%", (int)lroundf(curIllum * 100.0f));
   txtc(137, 111, b, M_DIG);

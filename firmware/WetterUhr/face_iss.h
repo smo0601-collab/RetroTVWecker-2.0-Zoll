@@ -122,7 +122,7 @@ static void drawSleigh(const FaceCtx& c) {
   const uint32_t now = c.now;
   char b[40];
   if (!(c.timeOk && c.unixT > 0)) {
-    txtc(80, 109, "WARTE AUF UHRZEIT", I_DIM);
+    txtc(80, 109, TR(D_WAIT_TIME), I_DIM);
     return;
   }
   float la, lo;
@@ -140,16 +140,16 @@ static void drawSleigh(const FaceCtx& c) {
   // Kopf
   snprintf(b, sizeof(b), "%d%c %d%c", (int)fabsf(la), la >= 0 ? 'N' : 'S', (int)fabsf(lo), lo >= 0 ? 'E' : 'W');
   txtr(FB_W - 3, 3, b, I_DIG);
-  txtr(FB_W - 3, 13, "WEIHNACHTSMANN", I_SLED2);
+  txtr(FB_W - 3, 13, TR(D_SANTA), I_SLED2);
   // Fuss: Entfernung und wann er bei dir ist (lokale Mitternacht)
   const float dk = distKm(c.lat, c.lon, la, lo);
   snprintf(b, sizeof(b), "%d KM", (int)dk);
   txt(3, 109, b, I_DIG);
   int m = 24 * 60 - (c.hh * 60 + c.mm);
   if (m >= 24 * 60) m -= 24 * 60;
-  if (dk < 900.0f)      snprintf(b, sizeof(b), "UEBER DIR!");
-  else if (m <= 15)     snprintf(b, sizeof(b), "GLEICH BEI DIR");
-  else                  snprintf(b, sizeof(b), "BEI DIR IN %d:%02d", m / 60, m % 60);
+  if (dk < 900.0f)      snprintf(b, sizeof(b), "%s", TR(D_OVERHEAD_EX));
+  else if (m <= 15)     snprintf(b, sizeof(b), "%s", TR(D_SANTA_SOON));
+  else                  snprintf(b, sizeof(b), TR(D_SANTA_IN), m / 60, m % 60);
   txtr(FB_W - 3, 109, b, (dk < 900.0f || m <= 15) ? I_OK : I_DIM);
 }
 
@@ -186,7 +186,7 @@ static void draw(const FaceCtx& c) {
   if (c.opts & OPT_SLEIGH) {                                      // Weihnachtsschlitten statt ISS
     drawTime(3, 3, 2, c, cellS);
     drawTime(3, 3, 2, c, cellD);
-    if (c.timeOk) { char d[12]; snprintf(d, sizeof(d), "%02u.%02u.", c.mday, c.mon); txt(62, 3, d, I_DIM); }
+    if (c.timeOk) { char d[12]; langDate(d, sizeof(d), c.mday, c.mon); txt(62, 3, d, I_DIM); }
     drawSleigh(c);
     return;
   }
@@ -237,9 +237,9 @@ static void draw(const FaceCtx& c) {
     snprintf(b, sizeof(b), "%d%c %d%c", (int)fabsf(ilat), ilat >= 0 ? 'N' : 'S', (int)fabsf(ilon), ilon >= 0 ? 'E' : 'W');
     txtr(FB_W - 3, 3, b, I_DIG);
     if (I->speedKmh > 1000) { snprintf(b, sizeof(b), "%d KM/H", (int)I->speedKmh); txtr(FB_W - 3, 13, b, I_DIM); }
-  } else txtr(FB_W - 3, 3, "LADE ISS-DATEN", I_DIM);
+  } else txtr(FB_W - 3, 13, TR(D_ISS_LOAD), I_DIM);
   if (c.timeOk) {
-    snprintf(b, sizeof(b), "%02u.%02u.", c.mday, c.mon);
+    langDate(b, sizeof(b), c.mday, c.mon);
     txt(62, 3, b, I_DIM);
   }
 
@@ -251,13 +251,13 @@ static void draw(const FaceCtx& c) {
     const float el = atan2f(cosf(psi) - R / (R + h), sinf(psi)) * (180.0f / (float)astro::PI_D);
     const bool above = el > 0.0f;
     const bool nightHere = sunAltHome < -6.0f;
-    snprintf(b, sizeof(b), "ENTF %d KM", (int)dk);
+    snprintf(b, sizeof(b), TR(D_DIST_KM), (int)dk);
     txt(3, 109, b, above ? I_OK : I_DIG);
-    if (above) txtr(FB_W - 3, 109, (nightHere ? "UEBER DIR - SICHTBAR" : "UEBER DIR"), I_OK);
-    else if (I->crew) { snprintf(b, sizeof(b), "BESATZUNG %d", I->crew); txtr(FB_W - 3, 109, b, I_DIM); }
-    if (I->status == 2 && now - I->fetchedMs > 60000) txt(3, 118 - 8, "DATEN VERALTET", I_ORANGE);
+    if (above) txtr(FB_W - 3, 109, (nightHere ? TR(D_OVERHEAD_VIS) : TR(D_OVERHEAD)), I_OK);
+    else if (I->crew) { snprintf(b, sizeof(b), TR(D_CREW), I->crew); txtr(FB_W - 3, 109, b, I_DIM); }
+    if (I->status == 2 && now - I->fetchedMs > 60000) txt(3, 118 - 8, TR(D_DATA_OLD), I_ORANGE);
   } else {
-    txtc(80, 109, c.wifi ? "WARTE AUF DATEN" : "KEIN WLAN", c.wifi ? I_DIM : I_RED);
+    txtc(80, 109, c.wifi ? TR(D_WAIT_DATA) : TR(D_NO_WIFI), c.wifi ? I_DIM : I_RED);
   }
 }
 

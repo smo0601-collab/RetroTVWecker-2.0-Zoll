@@ -214,7 +214,7 @@ static void draw(const FaceCtx& c) {
 
   if (c.timeOk) {
     char b[16];
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txt(4, 111, b, Y_DIG);
   }
   if (c.hasWx) tempTxt(FB_W - 4 - tempW(c.temp, 1), 111, c.temp, Y_DIG);

@@ -159,7 +159,7 @@ static void draw(const FaceCtx& c) {
     if (bt > 0.5f) {
       fb->fillRoundRect(gx2 + 24, gy2 - 2, 30, 13, 4, H_GHOST);
       fb->fillTriangle(gx2 + 24, gy2 + 6, gx2 + 28, gy2 + 6, gx2 + 19, gy2 + 10, H_GHOST);
-      txt(gx2 + 28, gy2 + 1, "BUH!", H_EYE);
+      txt(gx2 + 28, gy2 + 1, TR(D_BOO), H_EYE);
     }
   } else {
     const float gt = (float)(now % 12000) / 12000.0f * 6.2832f;
@@ -177,18 +177,18 @@ static void draw(const FaceCtx& c) {
   if (c.timeOk) {
     if (c.mon == 10 && c.mday == 31) {
       const uint8_t a = ((now / 500) & 1) ? H_ORG : H_GRN;
-      txtS(cx - txtw("HAPPY", 2) / 2, 38, "HAPPY", a, H_SH, 2);
+      txtSC(cx, 38, TR(D_HAPPY_HAL), a, H_SH, 2);
       txtS(cx - txtw("HALLOWEEN", 1) / 2, 55, "HALLOWEEN", H_TXT, H_SH);
     } else {
       const int d = daysUntil(c.year, c.mon, c.mday, 10, 31);
       snprintf(b, sizeof(b), "%d", d);
-      const char* unit = d == 1 ? "TAG" : "TAGE";
+      const char* unit = d == 1 ? TR(D_DAY) : TR(D_DAYS);
       const int w = txtw(b, 2) + 5 + txtw(unit, 1), x0 = cx - w / 2;
       txtS(x0, 38, b, H_ORG, H_SH, 2);
       txtS(x0 + txtw(b, 2) + 5, 45, unit, H_TXT, H_SH);
-      txtS(cx - txtw("BIS HALLOWEEN") / 2, 55, "BIS HALLOWEEN", H_DIM, H_SH);
+      txtSC(cx, 55, TR(D_TO_HAL), H_DIM, H_SH);
     }
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txt(4, 110, b, H_DIM);
   }
   if (c.hasWx) tempTxt(100 - tempW(c.temp, 1), 110, c.temp, H_DIM);

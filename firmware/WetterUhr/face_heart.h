@@ -158,7 +158,7 @@ static void draw(const FaceCtx& c) {
   if (c.timeOk) {
     char b[16];
     txt(6, 44, WD_SHORT[c.wday % 7], P_DIG, 2);
-    snprintf(b, sizeof(b), "%02u.%02u.", c.mday, c.mon);
+    langDate(b, sizeof(b), c.mday, c.mon);
     txt(6, 62, b, P_DIM);
   } else txt(6, 44, "--", P_DIG, 2);
   if (c.hasWx) {

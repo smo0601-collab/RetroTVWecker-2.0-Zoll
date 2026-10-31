@@ -193,8 +193,8 @@ static void draw(const FaceCtx& c) {
   fb->drawFastHLine(130, 73, 10, M_ORA); fb->drawFastVLine(139, 64, 10, M_ORA);
   drawTime(26, 38, 4, c, cellD);
   char b[32];
-  if (c.timeOk) snprintf(b, sizeof(b), "LAGE %s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
-  else          snprintf(b, sizeof(b), "LAGE --");
+  if (c.timeOk) { char d[16]; langWdDate(d, sizeof(d), c.wday, c.mday, c.mon); snprintf(b, sizeof(b), "%s %s", TR(D_SITREP), d); }
+  else          snprintf(b, sizeof(b), "%s --", TR(D_SITREP));
   txt(26, 27, b, M_DIM);
   if (c.hasWx) tempTxt(135 - tempW(c.temp, 1), 27, c.temp, M_TXT);
   if (c.showSec && c.timeOk) fb->fillRect(26, 68, ((c.ss + 1) * 108) / 60, 1, M_ORA);

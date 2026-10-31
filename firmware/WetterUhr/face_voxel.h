@@ -107,7 +107,7 @@ static void draw(const FaceCtx& c) {
   if (c.showSec && c.timeOk) for (int i = 0; i < 12; i++) fb->fillRect(8 + i * 12, 116, 10, 3, (i <= c.ss / 5) ? B_GRASS : B_STONE2);
   if (c.timeOk) {
     char b[16];
-    snprintf(b, sizeof(b), "%02u.%02u.", c.mday, c.mon);
+    langDate(b, sizeof(b), c.mday, c.mon);
     txt(3, 34, b, B_DIG);
   }
   if (c.hasWx) tempTxt(FB_W - 3 - tempW(c.temp, 1), 34, c.temp, B_DIG);

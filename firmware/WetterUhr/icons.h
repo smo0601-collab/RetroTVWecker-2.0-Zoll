@@ -1,4 +1,5 @@
 #pragma once
+#include "lang.h"
 /*
   Farben (zur Laufzeit abdunkelbar), Wettersymbole aus Grafikprimitiven und
   Zuordnung WMO-Wettercode -> Symbol/Text (deutsch, nur ASCII, da die
@@ -40,9 +41,6 @@ static uint16_t C_WHITE = B_WHITE, C_GREY = B_GREY, C_DIM = B_DIM, C_LINE = B_LI
 static const uint8_t ACCENT_RGB[ACCENT_COUNT][3] = {
   {0, 200, 255}, {60, 210, 110}, {255, 140, 0}, {255, 200, 0}, {230, 50, 50},
   {255, 80, 170}, {70, 140, 255}, {240, 240, 240}, {170, 100, 255}
-};
-static const char* const ACCENT_NAME[ACCENT_COUNT] = {
-  "Cyan", "Gruen", "Orange", "Gelb", "Rot", "Pink", "Blau", "Weiss", "Violett"
 };
 static uint8_t  gAccentIdx = 0;
 static uint16_t C_ACCENT   = B_CYAN;
@@ -87,27 +85,27 @@ static IconType iconForCode(int code, bool isDay) {
 
 static const char* textForCode(int code) {
   switch (code) {
-    case 0:  return "Klar";
-    case 1:  return "Meist klar";
-    case 2:  return "Wolkig";
-    case 3:  return "Bedeckt";
-    case 45: case 48: return "Nebel";
-    case 51: case 53: case 55: return "Nieselregen";
-    case 56: case 57: return "Eisniesel";
-    case 61: return "Lt. Regen";
-    case 63: return "Regen";
-    case 65: return "Starkregen";
-    case 66: case 67: return "Eisregen";
-    case 71: return "Lt. Schnee";
-    case 73: return "Schnee";
-    case 75: return "Starkschnee";
-    case 77: return "Griesel";
-    case 80: return "Lt. Schauer";
-    case 81: return "Schauer";
-    case 82: return "St. Schauer";
-    case 85: case 86: return "Schneefall";
-    case 95: return "Gewitter";
-    case 96: case 99: return "Gewit.+Hagel";
+    case 0:  return TR(K_WX_CLEAR);
+    case 1:  return TR(K_WX_MCLEAR);
+    case 2:  return TR(K_WX_PCLOUD);
+    case 3:  return TR(K_WX_OVERCAST);
+    case 45: case 48: return TR(K_WX_FOG);
+    case 51: case 53: case 55: return TR(K_WX_DRIZZLE);
+    case 56: case 57: return TR(K_WX_FDRIZZLE);
+    case 61: return TR(K_WX_LRAIN);
+    case 63: return TR(K_WX_RAIN);
+    case 65: return TR(K_WX_HRAIN);
+    case 66: case 67: return TR(K_WX_FRAIN);
+    case 71: return TR(K_WX_LSNOW);
+    case 73: return TR(K_WX_SNOW);
+    case 75: return TR(K_WX_HSNOW);
+    case 77: return TR(K_WX_GRAINS);
+    case 80: return TR(K_WX_LSHOWER);
+    case 81: return TR(K_WX_SHOWER);
+    case 82: return TR(K_WX_HSHOWER);
+    case 85: case 86: return TR(K_WX_SSHOWER);
+    case 95: return TR(K_WX_STORM);
+    case 96: case 99: return TR(K_WX_HAIL);
     default: return "--";
   }
 }

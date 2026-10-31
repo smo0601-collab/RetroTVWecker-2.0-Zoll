@@ -18,6 +18,7 @@
 #include <Adafruit_GFX.h>
 #include "config.h"
 #include "icons.h"
+#include "lang.h"
 
 #define FB_W 160
 #define FB_H 120
@@ -123,8 +124,8 @@ static void upper(char* dst, const char* src, size_t n) {
   dst[i] = 0;
 }
 
-static const char* const WD_FULL[7]  = {"SONNTAG", "MONTAG", "DIENSTAG", "MITTWOCH", "DONNERSTAG", "FREITAG", "SAMSTAG"};
-static const char* const WD_SHORT[7] = {"SO", "MO", "DI", "MI", "DO", "FR", "SA"};
+#define WD_FULL  (WDF_L[LANG_IDX])     // Wochentage in der eingestellten Sprache (lang.h)
+#define WD_SHORT (WDS_L[LANG_IDX])
 
 // Temperatur mit gezeichnetem Gradzeichen, Rueckgabe: Breite in Pixeln
 static int tempW(int t, int sz) {

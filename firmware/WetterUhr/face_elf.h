@@ -127,11 +127,11 @@ static void draw(const FaceCtx& c) {
       switch (msgIdx++ % 4) {
         case 0: say("HO HO HO!", now, 2600); break;
         case 1:
-          if (fest) say("FROHE WEIHNACHTEN!", now, 2600);
-          else if (xmasDays >= 0) { snprintf(b, sizeof(b), "NOCH %d TAGE!", xmasDays); say(b, now, 2600); }
+          if (fest) say(TR(D_MERRY_XMAS), now, 2600);
+          else if (xmasDays >= 0) { snprintf(b, sizeof(b), TR(D_ELF_DAYS), xmasDays); say(b, now, 2600); }
           break;
-        case 2: snprintf(b, sizeof(b), "%d GESCHENKE!", packed); say(b, now, 2600); break;
-        default: say("JUHUU!", now, 2600); break;
+        case 2: snprintf(b, sizeof(b), TR(D_ELF_GIFTS), packed); say(b, now, 2600); break;
+        default: say(TR(D_ELF_YAY), now, 2600); break;
       }
     }
     lastMm = c.mm;
@@ -160,7 +160,7 @@ static void draw(const FaceCtx& c) {
   fb->fillRect(102, 38, 54, 22, E_SHELF);
   fb->fillRect(104, 40, 50, 18, E_BOARD);
   char b[24];
-  if (c.timeOk) { snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon); txtc(129, 41, b, E_CHALK); }
+  if (c.timeOk) { langWdDate(b, sizeof(b), c.wday, c.mday, c.mon); txtc(129, 41, b, E_CHALK); }
   if (c.hasWx) tempTxt(129 - tempW(c.temp, 1) / 2, 50, c.temp, E_CHALK);
   fb->fillRect(100, 72, 58, 2, E_SHELF);
   fb->fillCircle(108, 68, 3, E_TEDDY); fb->fillCircle(108, 63, 2, E_TEDDY);           // Teddy
@@ -213,7 +213,7 @@ static void draw(const FaceCtx& c) {
     else st = ST_IDLE;
   } else if (st == ST_TOSS && t > 1.1f) {
     packed++;
-    if (rn(4) == 0) { st = ST_SLIP; stT = now; say("HOPPLA!", now, 2200); }
+    if (rn(4) == 0) { st = ST_SLIP; stT = now; say(TR(D_ELF_OOPS), now, 2200); }
     else st = ST_IDLE;
   } else if (st == ST_SLIP && t > 2.4f) { st = ST_IDLE; stT = now; }
   else if (st == ST_JUMP && t > 2.6f) { st = ST_IDLE; stT = now; }

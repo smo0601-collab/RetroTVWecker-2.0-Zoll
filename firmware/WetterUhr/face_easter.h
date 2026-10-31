@@ -149,7 +149,7 @@ static void draw(const FaceCtx& c) {
     fb->drawFastHLine(19, 85, 6, O_SHELL); fb->drawFastHLine(20, 84, 4, O_SHELL);     // Schalenhut
     fb->fillRoundRect(28, 76, 36, 11, 3, O_WHITE);
     fb->fillTriangle(28, 84, 32, 84, 25, 88, O_WHITE);
-    txt(32, 78, "PIEP!", O_ACC);
+    txt(32, 78, TR(D_PEEP), O_ACC);
   } else egg(22, 94, O_SHELL, O_E4, 2);
   fb->fillRoundRect(6, 96, 32, 7, 3, O_NEST);
   for (int x = 8; x < 36; x += 3) fb->drawLine(x, 97, x + 3, 101, O_NEST2);
@@ -210,20 +210,20 @@ static void draw(const FaceCtx& c) {
     int doyE = dayOfYear(c.year, em, ed);
     const int doy = dayOfYear(c.year, c.mon, c.mday);
     if (doy == doyE || doy == doyE + 1) {
-      txtS(cx - txtw("FROHE", 2) / 2, 38, "FROHE", O_ACC, O_WHITE, 2);
-      txtS(cx - txtw("OSTERN", 2) / 2, 54, "OSTERN", O_TXT, O_WHITE, 2);
+      txtSC(cx, 38, TR(D_HAPPY_EASTER), O_ACC, O_WHITE, 2);
+      txtSC(cx, 54, TR(D_EASTER), O_TXT, O_WHITE, 2);
     } else {
       int d;
       if (doy < doyE) d = doyE - doy;
       else { easterDate(c.year + 1, em, ed); d = daysInYear(c.year) - doy + dayOfYear(c.year + 1, em, ed); }
       snprintf(b, sizeof(b), "%d", d);
-      const char* unit = d == 1 ? "TAG" : "TAGE";
+      const char* unit = d == 1 ? TR(D_DAY) : TR(D_DAYS);
       const int w = txtw(b, 2) + 5 + txtw(unit, 1), x0 = cx - w / 2;
       txtS(x0, 38, b, O_ACC, O_WHITE, 2);
       txtS(x0 + txtw(b, 2) + 5, 45, unit, O_TXT, O_WHITE);
-      txtS(cx - txtw("BIS OSTERN") / 2, 55, "BIS OSTERN", O_DIM, O_WHITE);
+      txtSC(cx, 55, TR(D_TO_EASTER), O_DIM, O_WHITE);
     }
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txt(4, 111, b, O_GTXT);
   }
   if (c.hasWx) tempTxt(FB_W - 4 - tempW(c.temp, 1), 111, c.temp, O_GTXT);

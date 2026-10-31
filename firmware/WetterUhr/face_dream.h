@@ -134,7 +134,7 @@ static void draw(const FaceCtx& c) {
   // ---- Datum und Wetter rechts ----
   if (c.timeOk) {
     char b[16];
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txtr(FB_W - 6, 48, b, D_DIM);
   }
   if (c.hasWx) {

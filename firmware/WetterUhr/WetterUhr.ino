@@ -134,9 +134,8 @@ static void ntpStop() {
 // "veraltet" = 3 Aktualisierungsintervalle ohne neue Daten (Standard 45 min)
 static uint32_t staleMs() { return (uint32_t)gSet.updMin * 60000UL * 3UL; }
 
-static const char* WEEKDAY[7]  = {"Sonntag", "Montag", "Dienstag", "Mittwoch",
-                                  "Donnerstag", "Freitag", "Samstag"};
-static const char* WEEKDAY2[7] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
+#define WEEKDAY  (WDK_L[LANG_IDX])    // Wochentage in der eingestellten Sprache (lang.h)
+#define WEEKDAY2 (WDK2_L[LANG_IDX])
 
 // 0 = Sonntag; Eingabe "YYYY-MM-DD"
 static int dayOfWeekFromIso(const char* s) {
@@ -674,7 +673,7 @@ static void otaScreen(int pct, const char* msg) {
   if (pct > 100) pct = 100;
   if (pct == 0 && last != 0) {
     tft.fillScreen(C_BG);
-    drawText(&FreeSansBold12pt7b, 1, "Firmware-Update", tft.width() / 2, 80, C_WHITE, AL_CENTER, 0, 56, tft.width(), 32);
+    drawText(&FreeSansBold12pt7b, 1, TR(K_FW_UPDATE), tft.width() / 2, 80, C_WHITE, AL_CENTER, 0, 56, tft.width(), 32);
     tft.drawRect(28, 108, 264, 24, C_GREY);
   }
   if (pct != last) {
@@ -702,9 +701,9 @@ static void arduinoOtaBegin() {
   if (gSet.webPw[0]) ArduinoOTA.setPassword(gSet.webPw);
   ArduinoOTA.setMdnsEnabled(false);                 // mDNS macht webLoop() (MDNS.enableArduino)
   ArduinoOTA.setRebootOnSuccess(true);
-  ArduinoOTA.onStart([]() { gOtaActive = true; otaScreen(0, "Arduino IDE, bitte warten ..."); });
+  ArduinoOTA.onStart([]() { gOtaActive = true; otaScreen(0, TR(K_OTA_IDE)); });
   ArduinoOTA.onProgress([](unsigned int done, unsigned int total) { if (total) otaScreen((int)((uint64_t)done * 100 / total), nullptr); });
-  ArduinoOTA.onEnd([]() { otaScreen(100, "Fertig - Neustart"); });
+  ArduinoOTA.onEnd([]() { otaScreen(100, TR(K_OTA_DONE)); });
   ArduinoOTA.onError([](ota_error_t e) { LOGF("OTA-Fehler %u\n", (unsigned)e); otaResume(); });
   ArduinoOTA.begin();
   gArduinoOtaOn = true;
@@ -1183,7 +1182,7 @@ static void updateStatus(bool timeOk, const Weather& w, bool hv, bool stale) {
   } else if (wf) {
     snprintf(left, sizeof(left), "%s", WiFi.localIP().toString().c_str());
   } else {
-    snprintf(left, sizeof(left), "Kein WLAN");
+    snprintf(left, sizeof(left), "%s", TR(K_NO_WIFI));
     lcol = C_RED;
   }
   tft.setTextColor(lcol);
@@ -1192,8 +1191,8 @@ static void updateStatus(bool timeOk, const Weather& w, bool hv, bool stale) {
 
   const char* rt = nullptr;
   uint16_t rcol = C_ORANGE;
-  if (!hv)        { rt = "kein Wetter"; rcol = C_RED; }
-  else if (stale) { rt = "Wetter veraltet"; }
+  if (!hv)        { rt = TR(K_NO_WX); rcol = C_RED; }
+  else if (stale) { rt = TR(K_WX_OLD); }
   if (rt) {
     int16_t x1, y1; uint16_t tw, th;
     tft.getTextBounds(rt, 0, 19, &x1, &y1, &tw, &th);
@@ -1213,7 +1212,7 @@ static void drawSeconds(bool ok, const struct tm& t, int sx, int baseline) {
 
 static void drawDateLine(bool ok, const struct tm& t) {
   char b[48];
-  if (ok) snprintf(b, sizeof(b), "%s, %02d.%02d.%04d", WEEKDAY[t.tm_wday], t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
+  if (ok) { char d[16]; langDateY(d, sizeof(d), t.tm_mday, t.tm_mon + 1, t.tm_year + 1900); snprintf(b, sizeof(b), "%s, %s", WEEKDAY[t.tm_wday], d); }
   else    snprintf(b, sizeof(b), "--.--.----");
   if (upd(K_DATE, b)) drawText(&FreeSans12pt7b, 1, b, tft.width() / 2, 130, C_WHITE, AL_CENTER, 0, 110, tft.width(), 26);
 }
@@ -1284,7 +1283,7 @@ static void drawWeatherBlock(const Weather& w, bool hv, bool stale) {
   tft.fillRect(0, 140, W, 100, C_BG);
 
   if (!hv) {
-    drawText(&FreeSans12pt7b, 1, "Keine Wetterdaten", W / 2, 180, C_ORANGE, AL_CENTER, 0, 160, W, 28);
+    drawText(&FreeSans12pt7b, 1, TR(K_NO_WEATHER), W / 2, 180, C_ORANGE, AL_CENTER, 0, 160, W, 28);
     return;
   }
 
@@ -1298,12 +1297,12 @@ static void drawWeatherBlock(const Weather& w, bool hv, bool stale) {
 
   // Details rechts: Gefuehlt / Feuchte / Wind
   const int lx = 188, rx = W - 8;
-  drawText(&FreeSans9pt7b, 1, "Gefuehlt", lx, 162, C_GREY, AL_LEFT, lx - 2, 148, 56, 18);
+  drawText(&FreeSans9pt7b, 1, TR(K_FEELS), lx, 162, C_GREY, AL_LEFT, lx - 2, 148, 56, 18);
   drawTemp(rx, 162, (int)lroundf(w.feels), &FreeSansBold9pt7b, 1, tcol, AL_RIGHT, rx - 52, 148, 54, 18);
-  drawText(&FreeSans9pt7b, 1, "Feuchte", lx, 181, C_GREY, AL_LEFT, lx - 2, 167, 56, 18);
+  drawText(&FreeSans9pt7b, 1, TR(K_HUMID), lx, 181, C_GREY, AL_LEFT, lx - 2, 167, 56, 18);
   snprintf(b, sizeof(b), "%d %%", w.hum);
   drawText(&FreeSansBold9pt7b, 1, b, rx, 181, tcol, AL_RIGHT, rx - 52, 167, 54, 18);
-  drawText(&FreeSans9pt7b, 1, "Wind", lx, 200, C_GREY, AL_LEFT, lx - 2, 186, 56, 18);
+  drawText(&FreeSans9pt7b, 1, TR(K_WIND), lx, 200, C_GREY, AL_LEFT, lx - 2, 186, 56, 18);
   snprintf(b, sizeof(b), "%d km/h", (int)lroundf(w.wind));
   drawText(&FreeSansBold9pt7b, 1, b, rx, 200, tcol, AL_RIGHT, rx - 66, 186, 68, 18);
 
@@ -1497,7 +1496,7 @@ void setup() {
 
   displayInit();
   blApply();
-  drawText(&FreeSans12pt7b, 1, "Starte ...", tft.width() / 2, tft.height() / 2, C_GREY, AL_CENTER,
+  drawText(&FreeSans12pt7b, 1, TR(K_STARTING), tft.width() / 2, tft.height() / 2, C_GREY, AL_CENTER,
            0, tft.height() / 2 - 30, tft.width(), 45);
 
   gMutex = xSemaphoreCreateMutex();

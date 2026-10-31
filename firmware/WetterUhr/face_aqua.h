@@ -472,7 +472,7 @@ static void draw(const FaceCtx& c) {
   drawTime(26, 4, 4, c, cellD);
   if (c.timeOk) {
     char t[16];
-    snprintf(t, sizeof(t), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(t, sizeof(t), c.wday, c.mday, c.mon);
     txt(4, 112, t, A_SH);
   }
   if (c.hasWx) tempTxt(FB_W - 4 - tempW(c.temp, 1), 112, c.temp, A_SH);

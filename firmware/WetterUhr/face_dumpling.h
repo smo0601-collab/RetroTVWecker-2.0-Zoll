@@ -84,14 +84,14 @@ static void draw(const FaceCtx& c) {
     if (lastMm != 255 && c.mm != lastMm) { mode = M_BIG; mT = now; say("BOING!", now + 700, 1600); }
     lastMm = c.mm;
   }
-  if (mode == M_SLEEP && !night) { mode = M_IDLE; mT = now; say("GAEHN!", now, 1500); }
+  if (mode == M_SLEEP && !night) { mode = M_IDLE; mT = now; say(TR(D_YAWN), now, 1500); }
   if (mode == M_IDLE && (int32_t)(now - nextAct) >= 0) {
     mT = now;
     if (night) mode = M_SLEEP;
     else {
       const int r = rn(6);
       mode = r == 0 ? M_HOP : r == 1 ? M_POKE : r == 2 ? M_BLUSH : r == 3 ? M_LOOK : r == 4 ? M_SHAKE : M_HOP;
-      if (mode == M_BLUSH) say("HIHI!", now + 300, 1500);
+      if (mode == M_BLUSH) say(TR(D_GIGGLE), now + 300, 1500);
     }
     nextAct = now + 7000 + (uint32_t)rn(7000);
   }
@@ -151,7 +151,7 @@ static void draw(const FaceCtx& c) {
 
   // ---- Datum und Temperatur ----
   char b[24];
-  if (c.timeOk) { snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon); txt(4, 38, b, D_TXT); }
+  if (c.timeOk) { langWdDate(b, sizeof(b), c.wday, c.mday, c.mon); txt(4, 38, b, D_TXT); }
   if (c.hasWx) tempTxt(FB_W - 4 - tempW(c.temp, 1), 38, c.temp, D_TXT);
 
   // ---- Korb hinten ----

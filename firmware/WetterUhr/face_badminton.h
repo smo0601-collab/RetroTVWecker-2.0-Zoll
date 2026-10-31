@@ -116,7 +116,7 @@ static bool loadSaved() {
 
 static float dirOf(int side) { return side == 0 ? 1.0f : -1.0f; }
 static int   slotOf(int fig) { return figAt[0] == fig ? 0 : 1; }
-static const char* figName(int f) { return f == 0 ? "ROT" : "BLAU"; }
+static const char* figName(int f) { return f == 0 ? TR(D_RED) : TR(D_BLUE); }
 
 // Satzgewinn: 21 mit 2 Punkten Vorsprung, bei 29:29 gewinnt 30
 static bool gameWon(int f) {
@@ -320,7 +320,7 @@ static void enter(uint32_t now) {
   }
   else if (st == ST_BANNER) until = now + 1500;
   swingAt[0] = swingAt[1] = now - 5000;
-  say("FORTSETZUNG", W_GOLD, now, 1600);
+  say(TR(D_RESUME), W_GOLD, now, 1600);
 }
 
 // Schlaegerwinkel: 0 = senkrecht nach oben, positiv = zum Netz hin
@@ -477,14 +477,14 @@ static void pointScored(uint32_t now) {
   if (pw) cheer(pw, now, pw == 2 ? 2200 : 1400);
   switch (fl.end) {
     case E_WIN: {
-      const char* m = fl.shot == SH_SMASH ? "SMASH!" : fl.shot == SH_DROP ? "STOPPBALL!" : fl.shot == SH_NET ? "NETZROLLER!" : "PUNKT!";
-      if (rally >= 10) m = "WAS FUER EIN BALLWECHSEL!";
+      const char* m = fl.shot == SH_SMASH ? "SMASH!" : fl.shot == SH_DROP ? TR(D_DROPSHOT) : fl.shot == SH_NET ? TR(D_NETCORD) : TR(D_POINT);
+      if (rally >= 10) m = TR(D_WHAT_RALLY);
       say(m, W_GOLD, now, 1300);
       break;
     }
-    case E_NET: say("NETZ!", W_OUT, now, 1200); break;
-    case E_OUT: say("AUS!", W_OUT, now, 1200); break;
-    default: say("AUS?  CHALLENGE!", W_GOLD, now, 1100); break;
+    case E_NET: say(TR(D_NET), W_OUT, now, 1200); break;
+    case E_OUT: say(TR(D_OUT), W_OUT, now, 1200); break;
+    default: say(TR(D_OUT_CHAL), W_GOLD, now, 1100); break;
   }
 }
 
@@ -640,7 +640,7 @@ static void draw(const FaceCtx& c) {
       const int mx = bx + 30 + (int)((in ? -1.5f : 4.5f) * a) + (in ? 0 : 0);
       fb->fillRect(mx - 2, by + 18, 4, 4, W_CORK);
       if (t > 2.0f) {
-        txtc(80, by + 27 - 1, in ? "IN!" : "AUS!", ((now / 200) & 1) ? W_TXT : (in ? W_IN : W_OUT));
+        txtc(80, by + 27 - 1, in ? TR(D_IN) : TR(D_OUT), ((now / 200) & 1) ? W_TXT : (in ? W_IN : W_OUT));
       }
     }
   }
@@ -659,7 +659,7 @@ static void draw(const FaceCtx& c) {
   lamps(112, fr0, 1);
   const int sdot = slotOf(server);                                  // orangefarbener Punkt = Aufschlaeger
   fb->fillRect(sdot == 0 ? 44 : 115, 111, 3, 3, W_CORK);
-  if (c.timeOk) snprintf(b, sizeof(b), "%02u.%02u.", c.mday, c.mon); else snprintf(b, sizeof(b), "--.--.");
+  if (c.timeOk) langDate(b, sizeof(b), c.mday, c.mon); else snprintf(b, sizeof(b), "--.--.");
   txtS(3, 104, b, W_TXT, W_SH);
   if (c.timeOk) txtS(3, 112, WD_SHORT[c.wday % 7], W_TXT, W_SH);
   if (c.hasWx) {
@@ -667,7 +667,7 @@ static void draw(const FaceCtx& c) {
     tempTxt(FB_W - 3 - w + 1, 105, c.temp, W_SH);
     tempTxt(FB_W - 3 - w, 104, c.temp, W_TXT);
   } else txtr(FB_W - 3, 104, "--", W_TXT);
-  snprintf(b, sizeof(b), "SATZ %u", gameNo);
+  snprintf(b, sizeof(b), TR(D_SET_N), gameNo);
   txtS(FB_W - 3 - txtw(b), 112, b, W_TXT, W_SH);
   if (c.showSec && c.timeOk) fb->fillRect(0, FB_H - 1, ((c.ss + 1) * FB_W) / 60, 1, W_LINE);
 
@@ -681,12 +681,12 @@ static void draw(const FaceCtx& c) {
       if (gamePoint(0)) gp = 0; else if (gamePoint(1)) gp = 1;
       if (gp >= 0) {
         const bool mb = games[gp] == 1;
-        snprintf(b, sizeof(b), "%s %s", mb ? "MATCHBALL" : "SATZBALL", figName(gp));
+        snprintf(b, sizeof(b), "%s %s", mb ? TR(D_MATCHPOINT) : TR(D_SETPOINT), figName(gp));
         if ((now / 400) & 1) txtS(80 - txtw(b) / 2, 38, b, gp == 0 ? W_SHIRT_L : W_SHIRT_R, W_SH);
       } else if (pts[0] >= 20 && pts[0] == pts[1]) {
-        txtS(80 - txtw("VERLAENGERUNG") / 2, 38, "VERLAENGERUNG", W_GOLD, W_SH);
+        txtS(80 - txtw(TR(D_DEUCE)) / 2, 38, TR(D_DEUCE), W_GOLD, W_SH);
       } else if (st == ST_RALLY && rally >= 5) {
-        snprintf(b, sizeof(b), "RALLYE %u", rally);
+        snprintf(b, sizeof(b), TR(D_RALLY_N), rally);
         txtS(80 - txtw(b) / 2, 38, b, rally >= 10 ? W_GOLD : W_TXT, W_SH);
       }
     }
@@ -697,12 +697,12 @@ static void draw(const FaceCtx& c) {
     char t[20], d[32];
     uint8_t tcol = W_GOLD;
     switch (bannerKind) {
-      case BK_PAUSE:  snprintf(t, sizeof(t), "PAUSE");         snprintf(d, sizeof(d), "BEI 11 PUNKTEN"); break;
-      case BK_SWAP11: snprintf(t, sizeof(t), "SEITENWECHSEL"); snprintf(d, sizeof(d), "SATZ 3 - BEI 11 PUNKTEN"); break;
-      case BK_GAME:   snprintf(t, sizeof(t), "SATZ %u", gameNo);
+      case BK_PAUSE:  snprintf(t, sizeof(t), "%s", TR(D_BREAK)); snprintf(d, sizeof(d), "%s", TR(D_AT_11)); break;
+      case BK_SWAP11: snprintf(t, sizeof(t), "%s", TR(D_CHANGE_ENDS)); snprintf(d, sizeof(d), "%s", TR(D_SET3_AT_11)); break;
+      case BK_GAME:   snprintf(t, sizeof(t), TR(D_SET_N), gameNo);
                       snprintf(d, sizeof(d), "%s %u:%u", figName(gameWinner), pts[gameWinner], pts[1 - gameWinner]); break;
-      default:        snprintf(t, sizeof(t), "SIEG %s", figName(gameWinner));
-                      snprintf(d, sizeof(d), "%u:%u SAETZE", games[gameWinner], games[1 - gameWinner]);
+      default:        snprintf(t, sizeof(t), TR(D_WINS), figName(gameWinner));
+                      snprintf(d, sizeof(d), TR(D_SETS_SCORE), games[gameWinner], games[1 - gameWinner]);
                       tcol = gameWinner == 0 ? W_SHIRT_L : W_SHIRT_R; break;
     }
     const int sz = txtw(t, 2) <= 110 ? 2 : 1;

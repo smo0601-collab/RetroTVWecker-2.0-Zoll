@@ -4,7 +4,7 @@
 
   Eine Wiese mit Himmel (Tag und Nacht), Wolken, Blumen und einem Ball. Der Welpe jagt den
   Ball, stupst ihn mit der Nase an, setzt sich nach ein paar Staenden hin oder schnueffelt.
-  Zur vollen Minute bellt er ("WUFF!"). Die Rasse zeichnet nur den Hund selbst (DogFn);
+  Zur vollen Minute bellt er (TR(D_WOOF)). Die Rasse zeichnet nur den Hund selbst (DogFn);
   Verhalten, Ball und Hintergrund sind hier gemeinsam. Uhrzeit oben gross, darunter Datum
   und Temperatur.
 */
@@ -170,7 +170,7 @@ static void draw(const FaceCtx& c, DogFn dogFn) {
     const int bxp = icl(hx, 1, FB_W - 32);
     fb->fillRect(bxp, hy, 30, 11, P_BUB);
     fb->fillTriangle(bxp + 10, hy + 11, bxp + 18, hy + 11, bxp + 14 + dog.dir * 4, hy + 16, P_BUB);
-    txt(bxp + 2, hy + 2, "WUFF!", P_BUBTX);
+    txt(bxp + 2, hy + 2, TR(D_WOOF), P_BUBTX);
   }
   sp.draw();
 
@@ -178,7 +178,7 @@ static void draw(const FaceCtx& c, DogFn dogFn) {
   drawTime(26, 6, 4, c, cellS);
   drawTime(26, 6, 4, c, cellD);
   char b[24];
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txtS(4, 37, b, P_TXT, P_SH);
   if (c.hasWx) {

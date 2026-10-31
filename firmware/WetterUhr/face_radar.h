@@ -10,7 +10,7 @@
   Rechts: Uhrzeit, Datum, Temperatur und eine Infotafel zum jeweils markierten Flugzeug
   (Rufzeichen, Typ, Hoehe, Geschwindigkeit, Entfernung); alle fuenf Sekunden kommt das naechste dran.
   UFO (abschaltbar): Ab und zu taucht fuer ca. 20 Sekunden ein "unbekanntes Objekt" auf. Es schwebt,
-  springt ruckartig an neue Stellen, blinkt in Magenta und Gruen; die Infotafel zeigt "UFO!" mit
+  springt ruckartig an neue Stellen, blinkt in Magenta und Gruen; die Infotafel zeigt TR(D_UFO_EX) mit
   unmoeglichen Werten. Nur ein Spass, keine echten Daten.
   Uebergang: Ein Radarring waechst aus der Mitte.
 */
@@ -203,8 +203,8 @@ static void draw(const FaceCtx& c) {
     fb->drawPixel(ux, uy + 1, ((now / 100) & 1) ? R_AMB : I_WHITE);
     fb->drawPixel(ux + 3, uy + 1, ((now / 100) & 1) ? I_WHITE : R_AMB);
     const int tx = (ux + 10 + 18 < CX + RAD + 2) ? ux + 10 : ux - 10 - 23;
-    txt(tx + 1, uy - 3, "UFO?", R_SH);
-    txt(tx, uy - 4, "UFO?", a);
+    txt(tx + 1, uy - 3, TR(D_UFO_Q), R_SH);
+    txt(tx, uy - 4, TR(D_UFO_Q), a);
   }
 
   // Standort in der Mitte
@@ -213,15 +213,15 @@ static void draw(const FaceCtx& c) {
 
   // Hinweise im Schirm
   char b[32];
-  if (!have)            txtc(CX, CY + 14, c.wifi ? "LADE..." : "KEIN WLAN", R_AMB);
-  else if (L->status == 2 && L->n == 0 && L->fetchedMs == 0) txtc(CX, CY + 14, "KEINE DATEN", R_ERR);
-  else if (n == 0)      txtc(CX, CY + 14, "KEINE FLUGZEUGE", R_DIM);
-  if (stale && have && L->fetchedMs) txtc(CX, CY - 14, "VERALTET", R_ERR);
+  if (!have)            txtc(CX, CY + 14, c.wifi ? TR(D_LOADING) : TR(D_NO_WIFI), R_AMB);
+  else if (L->status == 2 && L->n == 0 && L->fetchedMs == 0) txtc(CX, CY + 14, TR(D_NO_DATA), R_ERR);
+  else if (n == 0)      txtc(CX, CY + 14, TR(D_NO_PLANES), R_DIM);
+  if (stale && have && L->fetchedMs) txtc(CX, CY - 14, TR(D_OUTDATED), R_ERR);
   snprintf(b, sizeof(b), "%dKM", (int)lroundf(radiusKm));
   txt(2, 2, b, R_DIM);
-  snprintf(b, sizeof(b), "%d FLZ", nAir);
+  snprintf(b, sizeof(b), TR(D_N_PLANES), nAir);
   txt(2, 111, b, R_DIM);
-  if (ufoOn) txt(2 + txtw(b) + 6, 111, "+1 UFO", ((now / 300) & 1) ? R_UFO : R_UFO2);
+  if (ufoOn) txt(2 + txtw(b) + 6, 111, TR(D_PLUS_UFO), ((now / 300) & 1) ? R_UFO : R_UFO2);
 
   // ---- Seitenleiste ----
   fb->fillRect(117, 0, 43, FB_H, R_PANEL);
@@ -233,15 +233,15 @@ static void draw(const FaceCtx& c) {
   glyph(122, 27, d, 3, cellS); glyph(122, 27, d, 3, cellD);
   glyph(140, 27, e, 3, cellS); glyph(140, 27, e, 3, cellD);
   if (c.showSec && c.timeOk) fb->fillRect(119, 50, ((c.ss + 1) * 39) / 60, 1, R_SW2);
-  if (c.timeOk) snprintf(b, sizeof(b), "%02u.%02u.", c.mday, c.mon); else snprintf(b, sizeof(b), "--.--.");
+  if (c.timeOk) langDate(b, sizeof(b), c.mday, c.mon); else snprintf(b, sizeof(b), "--.--.");
   txtc(138, 54, b, R_DIM);
   if (c.hasWx) tempTxt(138 - tempW(c.temp, 1) / 2, 63, c.temp, R_TXT);
   fb->drawFastHLine(119, 73, 39, R_BORDER);
 
   if (ufoOn) {
     const bool bl = (now / 300) & 1;
-    txtc(138, 76, "UFO!", bl ? R_UFO : R_UFO2);
-    txtc(138, 85, "UNBEK.", R_TXT);
+    txtc(138, 76, TR(D_UFO_EX), bl ? R_UFO : R_UFO2);
+    txtc(138, 85, TR(D_UNKNOWN), R_TXT);
     txtc(138, 94, "FL???", R_A3);
     txtc(138, 103, "9999KT", R_TXT);
     snprintf(b, sizeof(b), "%.1fKM", (double)(sqrtf(ufoX * ufoX + ufoY * ufoY) / scale));
@@ -252,7 +252,7 @@ static void draw(const FaceCtx& c) {
     txtc(138, 76, cs, R_AMB);
     txtc(138, 85, p.type[0] ? p.type : "----", R_TXT);
     if (p.alt >= 6000) snprintf(b, sizeof(b), "FL%03d", (int)(p.alt / 100)); else snprintf(b, sizeof(b), "%dFT", (int)(p.alt / 100) * 100);
-    if (p.ground) snprintf(b, sizeof(b), "BODEN");
+    if (p.ground) snprintf(b, sizeof(b), "%s", TR(D_GROUND));
     const int w = txtw(b);
     txt(138 - w / 2 - (p.vr > 300 || p.vr < -300 ? 3 : 0), 94, b, R_A3);
     if (p.vr > 300)       txt(138 + w / 2 - 2, 94, "\x18", R_A2);
@@ -262,8 +262,8 @@ static void draw(const FaceCtx& c) {
     snprintf(b, sizeof(b), "%.1fKM", (double)dist[sel]);
     txtc(138, 112, b, R_DIM);
   } else {
-    if (!have) { txtc(138, 85, "WARTE", R_DIM); txtc(138, 94, "AUF", R_DIM); txtc(138, 103, "DATEN", R_DIM); }
-    else       { txtc(138, 85, "KEINE", R_DIM); txtc(138, 94, "FLUG-", R_DIM); txtc(138, 103, "ZEUGE", R_DIM); }
+    if (!have) { txtc(138, 85, TR(D_WAIT1), R_DIM); txtc(138, 94, TR(D_WAIT2), R_DIM); txtc(138, 103, TR(D_WAIT3), R_DIM); }
+    else       { txtc(138, 85, TR(D_NOPL1), R_DIM); txtc(138, 94, TR(D_NOPL2), R_DIM); txtc(138, 103, TR(D_NOPL3), R_DIM); }
   }
 }
 

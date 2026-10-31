@@ -172,7 +172,7 @@ static void draw(const FaceCtx& c) {
   if (now < bonusUntil) {
     if ((now / 160) & 1) txtS(80 - txtw("BONUS", 1) / 2, 37, "BONUS", W_TXT, W_GIR2);
   } else {
-    if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     else          snprintf(b, sizeof(b), "-- --.--.");
     txt(28, 38, b, W_DIM);
     if (c.hasWx) tempTxt(FB_W - 28 - tempW(c.temp, 1), 38, c.temp, W_DIM);

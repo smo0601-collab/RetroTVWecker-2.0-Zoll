@@ -29,6 +29,9 @@ neue Firmware kommt per WLAN.
 - **Wecker und Stundensignal** mit einem aktiven Piezo-Summer (optional).
 - **Touch-Taster** (optional): durch die Designs blättern, Laufschrift starten, Standby.
 - **Firmware-Update über WLAN** direkt im Browser.
+- **Fünf Sprachen** für Display und Browser-Seite: Deutsch, English, Français, Español, Italiano.
+
+![Ein Design in fünf Sprachen](docs/images/languages.png)
 
 ## Ein paar Designs im Detail
 
@@ -112,7 +115,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases) in drei Formen
-(aktuell: [`releases/2026.10.31-2`](releases/2026.10.31-2)), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.10.31-3`](releases/2026.10.31-3)), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
@@ -140,7 +143,7 @@ Was sich in jeder Version geändert hat, steht im [CHANGELOG](firmware/WetterUhr
 | Seite | Inhalt |
 |---|---|
 | Status | WLAN, IP, Uhrzeit, Wetter, aktuelles Design, Dimmung, Wecker, Firmware-Version |
-| Anzeige | Designs mit Vorschaubildern, Akzentfarbe, automatischer Wechsel, Extras (Silvester-Automatik, Weihnachtsschlitten, UFO, Aquarium) |
+| Anzeige | Designs mit Vorschaubildern, Akzentfarbe, automatischer Wechsel, Extras (Feiertage, Silvester-Automatik, Weihnachtsschlitten, UFO, Aquarium), Sprache |
 | Helligkeit | Helligkeit, Standby, Zeitplan-Dimmung, Nachtmodus mit Testbild |
 | Laufschrift | Text, Position, Größe, Farbe, Tempo, Dauerschleife |
 | Summer & Wecker | Stundensignal, Nachtruhe, Weckzeit mit Wochentagen, Summer-Test |
@@ -161,6 +164,7 @@ firmware/WetterUhr/        Arduino-Sketch (diesen Ordner in der Arduino IDE öff
   config.h                 Pins, Standardwerte, Firmware-Version
   settings.h               Einstellungen im Flash
   webui.h                  Einstellungsseite im Browser
+  lang.h, lang_web.h       Texte in fünf Sprachen (Display, Browser)
   faces.h, faces_*.h       Rahmen für die Themen-Designs (160×120-Pixelpuffer, 2× vergrößert)
   face_*.h                 je ein Design
   ticker.h, buzzer.h       Laufschrift, Summer und Wecker

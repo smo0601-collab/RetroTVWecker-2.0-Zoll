@@ -110,7 +110,7 @@ static void draw(const FaceCtx& c) {
   if (c.showSec && c.timeOk) fb->fillRect(26, 77, ((c.ss + 1) * 108) / 60, 1, B_DIM);
 
   char b[40];
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txt(4, 84, b, B_DIM);
   if (c.hasWx) tempTxt(FB_W - 4 - tempW(c.temp, 1), 84, c.temp, B_DIM);

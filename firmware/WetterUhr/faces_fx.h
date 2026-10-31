@@ -87,6 +87,15 @@ static void txtS(int x, int y, const char* s, uint8_t col, uint8_t shadow, int s
   txt(x, y, s, col, sz);
 }
 
+// Zentrierter Schatten-Text, der bei langen Texten (andere Sprachen) kleiner wird, bis er in maxW passt;
+// die Zeile bleibt dabei vertikal mittig an derselben Stelle.
+static void txtSC(int cx, int y, const char* s, uint8_t col, uint8_t shadow, int sz = 1, int maxW = 156) {
+  int z = sz;
+  while (z > 1 && txtw(s, z) > maxW) z--;
+  y += (sz - z) * 7 / 2;
+  txtS(cx - txtw(s, z) / 2, y, s, col, shadow, z);
+}
+
 // Zeitdifferenz in Sekunden als dt (auf 0.1 s begrenzt)
 static inline float frameDt(uint32_t now, uint32_t& last) {
   float dt = (float)(uint32_t)(now - last) * 0.001f;

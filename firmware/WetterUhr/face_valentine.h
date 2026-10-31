@@ -144,18 +144,19 @@ static void draw(const FaceCtx& c) {
   if (c.timeOk) {
     if (c.mon == 2 && c.mday == 14) {
       const uint8_t a = ((now / 600) & 1) ? V_WHITE : V_H3;
-      txtS(cx - txtw("ALLES LIEBE", 2) / 2, 46, "ALLES LIEBE", a, V_SH, 2);
-      txtS(cx - txtw("ZUM VALENTINSTAG") / 2, 63, "ZUM VALENTINSTAG", V_TXT, V_SH);
+      txtSC(cx, 46, TR(D_VAL_L1), a, V_SH, 2);
+      txtSC(cx, 63, TR(D_VAL_L2), V_TXT, V_SH);
     } else {
       const int d = daysUntil(c.year, c.mon, c.mday, 2, 14);
       snprintf(b, sizeof(b), "%d", d);
-      const char* unit = d == 1 ? "TAG" : "TAGE";
-      const int w = txtw(b, 3) + 6 + txtw(unit, 2), x0 = cx - w / 2;
+      const char* unit = d == 1 ? TR(D_DAY) : TR(D_DAYS);
+      const int us = (txtw(b, 3) + 6 + txtw(unit, 2) > 2 * (cx < FB_W - cx ? cx : FB_W - cx) - 4) ? 1 : 2;   // lange Woerter kleiner
+        const int w = txtw(b, 3) + 6 + txtw(unit, us), x0 = cx - w / 2;
       txtS(x0, 44, b, V_WHITE, V_SH, 3);
-      txtS(x0 + txtw(b, 3) + 6, 51, unit, V_TXT, V_SH, 2);
-      txtS(cx - txtw("BIS ZUM VALENTINSTAG") / 2, 68, "BIS ZUM VALENTINSTAG", V_DIM, V_SH);
+      txtS(x0 + txtw(b, 3) + 6, 51 + (2 - us) * 4, unit, V_TXT, V_SH, us);
+      txtSC(cx, 68, TR(D_TO_VAL), V_DIM, V_SH);
     }
-    snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+    langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
     txtS(94 - txtw(b) / 2, 101, b, V_TXT, V_SH);
   }
   if (c.hasWx) tempTxt(94 - tempW(c.temp, 1) / 2, 111, c.temp, V_TXT);

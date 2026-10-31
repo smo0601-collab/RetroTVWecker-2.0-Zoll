@@ -231,7 +231,7 @@ static void draw(const FaceCtx& c) {
   char b[24];
   snprintf(b, sizeof(b), "%05lu", (unsigned long)(scoreV % 100000));
   txtr(FB_W - 4, 4, b, S_TXT);
-  if (c.timeOk) snprintf(b, sizeof(b), "%s %02u.%02u.", WD_SHORT[c.wday % 7], c.mday, c.mon);
+  if (c.timeOk) langWdDate(b, sizeof(b), c.wday, c.mday, c.mon);
   else          snprintf(b, sizeof(b), "-- --.--.");
   txt(4, 111, b, S_DIM);
   if (c.hasWx) tempTxt(FB_W - 10 - tempW(c.temp, 1), 111, c.temp, S_DIM);
