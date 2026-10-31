@@ -87,6 +87,13 @@ Stunden; 10 s bis 24 h), die gewuenschten Designs ankreuzen (mindestens zwei) un
 Nach "Speichern" wechselt die Uhr im Takt durch die gewaehlten Designs, mit dem jeweiligen Uebergang der Themen-Designs.
 Ein Klick auf eine Design-Karte zeigt das Design sofort und startet das Intervall neu. Im Standby pausiert der Timer.
 
+**Feiertage automatisch:** Weihnachten, Silvester, Valentinstag, Halloween und Ostern kommen jeweils 10 Tage vor dem
+Termin von selbst in den Wechsel und fallen nach dem Fest wieder heraus - ohne dass die eigene Liste geaendert wird.
+Zeitfenster: Weihnachten 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10., Ostern
+10 Tage vor Ostersonntag bis Ostermontag. Abschalten unter *Anzeige > Extras*. Die Status-Seite zeigt beim
+Uhr-Design z. B. "(Wechsel aktiv + Halloween, naechster in 42 s)". Die Zahl der Tage steht in `config.h`
+(`HOL_DAYS_BEFORE`).
+
 ### Themen-Designs (Pixel-Retro, Nr. 2-32)
 
 Animierte Szenen mit eigenen, festen Farben (die Akzentfarbe wirkt hier nicht). Alle zeigen Uhrzeit,
@@ -146,6 +153,7 @@ entfernte Designs fallen aus der Liste, ein entferntes ausgewaehltes Design wird
 
 Browser > "Anzeige" > "Extras":
 
+- **Feiertags-Designs automatisch im Design-Wechsel** (Standard an): siehe "Automatischer Design-Wechsel".
 - **Silvester-Automatik** (Standard an): Am 31.12. von 23:30 bis 1.1. 00:30 zeigt die Uhr automatisch das Design
   "Silvester" mit Countdown und Feuerwerk, egal welches Design gewaehlt ist. Sie hat Vorrang vor dem Nachtmodus und
   dem automatischen Wechsel. Danach geht es mit dem gewaehlten Design bzw. der Liste weiter.

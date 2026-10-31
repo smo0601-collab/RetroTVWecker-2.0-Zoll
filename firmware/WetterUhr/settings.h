@@ -50,6 +50,7 @@ struct Settings {
   bool     ufoOn;      // Flugradar: UFO-Sichtungen
   uint8_t  sleigh;     // ISS-Tracker: 0 ISS, 1 Schlitten, 2 Schlitten im Dezember (1.-26.)
   bool     nyeAuto;    // Silvester-Automatik
+  bool     holAuto;    // Feiertags-Designs vor dem Termin automatisch im Wechsel
 };
 
 static Settings    gSet;
@@ -108,6 +109,7 @@ static void settingsLoad() {
   gSet.ufoOn   = prefs.getBool("ufo", DEFAULT_UFO != 0);
   gSet.sleigh  = prefs.getUChar("sled", DEFAULT_SLEIGH);
   gSet.nyeAuto = prefs.getBool("nyeauto", DEFAULT_NYE_AUTO != 0);
+  gSet.holAuto = prefs.getBool("holauto", DEFAULT_HOL_AUTO != 0);
   const bool hasOld = prefs.isKey("cs") && prefs.getUChar("sver", 1) < STYLE_VERSION;
   prefs.end();
 
@@ -195,6 +197,7 @@ static void settingsSave() {
   prefs.putBool("ufo", gSet.ufoOn);
   prefs.putUChar("sled", gSet.sleigh);
   prefs.putBool("nyeauto", gSet.nyeAuto);
+  prefs.putBool("holauto", gSet.holAuto);
   prefs.end();
 }
 

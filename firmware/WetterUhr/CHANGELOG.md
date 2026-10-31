@@ -4,6 +4,16 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.10.31 - Feiertage automatisch im Design-Wechsel
+
+- Weihnachten, Silvester, Valentinstag, Halloween und Ostern kommen jeweils 10 Tage vor dem Termin automatisch in den
+  Design-Wechsel und fallen nach dem Fest wieder heraus (Weihnachten 14.-26.12., Silvester 21.12.-1.1.,
+  Valentinstag 4.-14.2., Halloween 21.-31.10., Ostern 10 Tage vor Ostersonntag bis Ostermontag).
+- Die eigene Liste bleibt unveraendert; abschaltbar unter Anzeige > Extras. Die Status-Seite zeigt, welche
+  Feiertags-Designs gerade dazugekommen sind.
+
+Geaenderte Dateien: `WetterUhr.ino`, `webui.h`, `settings.h`, `config.h`, `faces.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.10.30 - Update ueber WLAN
 
 - Firmware-Update im Browser (System > Firmware-Update ueber WLAN): Fortschritt im Browser und auf dem Display,

@@ -57,6 +57,10 @@
 #define RADAR_STYLE      (FACE_FIRST_STYLE + 17)   // Flugradar: Index 17 in FACES[]
 #define ISS_STYLE        (FACE_FIRST_STYLE + 22)   // ISS-Tracker: Index 22 in FACES[]
 #define AQUA_STYLE       (FACE_FIRST_STYLE + 19)   // Aquarium: Index 19 in FACES[]
+#define XMAS_STYLE       (FACE_FIRST_STYLE + 24)   // Weihnachten
+#define HALLOWEEN_STYLE  (FACE_FIRST_STYLE + 26)   // Halloween
+#define EASTER_STYLE     (FACE_FIRST_STYLE + 27)   // Ostern
+#define VALENTINE_STYLE  (FACE_FIRST_STYLE + 28)   // Valentinstag
 #define NEWYEAR_STYLE    (FACE_FIRST_STYLE + 29)   // Silvester: Index 29 in FACES[] (Silvester-Automatik)
 // Neue Zifferblaetter immer am Ende von FACES[] anhaengen, damit gespeicherte Nummern gueltig bleiben.
 

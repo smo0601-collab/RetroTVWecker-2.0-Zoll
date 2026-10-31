@@ -491,7 +491,11 @@ static String autoInfo() {
   if ((int32_t)(now - gAutoHold) < 0)
     return String(" (Wechsel aktiv, pausiert nach Auswahl noch ") + ((gAutoHold - now) / 1000UL) + " s)";
   const uint32_t iv = gSet.autoSec * 1000UL, el = now - gStyleSince;
-  return String(" (Wechsel aktiv, naechster in ") + ((el < iv ? iv - el : 0) / 1000UL) + " s)";
+  String h;
+  const uint64_t hm = holidayMask() & ~gSet.autoMask;
+  for (int i = 0; i < CLOCK_STYLE_COUNT; i++)
+    if (hm & (1ULL << i)) { h += h.length() ? ", " : " + "; h += STYLE_NAME[i]; }
+  return String(" (Wechsel aktiv") + h + ", naechster in " + ((el < iv ? iv - el : 0) / 1000UL) + " s)";
 }
 
 static void handleRoot() {
@@ -637,7 +641,13 @@ static void handleRoot() {
   }
 
   // Extras: Silvester-Automatik, Weihnachtsschlitten, UFO
-  p += F("<h2>Extras</h2><label><input type=checkbox name=nyeauto value=1");
+  p += F("<h2>Extras</h2><label><input type=checkbox name=holauto value=1");
+  p += gSet.holAuto ? F(" checked") : F("");
+  p += F(">Feiertags-Designs automatisch in den Design-Wechsel aufnehmen (jeweils 10 Tage vorher bis zum Fest: "
+         "Weihnachten, Silvester, Valentinstag, Halloween, Ostern)</label>"
+         "<small>Wirkt, wenn der automatische Design-Wechsel an ist. Die eigene Liste bleibt unver&auml;ndert; "
+         "nach dem Fest f&auml;llt das Design von selbst wieder heraus.</small>");
+  p += F("<label><input type=checkbox name=nyeauto value=1");
   p += gSet.nyeAuto ? F(" checked") : F("");
   p += F(">Silvester-Automatik: am 31.12. von 23:30 bis 00:30 Feuerwerk (Design &bdquo;Silvester&ldquo;)</label>"
          "<label>ISS-Tracker zeigt</label><select name=sled>");
@@ -953,6 +963,7 @@ static void handleSave() {
 #endif
   n.alOn    = server.hasArg("alon");
   n.nyeAuto = server.hasArg("nyeauto");
+  n.holAuto = server.hasArg("holauto");
   n.ufoOn   = server.hasArg("ufo");
   { int v = server.arg("sled").toInt(); if (v >= 0 && v <= 2) n.sleigh = (uint8_t)v; }
   { uint16_t v; if (parseHhmm(server.arg("alt"), v)) n.alTime = v; }
@@ -979,6 +990,7 @@ static void handleSave() {
   const bool csChanged = (n.clockStyle != gSet.clockStyle);
   gSet = n;
   settingsSave();
+  gHolAt = 0;                                         // Feiertags-Fenster neu berechnen
   if (ntpChanged) {                     // NTP ein/aus ohne Neustart
     if (!gSet.ntpOn) ntpStop();
     ntpStarted = false;                 // wifiLoop startet NTP bei Bedarf neu

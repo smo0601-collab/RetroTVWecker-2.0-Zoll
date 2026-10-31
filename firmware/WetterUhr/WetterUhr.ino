@@ -366,10 +366,44 @@ static void dimTick(uint32_t now, bool force) {
   }
 }
 
+// Feiertags-Designs, die gerade in ihrem Zeitfenster liegen (HOL_DAYS_BEFORE Tage vorher bis zum Fest):
+//   Weihnachten 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10.,
+//   Ostern 10 Tage vor Ostersonntag bis Ostermontag. Wird einmal pro Minute neu berechnet.
+static uint32_t gHolAt = 0;              // 0 = neu berechnen (z. B. nach "Speichern")
+static uint64_t holidayMask() {
+  static uint64_t m = 0;
+  const uint32_t now = millis();
+  if (gHolAt && now - gHolAt < 60000UL) return m;
+  gHolAt = now ? now : 1;
+  m = 0;
+  if (!gSet.holAuto || !timeValid()) return m;
+  time_t n = time(nullptr);
+  struct tm t;
+  localtime_r(&n, &t);
+  const int y = t.tm_year + 1900, mo = t.tm_mon + 1, d = t.tm_mday;
+  const int doy = fc::dayOfYear(y, mo, d), B = HOL_DAYS_BEFORE;
+  auto win = [&](int m1, int d1, int extra) {            // B Tage vor dem Termin bis "extra" Tage danach
+    const int e = fc::dayOfYear(y, m1, d1);
+    return doy >= e - B && doy <= e + extra;
+  };
+  if (win(12, 24, 2))                    m |= 1ULL << XMAS_STYLE;
+  if (win(12, 31, 0) || (mo == 1 && d == 1)) m |= 1ULL << NEWYEAR_STYLE;
+  if (win(2, 14, 0))                     m |= 1ULL << VALENTINE_STYLE;
+  if (win(10, 31, 0))                    m |= 1ULL << HALLOWEEN_STYLE;
+  int em, ed;
+  fc::easterDate(y, em, ed);
+  if (win(em, ed, 1))                    m |= 1ULL << EASTER_STYLE;
+  return m;
+}
+
+// Liste fuer den Design-Wechsel: eigene Auswahl plus die gerade anstehenden Feiertage
+static uint64_t listMask() { return gSet.autoMask | holidayMask(); }
+
 // Design-Wechsel nach Zeitplan: nur wenn aktiv und mindestens zwei Designs gewaehlt sind
 static int autoCount() {
   int n = 0;
-  for (int i = 0; i < CLOCK_STYLE_COUNT; i++) if (gSet.autoMask & (1ULL << i)) n++;
+  const uint64_t m = listMask();
+  for (int i = 0; i < CLOCK_STYLE_COUNT; i++) if (m & (1ULL << i)) n++;
   return n;
 }
 // Naechstes Design nach "from": aus der Wechsel-Liste (wenn mindestens zwei gewaehlt), sonst aus allen
@@ -377,12 +411,12 @@ static int nextStyle(int from) {
   const bool list = autoCount() >= 2;
   for (int k = 1; k <= CLOCK_STYLE_COUNT; k++) {
     const int i = (from + k) % CLOCK_STYLE_COUNT;
-    if (!list || (gSet.autoMask & (1ULL << i))) return i;
+    if (!list || (listMask() & (1ULL << i))) return i;
   }
   return from;
 }
 static bool autoActive() { return gSet.autoOn && autoCount() >= 2; }
-static bool inList(int s) { return s >= 0 && s < CLOCK_STYLE_COUNT && (gSet.autoMask & (1ULL << s)); }
+static bool inList(int s) { return s >= 0 && s < CLOCK_STYLE_COUNT && (listMask() & (1ULL << s)); }
 // Design zum Start bzw. nach Nachtmodus/Speichern: bei aktivem Wechsel immer eines aus der Liste
 static uint8_t listStyle(int from) {
   if (!autoActive()) return gSet.clockStyle;
@@ -427,15 +461,16 @@ static void styleTick(uint32_t now) {
   gStyleSince = now;
   int next = -1;
   if (gSet.autoRnd) {
-    int k = (int)(esp_random() % (uint32_t)(autoCount() - ((gSet.autoMask >> gStyle) & 1 ? 1 : 0)));
+    const uint64_t lm = listMask();
+    int k = (int)(esp_random() % (uint32_t)(autoCount() - ((lm >> gStyle) & 1 ? 1 : 0)));
     for (int i = 0; i < CLOCK_STYLE_COUNT; i++) {
-      if (!(gSet.autoMask & (1ULL << i)) || i == gStyle) continue;
+      if (!(lm & (1ULL << i)) || i == gStyle) continue;
       if (k-- == 0) { next = i; break; }
     }
   } else {
     for (int k = 1; k <= CLOCK_STYLE_COUNT; k++) {
       const int i = (gStyle + k) % CLOCK_STYLE_COUNT;
-      if (gSet.autoMask & (1ULL << i)) { next = i; break; }
+      if (listMask() & (1ULL << i)) { next = i; break; }
     }
   }
   if (next >= 0 && next != gStyle) { gStyle = (uint8_t)next; needFull = true; gDbgSrc = 'A'; }
