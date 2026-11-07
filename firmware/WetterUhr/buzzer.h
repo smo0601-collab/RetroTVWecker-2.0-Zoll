@@ -1,9 +1,9 @@
 #pragma once
 /*
-  buzzer.h - aktiver Piezo-Summer (3 V, mit eingebautem Tongeber)
+  buzzer.h - Ton fuer Wecker, Stundensignal und Touch-Klick
 
-  Ein aktiver Summer piept von selbst, sobald Spannung anliegt. Es reicht also ein
-  einfacher Ausgang (an/aus), kein PWM-Ton. Die Muster laufen ohne delay() in der
+  ESP32-C3: aktiver Piezo-Summer (3 V, mit eingebautem Tongeber), einfacher Ausgang an/aus.
+  CYD: kleiner Lautsprecher am Anschluss "SPEAK" (GPIO 26); der Ton wird per PWM erzeugt (BUZZER_TONE_HZ). Die Muster laufen ohne delay() in der
   Hauptschleife: gerade Eintraege = Summer an (ms), ungerade = Pause (ms).
 
   Anschluss: siehe config.h (PIN_BUZZER) und README, Abschnitt "Summer und Wecker".
@@ -26,8 +26,16 @@ static uint32_t t0 = 0;
 
 static constexpr bool present() { return PIN_BUZZER >= 0; }
 
+static bool level = false;
+
 static void out(bool on) {
-#if PIN_BUZZER >= 0
+#if PIN_BUZZER >= 0 && BUZZER_TONE_HZ > 0
+  // Lautsprecher/passiver Summer: Rechteckton per PWM (CYD: Anschluss "SPEAK" an GPIO 26)
+  if (on == level) return;
+  level = on;
+  ledcWriteTone(PIN_BUZZER, on ? BUZZER_TONE_HZ : 0);
+#elif PIN_BUZZER >= 0
+  level = on;
   digitalWrite(PIN_BUZZER, (on == (BUZZER_ACTIVE_HIGH != 0)) ? HIGH : LOW);
 #else
   (void)on;
@@ -35,7 +43,11 @@ static void out(bool on) {
 }
 
 static void init() {
-#if PIN_BUZZER >= 0
+#if PIN_BUZZER >= 0 && BUZZER_TONE_HZ > 0
+  ledcAttach(PIN_BUZZER, BUZZER_TONE_HZ, 8);
+  ledcWriteTone(PIN_BUZZER, 0);
+  level = false;
+#elif PIN_BUZZER >= 0
   out(false);                    // Pegel vor dem Umschalten auf Ausgang setzen (kein Piepser beim Start)
   pinMode(PIN_BUZZER, OUTPUT);
   out(false);

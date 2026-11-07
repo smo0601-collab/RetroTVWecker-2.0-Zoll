@@ -69,6 +69,7 @@
   X(W_RINGING,    "klingelt", "ringing", "sonne", "sonando", "suona") \
   X(W_NO_DAY,     "  (kein Tag gew&auml;hlt)", "  (no day selected)", "  (aucun jour choisi)", "  (ningún día elegido)", "  (nessun giorno scelto)") \
   X(W_R_HEAP,     "Freier Speicher", "Free memory", "Mémoire libre", "Memoria libre", "Memoria libera") \
+  X(W_R_BOARD,    "Hardware", "Hardware", "Matériel", "Hardware", "Hardware") \
   X(W_R_FW,       "Firmware", "Firmware", "Micrologiciel", "Firmware", "Firmware") \
   X(W_BUILT,      "gebaut", "built", "compilé", "compilado", "compilato") \
   X(W_AL_STOP,    "Wecker abstellen", "Stop alarm", "Arrêter le réveil", "Parar la alarma", "Ferma la sveglia") \
@@ -303,6 +304,9 @@
   X(W_E_NOPART,   "Partitionsschema ohne OTA-Bereich (siehe Hinweis)", "Partition scheme without OTA slot (see note)", "Schéma de partitions sans zone OTA (voir la remarque)", \
                   "Esquema de particiones sin zona OTA (ver nota)", "Schema partizioni senza area OTA (vedi nota)") \
   X(W_E_BIG,      "Datei zu groß (%lu KB, Platz %lu KB)", "File too large (%lu KB, space %lu KB)", "Fichier trop gros (%lu Ko, place %lu Ko)", "Archivo demasiado grande (%lu KB, espacio %lu KB)", "File troppo grande (%lu KB, spazio %lu KB)") \
+  X(W_E_BOARD,    "Falsche Firmware für dieses Board (CYD-Dateien enthalten \"CYD\" im Namen)", "Wrong firmware for this board (CYD files have \"CYD\" in their name)", \
+                  "Mauvais micrologiciel pour cette carte (les fichiers CYD contiennent \"CYD\")", "Firmware incorrecto para esta placa (los archivos CYD llevan \"CYD\" en el nombre)", \
+                  "Firmware errato per questa scheda (i file CYD hanno \"CYD\" nel nome)") \
   X(W_E_WRITE,    "Schreibfehler: ", "Write error: ", "Erreur d'écriture : ", "Error de escritura: ", "Errore di scrittura: ") \
   X(W_E_CHECK,    "Prüfung fehlgeschlagen: ", "Verification failed: ", "Vérification échouée : ", "Verificación fallida: ", "Verifica fallita: ") \
   X(W_E_ABORT,    "Übertragung abgebrochen", "Upload aborted", "Transfert interrompu", "Transferencia interrumpida", "Trasferimento interrotto") \

@@ -557,7 +557,15 @@ static void handleRoot() {
   } else rowh(W_R_DIMSCH, TR(W_OFF));
   rowh(W_R_DIM, TR(HW_DIM ? W_DIM_HW : W_DIM_SW));
   rowh(W_R_DISP, TR(standby ? W_STANDBY_S : W_ON));
-#if PIN_TOUCH >= 0
+#if TOUCH_XPT2046
+  {
+    const bool on = boardTouchRaw();
+    String v = String("XPT2046") + TR(W_T_LEVEL) + "Z=" + xpt::lastZ +
+               TR(on ? W_TOUCHED : W_FREE) + TR(W_DETECTED) + gTouchCount + "x";
+    if (gTouchCount) { snprintf(fb, sizeof(fb), TR(W_LAST_AGO), (unsigned long)((millis() - gTouchLastMs) / 1000UL)); v += fb; }
+    rowh(W_R_TOUCH, v);
+  }
+#elif PIN_TOUCH >= 0
   {
     const bool hi = digitalRead(PIN_TOUCH) == HIGH;
     String v = String("GPIO ") + PIN_TOUCH + TR(W_T_LEVEL) + (hi ? "HIGH" : "LOW") +
@@ -577,6 +585,7 @@ static void handleRoot() {
   } else rowh(W_R_ALARM, TR(W_OFF));
   rowh(W_R_LANG, LANG_NAME[LANG_IDX]);
   row(W_R_HEAP, String(ESP.getFreeHeap()) + " Bytes");
+  row(W_R_BOARD, boardName());
   row(W_R_FW, String(FW_VERSION) + "  (" + TR(W_BUILT) + " " + __DATE__ + " " + __TIME__ + ")");
   p += F("</table>");
   if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }
@@ -728,7 +737,7 @@ static void handleRoot() {
   p += F("<label><input type=checkbox name=bzhr value=1"); chk(gSet.bzHour);
   p += F(">"); T(W_BZ_HOUR); p += F("</label><label><input type=checkbox name=bzq value=1"); chk(gSet.bzQuiet);
   p += F(">"); T(W_BZ_QUIET); p += F("</label>");
-#if PIN_TOUCH >= 0
+#if HAS_TOUCH
   p += F("<label><input type=checkbox name=bztc value=1"); chk(gSet.bzTouch);
   p += F(">"); T(W_BZ_TOUCH); p += F("</label>");
 #endif
@@ -908,7 +917,7 @@ static void handleSave() {
   n.ntpOn   = server.hasArg("ntpon");
   n.bzHour  = server.hasArg("bzhr");
   n.bzQuiet = server.hasArg("bzq");
-#if PIN_TOUCH >= 0
+#if HAS_TOUCH
   n.bzTouch = server.hasArg("bztc");
 #endif
   n.alOn    = server.hasArg("alon");
@@ -1126,6 +1135,17 @@ static void handleUpdateUpload() {
     if (!Update.begin(gOtaSize ? gOtaSize : UPDATE_SIZE_UNKNOWN, U_FLASH)) { gOtaErr = Update.errorString(); otaResume(); }
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (gOtaErr.length()) return;
+    // Erster Block: Chip im Bild-Kopf pruefen (Byte 12/13), damit keine Firmware fuer das andere Board
+    // (CYD = ESP32 bzw. ESP32-C3) eingespielt wird - sie wuerde nicht starten.
+    if (Update.progress() == 0 && up.currentSize >= 16 && up.buf[0] == 0xE9) {
+      const uint16_t chip = up.buf[12] | (up.buf[13] << 8);
+      if (chip != CONFIG_IDF_FIRMWARE_CHIP_ID) {
+        gOtaErr = TR(W_E_BOARD);
+        Update.abort();
+        otaResume();
+        return;
+      }
+    }
     if (Update.write(up.buf, up.currentSize) != up.currentSize) {
       gOtaErr = String(TR(W_E_WRITE)) + Update.errorString();
       Update.abort();

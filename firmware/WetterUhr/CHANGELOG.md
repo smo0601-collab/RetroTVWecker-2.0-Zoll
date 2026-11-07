@@ -4,6 +4,19 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.07 - CYD 2,8 Zoll
+
+- Laeuft jetzt auch auf dem **CYD 2,8 Zoll** (ESP32-2432S028R, "Cheap Yellow Display"): ILI9341 320 x 240,
+  Touchscreen statt Touch-Taster, Ton ueber den Lautsprecher-Anschluss, echte Helligkeitsregelung ueber das Backlight,
+  RGB-LED blinkt rot beim Wecken. Gleicher Quellcode wie fuer den ESP32-C3; das Board wird automatisch erkannt.
+- Option `CYD_ST7789` fuer die CYD-Variante mit ST7789.
+- Firmware-Update ueber WLAN prueft, ob die Datei zum Board passt.
+- Status-Seite zeigt die Hardware.
+- Release-Dateien fuer beide Boards (CYD-Dateien mit `CYD` im Namen).
+
+Geaenderte Dateien: `board.h` (neu), `config.h`, `WetterUhr.ino`, `webui.h`, `buzzer.h`, `lang_web.h`, `faces.h`,
+`README.md`, `CHANGELOG.md`
+
 ## 2026.10.31-3 - Sprachen
 
 - Sprache waehlbar unter Anzeige > Darstellung: Deutsch, English, Francais, Espanol, Italiano.

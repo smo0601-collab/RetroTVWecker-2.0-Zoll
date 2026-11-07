@@ -1,7 +1,8 @@
 # RetroTV-Wecker 2,0 Zoll
 
 Eine kleine WLAN-Uhr mit Wetter, Wecker und **33 Zifferblättern** im Pixel-Retro-Stil – auf einem
-2,0-Zoll-Farbdisplay (320 × 240) mit einem ESP32-C3 SuperMini. Alles wird bequem im Browser eingestellt,
+2,0-Zoll-Farbdisplay (320 × 240) mit einem ESP32-C3 SuperMini **oder fertig auf einem CYD 2,8 Zoll**
+(„Cheap Yellow Display“, ESP32-2432S028R, ganz ohne Löten). Alles wird bequem im Browser eingestellt,
 neue Firmware kommt per WLAN.
 
 ![Alle Themen-Designs](docs/images/designs.png)
@@ -52,6 +53,22 @@ Die vollständige Liste aller Designs mit Beschreibung steht in der
 
 ## Hardware
 
+Zwei Varianten, gleicher Quellcode, gleiche Funktionen. Das Board wird beim Kompilieren automatisch erkannt.
+
+### Variante A: CYD 2,8 Zoll (ohne Löten)
+
+| Teil | Hinweis |
+|---|---|
+| CYD 2,8 Zoll (ESP32-2432S028R) | ESP32, Display ILI9341 320 × 240, resistiver Touchscreen, USB – alles auf einer Platine |
+| kleiner Lautsprecher 8 Ω, 0,5–2 W, Stecker JST 1,25 mm | optional, an „SPEAK“, für Wecker und Stundensignal |
+
+Nichts zu verdrahten. Der **Touchscreen** ersetzt den Touch-Taster (tippen = nächstes Design, doppelt = Laufschrift,
+1 s halten = Standby), die **Helligkeit** wird echt über das Backlight geregelt, und die **RGB-LED** blinkt rot,
+solange der Wecker klingelt. Für die CYD-Variante mit ST7789 (zwei USB-Buchsen) gibt es `CYD_ST7789` in
+[`config.h`](firmware/WetterUhr/config.h). Details in der [Anleitung](firmware/WetterUhr/README.md#cyd-28-zoll-esp32-2432s028r).
+
+### Variante B: ESP32-C3 SuperMini + 2,0-Zoll-Display
+
 | Teil | Hinweis |
 |---|---|
 | ESP32-C3 SuperMini | Mikrocontroller mit WLAN, USB-C |
@@ -85,17 +102,17 @@ GPIO 2, 8 und 9 bitte frei lassen (Boot-Pins). Alle Pins lassen sich in
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json` eintragen, dann im Boardverwalter
    **esp32 by Espressif Systems** installieren.
 2. **Bibliotheken** (Bibliotheksverwalter): *Adafruit GFX Library*, *Adafruit ST7735 and ST7789 Library*,
-   *ArduinoJson* (Version 7).
+   *Adafruit ILI9341*, *ArduinoJson* (Version 7).
 3. **Board-Einstellungen** unter *Werkzeuge*:
-   - Board: **ESP32C3 Dev Module**
-   - USB CDC On Boot: **Enabled**
-   - Partition Scheme: **Minimal SPIFFS (1.9MB APP with OTA)** – wichtig für Updates per WLAN
+   - CYD 2,8 Zoll: Board **ESP32 Dev Module**
+   - ESP32-C3: Board **ESP32C3 Dev Module**, USB CDC On Boot: **Enabled**
+   - beide: Partition Scheme: **Minimal SPIFFS (1.9MB APP with OTA)** – wichtig für Updates per WLAN
 
 ### 2. Firmware aufspielen (einmalig per USB)
 
 **Ohne Arduino IDE (am einfachsten):** Im Ordner [`releases/`](releases) die Datei
-`WetterUhr_<Version>_erstinstallation.bin` herunterladen, in Chrome oder Edge
-<https://espressif.github.io/esptool-js/> öffnen, ESP32-C3 per USB verbinden (**Connect**), *Flash Address* `0x0`,
+`WetterUhr_<Version>_CYD_erstinstallation.bin` (CYD) bzw. `WetterUhr_<Version>_erstinstallation.bin` (ESP32-C3)
+herunterladen, in Chrome oder Edge <https://espressif.github.io/esptool-js/> öffnen, Board per USB verbinden (**Connect**), *Flash Address* `0x0`,
 Datei wählen, **Program**. Genaue Schritte stehen in der `LIESMICH.md` der jeweiligen Version.
 Dabei werden vorhandene Einstellungen gelöscht.
 
@@ -114,14 +131,18 @@ Dabei werden vorhandene Einstellungen gelöscht.
 
 ## Updates über WLAN
 
-Jede neue Version liegt im Ordner [**`releases/`**](releases) in drei Formen
-(aktuell: [`releases/2026.10.31-3`](releases/2026.10.31-3)), außerdem unter [**Releases**](../../releases):
+Jede neue Version liegt im Ordner [**`releases/`**](releases)
+(aktuell: [`releases/2026.11.07`](releases/2026.11.07)), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
-| `WetterUhr_<Version>_erstinstallation.bin` | komplette Firmware für die Erstinstallation per USB (an Adresse `0x0`) |
-| `WetterUhr_<Version>_update.bin` | Update-Datei zum Einspielen über WLAN |
-| `WetterUhr_<Version>_komplett.zip` | kompletter Quellcode für die Arduino IDE |
+| `WetterUhr_<Version>_CYD_erstinstallation.bin` | CYD 2,8 Zoll: komplette Firmware für die Erstinstallation per USB (an Adresse `0x0`) |
+| `WetterUhr_<Version>_CYD_update.bin` | CYD 2,8 Zoll: Update-Datei zum Einspielen über WLAN |
+| `WetterUhr_<Version>_erstinstallation.bin` | ESP32-C3: komplette Firmware für die Erstinstallation per USB (an Adresse `0x0`) |
+| `WetterUhr_<Version>_update.bin` | ESP32-C3: Update-Datei zum Einspielen über WLAN |
+| `WetterUhr_<Version>_komplett.zip` | kompletter Quellcode für die Arduino IDE (beide Boards) |
+
+Eine Update-Datei für das falsche Board lehnt die Uhr ab.
 
 **Update einspielen:** Browser → *System* → *Firmware-Update über WLAN* → `.bin` wählen → *Update installieren*.
 Browser und Display zeigen den Fortschritt. Die Uhr prüft die Datei und startet nur bei Erfolg neu; sonst läuft
@@ -161,7 +182,8 @@ Alle Einzelheiten – Designs, Dimmung, Wecker, Touch-Bedienung, Fehlersuche –
 ```
 firmware/WetterUhr/        Arduino-Sketch (diesen Ordner in der Arduino IDE öffnen)
   WetterUhr.ino            Hauptprogramm: Anzeige, WLAN, Wetter, Flugradar, ISS, Update
-  config.h                 Pins, Standardwerte, Firmware-Version
+  config.h                 Pins (CYD bzw. ESP32-C3, automatisch), Standardwerte, Firmware-Version
+  board.h                  Display-Treiber, Touchscreen, RGB-LED je Board
   settings.h               Einstellungen im Flash
   webui.h                  Einstellungsseite im Browser
   lang.h, lang_web.h       Texte in fünf Sprachen (Display, Browser)

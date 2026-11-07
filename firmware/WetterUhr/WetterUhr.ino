@@ -1,19 +1,20 @@
 /*
-  Wetteruhr - ESP32-C3 SuperMini + GMT020-02-7P (ST7789, 240x320)
-
-  EIN Bildschirm: Uhr (oben) und Wetter (unten).
-
-  Bedienung nur per Browser (kein Touchsensor): Helligkeit, Display ein/aus.
+  Wetteruhr / RetroTV-Wecker - zwei Boards aus einem Quellcode (Auswahl automatisch, siehe config.h):
+    - CYD 2,8 Zoll (ESP32-2432S028R): ESP32, ILI9341 320x240, Touchscreen XPT2046, Lautsprecher, RGB-LED
+      Arduino IDE: Board "ESP32 Dev Module"
+    - ESP32-C3 SuperMini + GMT020-02-7P (ST7789 320x240) + TTP223 + aktiver Summer
+      Arduino IDE: Board "ESP32C3 Dev Module", USB CDC On Boot: Enabled
+  Partitionsschema bei beiden: Minimal SPIFFS (1.9MB APP with OTA)
 
   Einstellungen per Browser: http://<IP-Adresse> oder http://wetteruhr.local
   (WLAN, Zeitzone, Standort, Helligkeit, ...). Ohne WLAN-Daten startet der
   Access-Point "Wetteruhr-Setup" (Seite: http://192.168.4.1).
 
   Dimmung:
-    - mit Backlight-Umbau (PIN_TFT_BL >= 0): echte PWM-Dimmung, Standby = Backlight aus
-    - ohne Umbau: Software-Dimmung (Farben abdunkeln), Backlight bleibt an
+    - mit Backlight-PWM (PIN_TFT_BL >= 0, beim CYD immer): echte PWM-Dimmung, Standby = Backlight aus
+    - ohne (C3-Modul ohne Umbau): Software-Dimmung (Farben abdunkeln), Backlight bleibt an
 
-  Bibliotheken: Adafruit GFX, Adafruit ST7735 and ST7789, ArduinoJson (v7)
+  Bibliotheken: Adafruit GFX, Adafruit ST7735 and ST7789, Adafruit ILI9341, ArduinoJson (v7)
 */
 
 #include <Arduino.h>
@@ -23,7 +24,6 @@
 #include <SPI.h>
 #include <time.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_ST7789.h>
 #include <ArduinoJson.h>
 #include <esp_idf_version.h>
 #include <esp_sntp.h>
@@ -38,6 +38,7 @@
 #include <Fonts/FreeSansBold24pt7b.h>
 
 #include "config.h"
+#include "board.h"        // Display, Touch und LED je nach Board (CYD oder ESP32-C3)
 #include "icons.h"
 #include "settings.h"
 #include "types.h"
@@ -53,7 +54,6 @@
 // =====================================================================
 // Globale Objekte und Zustand
 // =====================================================================
-Adafruit_ST7789 tft(PIN_TFT_CS, PIN_TFT_DC, PIN_TFT_RST);
 
 static bool     standby       = false;
 static bool     wakePending   = false;   // Sleep-Out laeuft (120 ms Wartezeit)
@@ -524,11 +524,7 @@ static void tickerClassic(uint32_t now) {
 }
 
 static void displayInit() {
-  // SPI-Pins explizit setzen (entspricht beim C3 den Standardpins 4/5/6/7).
-  // CS steuert die Adafruit-Bibliothek per GPIO, daher hier -1.
-  SPI.begin(PIN_TFT_SCK, -1, PIN_TFT_MOSI, -1);
-  tft.init(240, 320);
-  tft.setRotation(gSet.rotation);
+  boardTftBegin(gSet.rotation);
 #if TFT_FORCE_INVERT >= 0
   tft.invertDisplay(TFT_FORCE_INVERT == 1);
 #endif
@@ -540,8 +536,8 @@ static void enterStandby() {
   standby = true;
   wakePending = false;
   tft.fillScreen(C_BG);
-  tft.enableDisplay(false);
-  tft.enableSleep(true);
+  boardTftDisplay(false);
+  boardTftSleep(true);
   blOff();                       // nur mit Umbau: Backlight wirklich aus
 }
 
@@ -549,9 +545,9 @@ static void startWake() {
   LOGF("Aufwachen\n");
   standby = false;
   needFull = true;
-  tft.enableSleep(false);
+  boardTftSleep(false);
   wakePending = true;
-  wakeAt = millis() + 130;       // ST7789: nach Sleep-Out ca. 120 ms warten (ohne delay())
+  wakeAt = millis() + 130;       // ST7789/ILI9341: nach Sleep-Out ca. 120 ms warten (ohne delay())
 }
 
 // ---------------------------------------------------------------------
@@ -588,13 +584,13 @@ static void soundTick(uint32_t now) {
 }
 
 // ---------------------------------------------------------------------
-// Touch-Taster (TTP223): kurz = naechstes Design (aus der Wechsel-Liste), doppelt = Laufschrift, lang = Standby
+// Touch (TTP223 bzw. Touchscreen beim CYD): kurz = naechstes Design (aus der Wechsel-Liste), doppelt = Laufschrift, lang = Standby
 // ---------------------------------------------------------------------
-#if PIN_TOUCH >= 0
+#if HAS_TOUCH
 static void touchTick(uint32_t now) {
   static bool down = false, longDone = false, pending = false;
   static uint32_t downAt = 0, tapAt = 0, hiSince = 0, loSince = 0;
-  const bool raw = (digitalRead(PIN_TOUCH) == (TOUCH_ACTIVE_HIGH ? HIGH : LOW));
+  const bool raw = boardTouchRaw();
   if ((int32_t)(now - touchBlockUntil) < 0) {          // Sperre (z. B. kurz nach Design-Wahl im Browser): Stoerimpulse ignorieren
     hiSince = 0; loSince = now; down = false; pending = false;
     return;
@@ -1434,7 +1430,7 @@ static bool themedTick(uint32_t now) {
     if (dt > gDiagFrameMax) gDiagFrameMax = dt;
   }
   if (showAfterDraw) {
-    tft.enableDisplay(true);
+    boardTftDisplay(true);
     blApply();
     showAfterDraw = false;
   }
@@ -1465,7 +1461,7 @@ static void renderTick(uint32_t now) {
   tickerClassic(now);
 
   if (showAfterDraw) {
-    tft.enableDisplay(true);
+    boardTftDisplay(true);
     blApply();
     showAfterDraw = false;
   }
@@ -1475,9 +1471,8 @@ static void renderTick(uint32_t now) {
 // Setup / Loop
 // =====================================================================
 void setup() {
-#if PIN_TOUCH >= 0
-  pinMode(PIN_TOUCH, TOUCH_ACTIVE_HIGH ? INPUT_PULLDOWN : INPUT_PULLUP);
-#endif
+  boardLedInit();
+  boardTouchInit();
 #if DEBUG_SERIAL
   Serial.begin(115200);
 #if defined(ARDUINO_USB_CDC_ON_BOOT) && ARDUINO_USB_CDC_ON_BOOT
@@ -1539,8 +1534,11 @@ void loop() {
   styleTick(now);
   soundTick(now);
   tickerTick(now);
-#if PIN_TOUCH >= 0
+#if HAS_TOUCH
   touchTick(now);
+#endif
+#if PIN_LED_R >= 0
+  boardLed(gAlarmRinging && (now / 400) % 2, false, false);   // Wecker: RGB-LED blinkt rot
 #endif
   if (wakePending && (int32_t)(now - wakeAt) >= 0) finishWake();
   m0 = micros();

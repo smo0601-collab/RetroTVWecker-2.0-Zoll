@@ -1,6 +1,14 @@
-# Wetteruhr ESP32-C3 SuperMini + GMT020-02-7P
+# Wetteruhr / RetroTV-Wecker
 
-Ein Bildschirm mit Uhr und Wetter (Open-Meteo). Einstellungen per Browser.
+Ein Bildschirm mit Uhr und Wetter (Open-Meteo). Einstellungen per Browser. Laeuft auf zwei Boards aus demselben
+Quellcode; welches gebaut wird, ergibt sich automatisch aus der Board-Wahl in der Arduino IDE:
+
+| Board | Display | Bedienung | Ton | Arduino IDE |
+|---|---|---|---|---|
+| **CYD 2,8 Zoll** (ESP32-2432S028R) | ILI9341, 320 x 240, eingebaut | Touchscreen | Lautsprecher am Anschluss "SPEAK" | *ESP32 Dev Module* |
+| ESP32-C3 SuperMini | GMT020-02-7P (ST7789, 2,0 Zoll) | Touch-Taster TTP223 | aktiver Summer | *ESP32C3 Dev Module* |
+
+Beide zeigen dasselbe Bild (320 x 240) und haben dieselben Funktionen. Siehe "CYD 2,8 Zoll" weiter unten.
 
 **Status:** Der Code wird mit arduino-cli und dem ESP32-Core 3.3.12 fehlerfrei kompiliert (ca. 1,65 MB, passt in das
 OTA-Partitionsschema). Auf echter Hardware ist nicht jede Funktion durchgetestet; Auffaelligkeiten bitte melden.
@@ -276,7 +284,44 @@ Das Backlight des GMT020-02-7P ist fest verdrahtet, das Modul hat keinen BL-Pin.
   Fuehre den Umbau nur durch, wenn du die Leiterbahn eindeutig identifiziert hast (z. B. mit Multimeter im
   Durchgangsmodus und einer Lupe). Ein schaerferes Nahfoto der Platinenrueckseite hilft, das zu klaeren.
 
-## Verdrahtung
+## CYD 2,8 Zoll (ESP32-2432S028R)
+
+Das "Cheap Yellow Display" hat alles auf der Platine: ESP32, 2,8-Zoll-Display, Touchscreen, Backlight-Steuerung,
+Verstaerker fuer einen Lautsprecher, RGB-LED, USB. **Es muss nichts verdrahtet werden.**
+
+| Teil | auf der Platine | Funktion in der Uhr |
+|---|---|---|
+| Display ILI9341 320 x 240 | SPI: SCK 14, MOSI 13, MISO 12, CS 15, DC 2 | gleiches Bild wie beim C3 |
+| Backlight | GPIO21 | **echte Helligkeitsregelung** (PWM), Standby schaltet das Licht ganz aus |
+| Touchscreen XPT2046 | CLK 25, MOSI 32, MISO 39, CS 33, IRQ 36 | die ganze Flaeche wirkt wie der Touch-Taster (siehe unten) |
+| Lautsprecher-Anschluss "SPEAK" | GPIO26 ueber Verstaerker | Wecker, Stundensignal, Klick; Ton per PWM (`BUZZER_TONE_HZ`, Standard 2700 Hz) |
+| RGB-LED (Rueckseite) | GPIO4/16/17 | aus; blinkt rot, solange der Wecker klingelt |
+
+**Bedienung am Touchscreen** (wie beim Touch-Taster): kurz tippen = naechstes Design aus der Wechsel-Liste,
+doppelt tippen = Laufschrift, 1 s halten = Standby an/aus, im Standby weckt jede Beruehrung, klingelt der Wecker,
+stellt jede Beruehrung ihn ab. Ein Stift ist nicht noetig, ein Finger reicht (resistiver Touch: kurz etwas fester tippen).
+Die Empfindlichkeit stellt `XPT_Z_MIN` in `config.h` ein (kleiner = empfindlicher); unter *Status > Touch-Taster*
+steht der gemessene Druck (Z).
+
+**Ton:** einen kleinen Lautsprecher (8 Ohm, 0,5-2 W, Stecker JST 1,25 mm 2-polig) an "SPEAK" stecken. Ohne
+Lautsprecher bleibt die Uhr einfach stumm. Wer lieber einen **aktiven** 3-V-Summer nimmt: an CN1 (GPIO27 und GND),
+in `config.h` `PIN_BUZZER 27` und `BUZZER_TONE_HZ 0`.
+
+**Stromversorgung:** USB-C oder Micro-USB mit 5 V, ca. 115 mA.
+
+**Andere CYD-Variante:** Es gibt Platinen mit zwei USB-Buchsen und ST7789 statt ILI9341. Zeigt das Display falsche
+Farben oder bleibt weiss: in `config.h` `CYD_ST7789 1` setzen. Steht das Bild auf dem Kopf: im Browser unter
+*Anzeige > Darstellung > Ausrichtung* auf "180 Grad gedreht" stellen. Rot und Blau vertauscht: `TFT_SWAP_RB 1`.
+
+**Erstinstallation ohne Arduino IDE:** <https://espressif.github.io/esptool-js/> in Chrome oder Edge oeffnen, CYD per USB
+verbinden, *Connect*, Adresse `0x0`, Datei `WetterUhr_<Version>_CYD_erstinstallation.bin`, *Program*. Danach den
+Access-Point **Wetteruhr-Setup** (Passwort `wetteruhr1`) oeffnen und unter `http://192.168.4.1` einrichten.
+Klappt die Verbindung nicht: eventuell fehlt der USB-Treiber fuer den CH340-Chip.
+
+**Updates per WLAN:** immer die Datei mit `CYD` im Namen nehmen (`..._CYD_update.bin`). Eine Datei fuer das
+andere Board lehnt die Uhr ab ("Falsche Firmware fuer dieses Board").
+
+## Verdrahtung (ESP32-C3 SuperMini)
 
 Modul-Beschriftung (links nach rechts, laut Foto): CS, DC, RST, SDA, SCL, VCC, GND.
 
@@ -302,9 +347,12 @@ GPIO0 ist frei. Nicht belegen: GPIO2, GPIO8, GPIO9 (Strapping/Boot), GPIO20/21 (
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json` unter *Datei > Voreinstellungen*
    eintragen, dann "esp32 by Espressif Systems" installieren.
 2. **Bibliotheken** (Bibliotheksverwalter): *Adafruit GFX Library*, *Adafruit ST7735 and ST7789 Library*,
-   *ArduinoJson* in **Version 7.x**. (`WebServer`, `Preferences`, `ESPmDNS`, `WiFi`, `HTTPClient` sind im Boardpaket enthalten.)
-3. **Board:** *ESP32C3 Dev Module*, *USB CDC On Boot: Enabled*, **Partition Scheme: Minimal SPIFFS (1.9MB APP with OTA)**
-   (noetig fuer Updates ueber WLAN, siehe unten), bei Boot-Problemen *Flash Mode: DIO*.
+   *Adafruit ILI9341* (fuer das CYD), *ArduinoJson* in **Version 7.x**. (`WebServer`, `Preferences`, `ESPmDNS`, `WiFi`, `HTTPClient` sind im Boardpaket enthalten.)
+3. **Board:**
+   - CYD 2,8 Zoll: *ESP32 Dev Module*, **Partition Scheme: Minimal SPIFFS (1.9MB APP with OTA)**.
+   - ESP32-C3: *ESP32C3 Dev Module*, *USB CDC On Boot: Enabled*, **Partition Scheme: Minimal SPIFFS (1.9MB APP with OTA)**,
+     bei Boot-Problemen *Flash Mode: DIO*.
+   Das Partitionsschema ist noetig fuer Updates ueber WLAN (siehe unten). `config.h` erkennt das Board selbst.
 4. Bei Upload-Problemen: BOOT gedrueckt halten, RESET druecken, loslassen, dann hochladen.
 
 ## Update ueber WLAN (OTA)
@@ -363,6 +411,7 @@ eine Zeile pro Text mit allen Sprachen nebeneinander; eine weitere Sprache bekom
 | `config.h` | Pins, Standardwerte, feste Optionen |
 | `settings.h` | Dauerhafte Einstellungen (Flash) |
 | `webui.h` | Browser-Einstellungsseite |
+| `board.h` | Unterschiede der Boards: Display-Treiber, Touchscreen, RGB-LED |
 | `lang.h`, `lang_web.h` | Texte in allen Sprachen (Display bzw. Browser-Seite), Wochentage, Datumsformat |
 | `icons.h` | Farben, Akzentfarben, Wettersymbole, Wettercode-Texte |
 | `types.h` | Gemeinsame Typen (Weather, Align) |

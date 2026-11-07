@@ -167,7 +167,7 @@ static void startOutro(uint32_t now) { phase = 1; pStart = now; }
 static void cancelOutro(uint32_t now) { if (phase == 1) { phase = 2; pStart = now; } }
 static bool outroDone(uint32_t now) { return phase == 1 && now - pStart >= T_OUT; }
 
-// Puffer verdoppeln und geaenderte Kacheln senden (TFT = Adafruit_ST7789 oder Testattrappe)
+// Puffer verdoppeln und geaenderte Kacheln senden (TFT = Adafruit_ST7789 / Adafruit_ILI9341 oder Testattrappe)
 template <class TFT>
 static int push(TFT& tft) {
   static uint16_t out[32 * 16];
