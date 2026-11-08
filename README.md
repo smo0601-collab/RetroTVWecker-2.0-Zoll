@@ -64,8 +64,8 @@ Zwei Varianten, gleicher Quellcode, gleiche Funktionen. Das Board wird beim Komp
 
 Nichts zu verdrahten. Der **Touchscreen** ersetzt den Touch-Taster (tippen = nächstes Design, doppelt = Laufschrift,
 1 s halten = Standby), die **Helligkeit** wird echt über das Backlight geregelt, und die **RGB-LED** blinkt rot,
-solange der Wecker klingelt. Für die CYD-Variante mit ST7789 (zwei USB-Buchsen) gibt es `CYD_ST7789` in
-[`config.h`](firmware/WetterUhr/config.h). Details in der [Anleitung](firmware/WetterUhr/README.md#cyd-28-zoll-esp32-2432s028r).
+solange der Wecker klingelt. CYDs gibt es mit ILI9341 oder ST7789 – die Uhr erkennt das selbst. Ist das Bild
+gedreht, gespiegelt oder farbig falsch, lässt es sich im Browser unter *System → Display-Anpassung* korrigieren. Details in der [Anleitung](firmware/WetterUhr/README.md#cyd-28-zoll-esp32-2432s028r).
 
 ### Variante B: ESP32-C3 SuperMini + 2,0-Zoll-Display
 
@@ -132,7 +132,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.07`](releases/2026.11.07)), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.08`](releases/2026.11.08)), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|

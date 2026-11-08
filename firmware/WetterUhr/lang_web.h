@@ -70,6 +70,7 @@
   X(W_NO_DAY,     "  (kein Tag gew&auml;hlt)", "  (no day selected)", "  (aucun jour choisi)", "  (ningún día elegido)", "  (nessun giorno scelto)") \
   X(W_R_HEAP,     "Freier Speicher", "Free memory", "Mémoire libre", "Memoria libre", "Memoria libera") \
   X(W_R_BOARD,    "Hardware", "Hardware", "Matériel", "Hardware", "Hardware") \
+  X(W_R_PANEL,    "Display-Controller", "Display controller", "Contrôleur d'écran", "Controlador de pantalla", "Controller del display") \
   X(W_R_FW,       "Firmware", "Firmware", "Micrologiciel", "Firmware", "Firmware") \
   X(W_BUILT,      "gebaut", "built", "compilé", "compilado", "compilato") \
   X(W_AL_STOP,    "Wecker abstellen", "Stop alarm", "Arrêter le réveil", "Parar la alarma", "Ferma la sveglia") \
@@ -274,6 +275,20 @@
                   "Usa il file <b>…_update.bin</b> della release, oppure nell'Arduino IDE: <i>Sketch &gt; Esporta sketch compilato</i> e scegli <b>WetterUhr.ino.bin</b> dalla cartella dello sketch (sottocartella <i>build</i>) – non il file «merged», «bootloader» o «partitions». L'orologio controlla il file, lo scrive nell'area libera e si riavvia solo se va tutto bene; altrimenti resta il firmware vecchio. Le impostazioni restano. In alternativa scegli nell'Arduino IDE la porta di rete «") \
   X(W_FW_HINT2,   "&ldquo; w&auml;hlen und normal hochladen (Passwort = Web-Passwort).", "” in the Arduino IDE and upload as usual (password = web password).", " » et téléversez normalement (mot de passe = mot de passe web).", \
                   "» y carga como siempre (contraseña = contraseña web).", "» e carica come sempre (password = password web).") \
+  X(W_H_PANEL,    "Display-Anpassung", "Display adjustment", "Réglage de l'écran", "Ajuste de pantalla", "Regolazione display") \
+  X(W_PANEL_CTL,  "Display-Controller", "Display controller", "Contrôleur d'écran", "Controlador de pantalla", "Controller del display") \
+  X(W_PANEL_AUTO, "Automatisch erkennen", "Detect automatically", "Détection automatique", "Detectar automáticamente", "Rileva automaticamente") \
+  X(W_PF0,        "Achsen tauschen (Bild um 90&deg; gedreht und gespiegelt)", "Swap axes (picture rotated 90&deg; and mirrored)", "Échanger les axes (image tournée de 90&deg; et en miroir)", \
+                  "Intercambiar ejes (imagen girada 90&deg; y reflejada)", "Scambia assi (immagine ruotata di 90&deg; e speculare)") \
+  X(W_PF1,        "Links/rechts spiegeln", "Mirror left/right", "Miroir gauche/droite", "Reflejar izquierda/derecha", "Specchia sinistra/destra") \
+  X(W_PF2,        "Oben/unten spiegeln", "Mirror top/bottom", "Miroir haut/bas", "Reflejar arriba/abajo", "Specchia alto/basso") \
+  X(W_PF3,        "Rot und Blau tauschen", "Swap red and blue", "Échanger rouge et bleu", "Intercambiar rojo y azul", "Scambia rosso e blu") \
+  X(W_PF4,        "Farben invertieren (Negativ)", "Invert colours (negative)", "Inverser les couleurs (négatif)", "Invertir colores (negativo)", "Inverti i colori (negativo)") \
+  X(W_PANEL_HINT, "Falls das Bild gedreht, spiegelverkehrt oder in falschen Farben erscheint: zuerst den Controller umstellen (beim CYD gibt es ILI9341 und ST7789), dann einzelne H&auml;kchen setzen. Jede &Auml;nderung wirkt sofort nach &bdquo;Speichern&ldquo;. Ein Bild auf dem Kopf l&auml;sst sich auch unter Anzeige &gt; Ausrichtung drehen.", \
+                  "If the picture is rotated, mirrored or in wrong colours: first switch the controller (the CYD comes with ILI9341 or ST7789), then tick single options. Every change applies right after “Save”. An upside-down picture can also be turned under Display &gt; Orientation.", \
+                  "Si l'image est tournée, en miroir ou dans de mauvaises couleurs : changez d'abord de contrôleur (le CYD existe en ILI9341 et ST7789), puis cochez les options une par une. Chaque changement s'applique dès « Enregistrer ». Une image à l'envers se tourne aussi sous Affichage &gt; Orientation.", \
+                  "Si la imagen aparece girada, reflejada o con colores erróneos: cambia primero el controlador (el CYD existe con ILI9341 y ST7789) y luego marca opciones una a una. Cada cambio se aplica al pulsar «Guardar». Una imagen al revés también se gira en Pantalla &gt; Orientación.", \
+                  "Se l'immagine è ruotata, speculare o con colori sbagliati: cambia prima il controller (il CYD esiste con ILI9341 e ST7789), poi spunta le opzioni una alla volta. Ogni modifica vale subito dopo «Salva». Un'immagine capovolta si gira anche in Display &gt; Orientamento.") \
   X(W_H_RESET,    "Zur&uuml;cksetzen", "Reset", "Réinitialiser", "Restablecer", "Ripristino") \
   X(W_RESET_Q,    "Alle Einstellungen löschen?", "Erase all settings?", "Effacer tous les réglages ?", "¿Borrar todos los ajustes?", "Cancellare tutte le impostazioni?") \
   X(W_FACTORY,    "Werkseinstellungen", "Factory reset", "Réglages d'usine", "Valores de fábrica", "Impostazioni di fabbrica") \

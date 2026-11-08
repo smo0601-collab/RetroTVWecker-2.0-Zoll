@@ -309,9 +309,16 @@ in `config.h` `PIN_BUZZER 27` und `BUZZER_TONE_HZ 0`.
 
 **Stromversorgung:** USB-C oder Micro-USB mit 5 V, ca. 115 mA.
 
-**Andere CYD-Variante:** Es gibt Platinen mit zwei USB-Buchsen und ST7789 statt ILI9341. Zeigt das Display falsche
-Farben oder bleibt weiss: in `config.h` `CYD_ST7789 1` setzen. Steht das Bild auf dem Kopf: im Browser unter
-*Anzeige > Darstellung > Ausrichtung* auf "180 Grad gedreht" stellen. Rot und Blau vertauscht: `TFT_SWAP_RB 1`.
+**Display-Anpassung (ILI9341 oder ST7789):** CYD-Platinen gibt es mit zwei verschiedenen Display-Controllern. Die Uhr
+erkennt den Controller beim Start selbst. Ist das Bild trotzdem um 90 Grad gedreht, spiegelverkehrt oder in falschen
+Farben, im Browser unter *System > Display-Anpassung* einstellen, ohne neu zu kompilieren:
+
+- **Display-Controller:** automatisch, ILI9341 oder ST7789 (zuerst das umstellen)
+- **Achsen tauschen** (Bild um 90 Grad gedreht und gespiegelt), **Links/rechts spiegeln**, **Oben/unten spiegeln**
+- **Rot und Blau tauschen**, **Farben invertieren** (Negativ)
+
+Jede Aenderung wirkt sofort nach "Speichern". Unter *Status* steht, welcher Controller erkannt wurde.
+Steht das Bild nur auf dem Kopf: *Anzeige > Darstellung > Ausrichtung* auf "180 Grad gedreht".
 
 **Erstinstallation ohne Arduino IDE:** <https://espressif.github.io/esptool-js/> in Chrome oder Edge oeffnen, CYD per USB
 verbinden, *Connect*, Adresse `0x0`, Datei `WetterUhr_<Version>_CYD_erstinstallation.bin`, *Program*. Danach den

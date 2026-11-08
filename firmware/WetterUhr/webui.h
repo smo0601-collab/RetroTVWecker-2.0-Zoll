@@ -586,6 +586,7 @@ static void handleRoot() {
   rowh(W_R_LANG, LANG_NAME[LANG_IDX]);
   row(W_R_HEAP, String(ESP.getFreeHeap()) + " Bytes");
   row(W_R_BOARD, boardName());
+  row(W_R_PANEL, boardPanelInfo());
   row(W_R_FW, String(FW_VERSION) + "  (" + TR(W_BUILT) + " " + __DATE__ + " " + __TIME__ + ")");
   p += F("</table>");
   if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }
@@ -839,6 +840,24 @@ static void handleRoot() {
            "x.onerror=()=>{o.textContent=L.lost;b.disabled=false;};"
            "const d=new FormData();d.append('firmware',f,f.name);x.send(d);}</script>");
   }
+  // Display-Anpassung: Controller, Drehung/Spiegelung, Farben (wirkt sofort nach "Speichern")
+  p += F("<h2>"); T(W_H_PANEL); p += F("</h2>");
+#if BOARD_CYD
+  p += F("<label>"); T(W_PANEL_CTL); p += F("</label><select name=panel>");
+  for (int i = 0; i < 3; i++) {
+    p += F("<option value="); p += String(i); sel(gSet.panel == i); p += '>';
+    if (i == 0) { T(W_PANEL_AUTO); p += F(" ("); p += gPanelUsed == PANEL_ST7789 ? F("ST7789") : F("ILI9341"); p += ')'; }
+    else p += i == 1 ? F("ILI9341") : F("ST7789");
+    p += F("</option>");
+  }
+  p += F("</select>");
+#endif
+  for (int i = 0; i < 5; i++) {
+    p += F("<label><input type=checkbox name=pf"); p += String(i); p += F(" value=1"); chk(gSet.pflags & (1 << i));
+    p += '>'; T(W_PF0 + i); p += F("</label>");
+  }
+  p += F("<small>"); T(W_PANEL_HINT); p += F("</small>");
+
   p += F("<h2>"); T(W_H_RESET); p += F("</h2><button type=submit class=red formaction=/reset formmethod=post formnovalidate "
          "onclick=\"return confirm(L.reset)\">"); T(W_FACTORY); p += F("</button></section>");
 
@@ -923,6 +942,9 @@ static void handleSave() {
   n.alOn    = server.hasArg("alon");
   n.nyeAuto = server.hasArg("nyeauto");
   n.holAuto = server.hasArg("holauto");
+  if (server.hasArg("panel")) { int v = server.arg("panel").toInt(); n.panel = (v >= 0 && v <= 2) ? (uint8_t)v : 0; }
+  n.pflags = 0;
+  for (int i = 0; i < 5; i++) if (server.hasArg(String("pf") + i)) n.pflags |= (1 << i);
   { int v = server.arg("lang").toInt(); if (server.hasArg("lang") && v >= 0 && v < LANG_COUNT) n.lang = (uint8_t)v; }
   n.ufoOn   = server.hasArg("ufo");
   { int v = server.arg("sled").toInt(); if (v >= 0 && v <= 2) n.sleigh = (uint8_t)v; }
@@ -943,7 +965,8 @@ static void handleSave() {
 
   const bool reboot = strcmp(n.ssid, gSet.ssid) || strcmp(n.pass, gSet.pass) ||
                       strcmp(n.ntp, gSet.ntp)   || strcmp(n.host, gSet.host);
-  const bool rotChanged = (n.rotation != gSet.rotation);
+  const bool rotChanged = (n.rotation != gSet.rotation) || (n.pflags != gSet.pflags);
+  const bool panelChanged = (n.panel != gSet.panel);
   const bool brChanged  = (n.bright != gSet.bright);
   const bool ntpChanged = (n.ntpOn != gSet.ntpOn);
 
@@ -964,7 +987,8 @@ static void handleSave() {
   applyTimezone();
   dimTick(millis(), true);
   themeApply();
-  if (rotChanged) tft.setRotation(gSet.rotation);
+  if (panelChanged) { displayInit(); setBrightness(gSet.bright, false); }   // anderer Controller: Display neu starten
+  else if (rotChanged) boardPanelApply(gSet.rotation, gSet.pflags);
   if (brChanged)  setBrightness(gSet.bright, false);
   gRefreshNow = true;   // Wetter mit neuen Koordinaten sofort neu abrufen
   needFull = true;

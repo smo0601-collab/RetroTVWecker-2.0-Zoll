@@ -524,10 +524,7 @@ static void tickerClassic(uint32_t now) {
 }
 
 static void displayInit() {
-  boardTftBegin(gSet.rotation);
-#if TFT_FORCE_INVERT >= 0
-  tft.invertDisplay(TFT_FORCE_INVERT == 1);
-#endif
+  boardTftBegin(gSet.rotation, gSet.panel, gSet.pflags);
   tft.fillScreen(C_BG);
 }
 

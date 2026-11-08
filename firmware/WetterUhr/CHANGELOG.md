@@ -4,6 +4,15 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.08 - Display-Anpassung im Browser
+
+- Neu unter *System > Display-Anpassung*: Display-Controller (automatisch, ILI9341, ST7789), Achsen tauschen,
+  links/rechts und oben/unten spiegeln, Rot und Blau tauschen, Farben invertieren. Wirkt sofort nach "Speichern".
+- CYD: Der Controller wird beim Start automatisch erkannt (ILI9341 oder ST7789); Status zeigt Controller und Kennung.
+- Die Compile-Optionen `CYD_ST7789` und `TFT_FORCE_INVERT` entfallen (jetzt im Browser).
+
+Geaenderte Dateien: `board.h`, `config.h`, `settings.h`, `WetterUhr.ino`, `webui.h`, `lang_web.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.07 - CYD 2,8 Zoll
 
 - Laeuft jetzt auch auf dem **CYD 2,8 Zoll** (ESP32-2432S028R, "Cheap Yellow Display"): ILI9341 320 x 240,

@@ -51,6 +51,8 @@
 #define DEFAULT_SLEIGH       2         // ISS-Tracker: 0 = ISS, 1 = immer Weihnachtsschlitten, 2 = Schlitten vom 1. bis 26.12.
 #define DEFAULT_NYE_AUTO     1         // Silvester: von 23:30 bis 00:30 automatisch Feuerwerk (0/1)
 #define DEFAULT_HOL_AUTO     1         // Feiertags-Designs 10 Tage vorher automatisch in den Design-Wechsel (0/1)
+#define DEFAULT_PANEL        0         // Display-Controller: 0 automatisch, 1 ILI9341, 2 ST7789 (Browser: System > Display-Anpassung)
+#define DEFAULT_PANEL_FLAGS  0         // Ausrichtung/Farben, siehe board.h (PF_...)
 #define DEFAULT_LANG         0         // Sprache fuer Display und Browser: 0 Deutsch, 1 English, 2 Francais, 3 Espanol, 4 Italiano
 #define HOL_DAYS_BEFORE      10        // so viele Tage vor dem Termin kommen sie dazu
 
@@ -63,7 +65,7 @@
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION "2026.11.07"
+#define FW_VERSION "2026.11.08"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1
@@ -88,7 +90,6 @@
 // =====================================================================
 // CYD 2,8 Zoll "Cheap Yellow Display" (ESP32-2432S028R), Pins fest auf der Platine
 // =====================================================================
-#define CYD_ST7789           0    // 0 = ILI9341 (Standard, laut Aufdruck/Datenblatt), 1 = Variante mit ST7789 (2 USB-Buchsen)
 #define TFT_SPI_HZ           40000000UL
 #define PIN_TFT_SCK          14
 #define PIN_TFT_MISO         12
@@ -193,6 +194,5 @@
 // Display
 // ---------------------------------------------------------------------
 #define TFT_SWAP_RB          0    // 1, falls Rot und Blau vertauscht erscheinen
-#define TFT_FORCE_INVERT     -1   // -1 = Bibliotheksstandard, 0 = aus, 1 = an
 
 #define DEBUG_SERIAL         1    // 1 = Statusmeldungen auf USB-Serial (115200)
