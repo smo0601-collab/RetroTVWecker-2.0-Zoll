@@ -111,7 +111,26 @@ static void palReset() {
 }
 
 // ---------- Text (eingebaute 5x7-Schrift, transparent) ----------
+// Feine Schrift (nur CYD, faces_hires.h): Texte werden dann nicht in den 160x120-Puffer gezeichnet, sondern
+// gemerkt und nach dem Bild in voller Aufloesung (320x240, geglaettet) darueber gelegt.
+struct TxtItem { int16_t x, y; uint8_t col, sz; uint16_t off; uint8_t len; };
+static const int TXT_MAX = 48, TXT_BUF = 900;
+static TxtItem txtItems[TXT_MAX];
+static char    txtBuf[TXT_BUF];
+static int     txtN = 0, txtUsed = 0;
+static bool    txtRec = false;                      // true = Texte merken statt zeichnen
+
 static void txt(int x, int y, const char* s, uint8_t col, int sz = 1) {
+  if (txtRec) {
+    const int n = (int)strlen(s);
+    if (n > 0 && n < 256 && txtN < TXT_MAX && txtUsed + n <= TXT_BUF) {
+      TxtItem& t = txtItems[txtN++];
+      t.x = (int16_t)x; t.y = (int16_t)y; t.col = col; t.sz = (uint8_t)sz; t.off = (uint16_t)txtUsed; t.len = (uint8_t)n;
+      memcpy(txtBuf + txtUsed, s, n);
+      txtUsed += n;
+      return;
+    }
+  }
   for (; *s; ++s) { fb->drawChar(x, y, (unsigned char)*s, col, col, sz); x += 6 * sz; }
 }
 static int txtw(const char* s, int sz = 1) { int n = (int)strlen(s); return n ? n * 6 * sz - sz : 0; }

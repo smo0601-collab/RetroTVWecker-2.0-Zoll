@@ -141,6 +141,13 @@
   X(W_ORIENT,     "Ausrichtung", "Orientation", "Orientation", "Orientación", "Orientamento") \
   X(W_NORMAL,     "Normal", "Normal", "Normale", "Normal", "Normale") \
   X(W_ROT180,     "180&deg; gedreht", "Rotated 180&deg;", "Tourné de 180&deg;", "Girado 180&deg;", "Ruotato di 180&deg;") \
+  X(W_FINE_SM,    "Kanten gl&auml;tten (Themen-Designs feiner statt Doppelpixel)", "Smooth edges (themed designs finer instead of double pixels)", "Lisser les contours (designs plus fins)", "Suavizar bordes (diseños más finos)", "Ammorbidisci i bordi (design più fini)") \
+  X(W_FINE_TX,    "Schrift in voller Aufl&ouml;sung (braucht 38 KB Speicher)", "Text in full resolution (needs 38 KB memory)", "Texte en pleine résolution (38 Ko de mémoire)", "Texto a resolución completa (38 KB de memoria)", "Testo a piena risoluzione (38 KB di memoria)") \
+  X(W_FINE_HINT,  "Die Themen-Designs werden in 160&times;120 gezeichnet und auf 320&times;240 vergr&ouml;&szlig;ert. Mit Gl&auml;ttung verschwinden Treppen an schr&auml;gen Kanten; Texte, Datum und Zahlen der Designs werden fein nachgezeichnet. F&uuml;r gro&szlig;e Uhrzeit aus der Ferne: Design &bdquo;Gro&szlig;anzeige&ldquo;.", \
+                  "Themed designs are drawn at 160×120 and enlarged to 320×240. Smoothing removes staircases on slanted edges; texts, dates and numbers of the designs are redrawn finely. For a big time readable from afar: design “Big display”.", \
+                  "Les designs sont dessinés en 160×120 puis agrandis en 320×240. Le lissage supprime les escaliers ; textes, dates et chiffres sont redessinés finement. Pour une grande heure lisible de loin : design « Grand affichage ».", \
+                  "Los diseños se dibujan a 160×120 y se amplían a 320×240. El suavizado quita los escalones; textos, fechas y números se redibujan finos. Para una hora grande legible de lejos: diseño «Pantalla grande».", \
+                  "I design sono disegnati a 160×120 e ingranditi a 320×240. L'ammorbidimento toglie le scalette; testi, date e numeri sono ridisegnati fini. Per un'ora grande leggibile da lontano: design «Display grande».") \
   X(W_LANG_HINT,  "Gilt f&uuml;r Display und diese Seite, sofort nach &bdquo;Speichern&ldquo;.", "Applies to the display and this page right after “Save”.", \
                   "S'applique à l'écran et à cette page dès « Enregistrer ».", "Se aplica a la pantalla y a esta página nada más pulsar «Guardar».", \
                   "Vale per il display e per questa pagina subito dopo «Salva».") \
@@ -409,4 +416,5 @@
   X(W_ST28,       "Halloween", "Halloween", "Halloween", "Halloween", "Halloween") \
   X(W_ST29,       "Ostern", "Easter", "Pâques", "Pascua", "Pasqua") \
   X(W_ST30,       "Valentinstag", "Valentine's Day", "Saint-Valentin", "San Valentín", "San Valentino") \
-  X(W_ST31,       "Silvester", "New Year's Eve", "Saint-Sylvestre", "Nochevieja", "San Silvestro")
+  X(W_ST31,       "Silvester", "New Year's Eve", "Saint-Sylvestre", "Nochevieja", "San Silvestro") \
+  X(W_ST27,       "Gro&szlig;anzeige", "Big display", "Grand affichage", "Pantalla grande", "Display grande")

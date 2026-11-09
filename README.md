@@ -66,10 +66,11 @@ Nichts zu verdrahten. Der **Touchscreen** ersetzt den Touch-Taster (tippen = nä
 1 s halten = Menü mit Spiele/Standby), die **Helligkeit** wird echt über das Backlight geregelt, und die **RGB-LED** blinkt rot,
 solange der Wecker klingelt. CYDs gibt es mit ILI9341 oder ST7789 – die Uhr erkennt das selbst. Ist das Bild
 gedreht, gespiegelt oder farbig falsch, lässt es sich im Browser unter *System → Display-Anpassung* korrigieren. Details in der [Anleitung](firmware/WetterUhr/README.md#cyd-28-zoll-esp32-2432s028r).
+Auf dem CYD werden die Designs geglättet und ihre Schrift in voller Auflösung gezeichnet (schärfer statt Doppelpixel); Design 27 **Großanzeige** zeigt die Uhrzeit über die ganze Breite – aus der Ferne lesbar.
 
 #### Spiele: RetroCYD als zweites Programm (nur CYD)
 
-Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (13 Spiele, Xbox-Controller per Bluetooth,
+Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (13 Spiele, Xbox-Controller per Bluetooth oder direkt per Touch,
 Quellcode in [`firmware/RetroCYD`](firmware/RetroCYD)). Uhr und Spiele sind zwei Programme in den beiden
 Programmbereichen des Flash:
 
@@ -148,7 +149,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.09-5`](releases/2026.11.09-5), mit RetroCYD 3.5), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.09-6`](releases/2026.11.09-6), mit RetroCYD 3.6), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|

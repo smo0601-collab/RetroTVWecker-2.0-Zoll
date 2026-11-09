@@ -203,7 +203,8 @@ static const uint8_t STYLE_CAT[CLOCK_STYLE_COUNT] = {
   1, 1, 1, 3, 1, 3, 1, 1, 1, 1,                 // 2 Abenteuer .. 11 Neonbrecher (5 Neon-Raster, 7 Code-Regen = Technik)
   4, 3, 1, 3, 2,                                // 12 Herz, 13 Sinuskurve, 14 Badminton, 15 Testbild, 16 Dackel
   5, 4, 2, 5, 5,                                // 17 Flugradar, 18 Traumsand, 19 Aquarium, 20 ISS, 21 Sonne und Mond
-  6, 6, 6, 6, 6                                 // 22-26 Feiertage
+  6, 6, 6, 6, 6,                                // 22-26 Feiertage
+  0                                             // 27 Grossanzeige (klassisch)
 };
 
 #define SVG_OPEN "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#000'/>"
@@ -425,11 +426,16 @@ static const char SVG_45[] PROGMEM =
   "<text x='60' y='46' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='9' fill='#ffe080'>BIS 2027</text>"
   "<path d='M0 70V58h8v-6h8v8h8v-12h8v10h8v-6h8v4h8v-14h8v12h8v-8h8v6h8v-10h8v8h8v-4h8v12z' fill='#0c0c18' transform='translate(0 9)'/>"
   "<g fill='#ffd26e' transform='translate(0 6)'><rect x='19' y='60' width='1.5' height='1.5'/><rect x='51' y='62' width='1.5' height='1.5'/><rect x='67' y='56' width='1.5' height='1.5'/><rect x='99' y='62' width='1.5' height='1.5'/></g></svg>";
+static const char SVG_BIG[] PROGMEM = SVG_OPEN
+  "<text x='60' y='44' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='46' style='fill:var(--acc)'>12:34</text>"
+  "<rect x='6' y='50' width='108' height='3' rx='1.5' fill='#333'/><rect x='6' y='50' width='60' height='3' rx='1.5' style='fill:var(--acc)'/>"
+  "<text x='8' y='70' font-family='sans-serif' font-weight='bold' font-size='13' fill='#eee'>7&#176;</text>"
+  "<text x='112' y='68' text-anchor='end' font-family='sans-serif' font-size='9' fill='#aaa'>Mo 09.11.</text></svg>";
 
 
 static const char* const STYLE_SVG[CLOCK_STYLE_COUNT] = {SVG_7, SVG_8,
   SVG_10, SVG_11, SVG_13, SVG_14, SVG_15, SVG_16, SVG_18, SVG_19, SVG_20, SVG_21, SVG_22, SVG_23, SVG_24, SVG_25, SVG_26,
-  SVG_30, SVG_31, SVG_33, SVG_38, SVG_39, SVG_40, SVG_42, SVG_43, SVG_44, SVG_45};
+  SVG_30, SVG_31, SVG_33, SVG_38, SVG_39, SVG_40, SVG_42, SVG_43, SVG_44, SVG_45, SVG_BIG};
 
 static String autoInfo() {                     // Ergebnis ist HTML (Design-Namen mit Entities)
   const uint32_t now = millis();
@@ -640,6 +646,9 @@ static void handleRoot() {
   p += F("</label><select name=lang>");
   for (int i = 0; i < LANG_COUNT; i++) { p += F("<option value="); p += String(i); sel(gSet.lang == i); p += '>'; p += LANG_NAME[i]; p += F("</option>"); }
   p += F("</select><small>"); T(W_LANG_HINT);
+  p += F("</small><label><input type=checkbox name=fsm value=1"); chk(gSet.fine & 1);
+  p += F(">"); T(W_FINE_SM); p += F("</label><label><input type=checkbox name=ftx value=1"); chk(gSet.fine & 2);
+  p += F(">"); T(W_FINE_TX); p += F("</label><small>"); T(W_FINE_HINT);
   p += F("</small><label><input type=checkbox name=sec value=1"); chk(gSet.seconds);
   p += F(">"); T(W_SHOW_SEC); p += F("</label><label>"); T(W_ORIENT); p += F("</label><select name=rot><option value=1"); sel(gSet.rotation == 1);
   p += F(">"); T(W_NORMAL); p += F("</option><option value=3"); sel(gSet.rotation == 3);
@@ -928,6 +937,7 @@ static void handleSave() {
   n.alOn    = server.hasArg("alon");
   n.nyeAuto = server.hasArg("nyeauto");
   n.holAuto = server.hasArg("holauto");
+  n.fine = (server.hasArg("fsm") ? 1 : 0) | (server.hasArg("ftx") ? 2 : 0);
   if (server.hasArg("panel")) { int v = server.arg("panel").toInt(); n.panel = (v >= 0 && v <= 2) ? (uint8_t)v : 0; }
   n.pflags = 0;
   for (int i = 0; i < 5; i++) if (server.hasArg(String("pf") + i)) n.pflags |= (1 << i);

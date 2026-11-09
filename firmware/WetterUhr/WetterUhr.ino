@@ -147,7 +147,7 @@ static int dayOfWeekFromIso(const char* s) {
 }
 
 // ---- Cache gegen unnoetiges Neuzeichnen (weniger Flackern) ----
-enum { K_H1, K_M1, K_SEC, K_DATE, K_STAT, K_WX, K_ATIME, K_BAR, K_COUNT };
+enum { K_H1, K_M1, K_SEC, K_DATE, K_STAT, K_WX, K_ATIME, K_BAR, K_BIG, K_BCOL, K_COUNT };
 static char cacheS[K_COUNT][48];
 
 static void resetCaches() {
@@ -1265,6 +1265,78 @@ static void updateBarClock(bool ok, const struct tm& t) {
   drawDateLine(ok, t);
 }
 
+// Design 27: Grossanzeige - Uhrzeit ueber die ganze Breite (aus der Ferne lesbar), darunter Temperatur und Datum.
+// Ziffern als 7-Segment mit runden Enden, in voller Aufloesung; nicht leuchtende Segmente ganz schwach sichtbar.
+static const uint8_t SEG7[11] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x40};
+
+static void bigDigit(int x, int y, int w, int h, int d, uint16_t on, uint16_t off) {
+  const uint8_t m = SEG7[(d < 0 || d > 10) ? 10 : d];
+  const int t = w / 5, g = 2;
+  const int hx = x + t / 2 + g, hw = w - t - 2 * g, vh = h / 2 - t / 2 - 2 * g, r = t / 2;
+  tft.fillRoundRect(hx, y, hw, t, r, (m & 0x01) ? on : off);                       // a oben
+  tft.fillRoundRect(x + w - t, y + t / 2 + g, t, vh, r, (m & 0x02) ? on : off);     // b rechts oben
+  tft.fillRoundRect(x + w - t, y + h / 2 + g, t, vh, r, (m & 0x04) ? on : off);     // c rechts unten
+  tft.fillRoundRect(hx, y + h - t, hw, t, r, (m & 0x08) ? on : off);               // d unten
+  tft.fillRoundRect(x, y + h / 2 + g, t, vh, r, (m & 0x10) ? on : off);             // e links unten
+  tft.fillRoundRect(x, y + t / 2 + g, t, vh, r, (m & 0x20) ? on : off);             // f links oben
+  tft.fillRoundRect(hx, y + (h - t) / 2, hw, t, r, (m & 0x40) ? on : off);         // g Mitte
+}
+
+static void updateBig(bool ok, const struct tm& t, const Weather& w, bool hv, bool stale) {
+  const int W = tft.width();
+  const int X[4] = {6, 80, 176, 250}, DW = 64, DH = 134, Y0 = 6;
+  const uint16_t on = C_ACCENT, off = scaleColor(C_ACCENT, 12);
+  char b[48];
+  // Ziffern: nur geaenderte neu zeichnen
+  char d4[5] = {(char)(ok ? t.tm_hour / 10 : 10), (char)(ok ? t.tm_hour % 10 : 10),
+                (char)(ok ? t.tm_min / 10 : 10), (char)(ok ? t.tm_min % 10 : 10), 0};
+  for (int i = 0; i < 4; i++) {
+    if (cacheS[K_BIG][0] == 'v' && cacheS[K_BIG][i + 1] == d4[i] + 1) continue;   // [0] = gueltig (resetCaches loescht es)
+    tft.fillRect(X[i], Y0, DW, DH, C_BG);
+    bigDigit(X[i], Y0, DW, DH, d4[i], on, off);
+    cacheS[K_BIG][i + 1] = (char)(d4[i] + 1);
+  }
+  cacheS[K_BIG][0] = 'v'; cacheS[K_BIG][5] = 0;
+  // Doppelpunkt (blinkt mit Sekunden)
+  const bool colOn = !ok || !gSet.seconds || (t.tm_sec % 2 == 0);
+  snprintf(b, sizeof(b), "%d", colOn);
+  if (upd(K_BCOL, b)) {
+    const uint16_t c = colOn ? on : off;
+    tft.fillCircle(W / 2 + 1, Y0 + DH * 30 / 100, 8, c);
+    tft.fillCircle(W / 2 + 1, Y0 + DH * 70 / 100, 8, c);
+  }
+  // Sekundenbalken
+  const int sec = (ok && gSet.seconds) ? t.tm_sec : -1;
+  snprintf(b, sizeof(b), "%d", sec);
+  if (upd(K_BAR, b)) {
+    tft.fillRoundRect(6, Y0 + DH + 6, W - 12, 5, 2, sec >= 0 ? C_DIM : C_BG);
+    if (sec >= 0) tft.fillRoundRect(6, Y0 + DH + 6, max(5, (sec + 1) * (W - 12) / 60), 5, 2, on);
+  }
+  // rechts unten: Datum gross, darunter der Wochentag
+  if (ok) { char d[12]; langDate(d, sizeof(d), t.tm_mday, t.tm_mon + 1); snprintf(b, sizeof(b), "%s|%s", d, WEEKDAY[t.tm_wday]); }
+  else snprintf(b, sizeof(b), "--|");
+  if (upd(K_DATE, b)) {
+    char* bar = strchr(b, '|');
+    *bar = 0;
+    drawText(&FreeSansBold18pt7b, 1, b, W - 6, 190, C_WHITE, AL_RIGHT, 200, 158, W - 200, 40);
+    drawText(&FreeSans12pt7b, 1, bar + 1, W - 6, 226, C_ACCENT, AL_RIGHT, 196, 204, W - 196, 30);
+  }
+  // links unten: Wettersymbol und grosse Temperatur
+  const bool wf = (WiFi.status() == WL_CONNECTED);
+  if (hv) snprintf(b, sizeof(b), "%d|%d|%d|%d|%d", (int)lroundf(w.temp), w.code, w.isDay, stale, wf);
+  else    snprintf(b, sizeof(b), "none|%d", wf);
+  if (upd(K_WX, b)) {
+    tft.fillRect(0, 156, 196, 84, C_BG);
+    if (hv) {
+      drawIcon(tft, 32, 202, 24, iconForCode(w.code, w.isDay));
+      drawTemp(64, 222, (int)lroundf(w.temp), &FreeSansBold24pt7b, 1, stale ? C_ORANGE : C_WHITE, AL_LEFT, 60, 162, 136, 70);
+    } else {
+      drawText(&FreeSans12pt7b, 1, TR(K_NO_WX), 8, 212, C_ORANGE, AL_LEFT, 0, 190, 196, 30);
+    }
+    if (!wf) tft.fillCircle(W - 5, 236, 3, C_RED);           // kein WLAN: roter Punkt
+  }
+}
+
 static void updateClock(bool ok) {
   time_t n = time(nullptr);
   struct tm t;
@@ -1431,6 +1503,14 @@ static bool themedTick(uint32_t now) {
     c.planes = &view;
   }
 
+  {                                            // Kantenglaettung / feine Schrift (Browser: Anzeige > Darstellung)
+    const bool sm = gSet.fine & 1, ht = (gSet.fine & 2) != 0;
+    if (sm != fc::hiSmooth || ht != fc::hiTextOn) {
+      fc::hiSmooth = sm; fc::hiTextOn = ht;
+      if (!ht) fc::hiFree();
+      fc::invalidate();
+    }
+  }
   const uint32_t t0 = micros();
   const bool drew = fc::frame(tft, c);
   if (drew) {
@@ -1455,13 +1535,23 @@ static void renderTick(uint32_t now) {
     tft.fillScreen(C_BG);
     resetCaches();
     needFull = false;
-    drawStatic();
+    if (gStyle != BIG_STYLE) drawStatic();
   }
 
   const bool ok = timeValid();
   Weather w;
   const bool hv = getWeather(w);
   const bool stale = hv && (millis() - w.fetchedMs > staleMs());
+
+  if (gStyle == BIG_STYLE) {                     // Grossanzeige: eigenes Layout ueber den ganzen Bildschirm
+    time_t n = time(nullptr);
+    struct tm t;
+    localtime_r(&n, &t);
+    updateBig(ok, t, w, hv, stale);
+    tickerClassic(now);
+    if (showAfterDraw) { boardTftDisplay(true); blApply(); showAfterDraw = false; }
+    return;
+  }
 
   updateStatus(ok, w, hv, stale);
   updateClock(ok);

@@ -51,6 +51,11 @@
 #define DEFAULT_SLEIGH       2         // ISS-Tracker: 0 = ISS, 1 = immer Weihnachtsschlitten, 2 = Schlitten vom 1. bis 26.12.
 #define DEFAULT_NYE_AUTO     1         // Silvester: von 23:30 bis 00:30 automatisch Feuerwerk (0/1)
 #define DEFAULT_HOL_AUTO     1         // Feiertags-Designs 10 Tage vorher automatisch in den Design-Wechsel (0/1)
+#if BOARD_CYD
+#define DEFAULT_FINE         3         // Themen-Designs: 1 = Kanten glaetten, 2 = feine Schrift (CYD: beides an)
+#else
+#define DEFAULT_FINE         0         // ESP32-C3: aus (wie bisher), im Browser einschaltbar
+#endif
 #define DEFAULT_PANEL        0         // Display-Controller: 0 automatisch, 1 ILI9341, 2 ST7789 (Browser: System > Display-Anpassung)
 #define DEFAULT_PANEL_FLAGS  0         // Ausrichtung/Farben, siehe board.h (PF_...)
 #define DEFAULT_LANG         0         // Sprache fuer Display und Browser: 0 Deutsch, 1 English, 2 Francais, 3 Espanol, 4 Italiano
@@ -60,12 +65,13 @@
 #define DEFAULT_AUTO_MASK    0         // Bitmaske der Designs im Wechsel (Bit n = Design n)
 #define DEFAULT_AUTO_SEC     300       // Wechselintervall in Sekunden (10..86400)
 #define DEFAULT_TICK_TEXT    "Willkommen! Sch\xC3\xB6ne Gr\xC3\xBC\xC3\x9F" "e von deiner Wetteruhr"   // Laufschrift (UTF-8)
-#define CLOCK_STYLE_COUNT    27        // Anzahl der Uhr-Designs: 2 klassische + 25 Themen (nicht aendern)
+#define CLOCK_STYLE_COUNT    28        // Anzahl der Uhr-Designs: 2 klassische + 25 Themen + Grossanzeige (nicht aendern)
+#define BIG_STYLE            27        // klassisches Design "Grossanzeige" (Uhrzeit ueber die ganze Breite)
 
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION "2026.11.09-5"
+#define FW_VERSION "2026.11.09-6"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1

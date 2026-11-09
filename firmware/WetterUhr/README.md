@@ -67,8 +67,17 @@ Im Browser unter "Uhr-Design" gibt es Vorschaukarten. Ein Klick wirkt sofort auf
 |---|---|---|
 | 0 | Flip-Karten | zwei Karten fuer Stunden und Minuten |
 | 1 | Digital + Balken | grosse Zeit mit Sekundenbalken |
+| 27 | Grossanzeige | Uhrzeit ueber die ganze Breite (7-Segment, 134 Pixel hoch), darunter Temperatur, Datum und Wochentag - aus der Ferne lesbar |
 
 Die uebrigen klassischen Designs (Digital klassisch/farbig/Duo, drei Analoguhren, Modern, Binaer) wurden entfernt.
+Die Grossanzeige hat die Nummer 27, weil neue Designs immer hinten angehaengt werden (gespeicherte Nummern bleiben gueltig).
+
+**Feine Darstellung** (Anzeige > Darstellung): Die Themen-Designs werden in 160x120 gezeichnet und auf 320x240
+vergroessert.
+- *Kanten glaetten*: Treppenstufen an schraegen Kanten werden beim Vergroessern geglaettet (Scale2x).
+- *Schrift in voller Aufloesung*: Texte, Datum und Zahlen der Designs werden in voller Aufloesung und geglaettet
+  darueber gezeichnet (38 KB Speicher, waehrend Uebergaengen und Laufschrift wie bisher).
+Auf dem CYD ist beides voreingestellt, beim ESP32-C3 aus (einschaltbar).
 
 Akzentfarben: Cyan, Gruen, Orange, Gelb, Rot, Pink, Blau, Weiss, Violett. Die Farbe wird auch fuer Sekunden,
 Wochentag und Wetterzustand verwendet. Die Vorschaubilder im Browser sind vereinfachte Darstellungen,

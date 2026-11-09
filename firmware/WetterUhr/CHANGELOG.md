@@ -4,6 +4,17 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.09-6 - Feinere Darstellung, Grossanzeige (fuer das CYD 2,8 Zoll)
+
+- Themen-Designs: Kanten glaetten (Scale2x beim Vergroessern) und Schrift in voller Aufloesung (Texte, Datum, Zahlen
+  fein darueber gezeichnet). Im Browser unter Anzeige > Darstellung; CYD: an, ESP32-C3: aus.
+- Neues klassisches Design 27 "Grossanzeige": Uhrzeit als 7-Segment ueber die ganze Breite, Sekundenbalken,
+  grosse Temperatur mit Wettersymbol, Datum und Wochentag - aus der Ferne lesbar.
+- RetroCYD 3.6: Spiele per Touch spielbar (ohne Controller), siehe RetroCYD.ino.
+
+Geaenderte Dateien: `faces_hires.h` (neu), `font5x7.h` (neu), `faces.h`, `faces_core.h`, `WetterUhr.ino`, `webui.h`,
+`settings.h`, `config.h`, `lang_web.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.09-5 - Uhr-Update direkt im Browser der Uhr (CYD mit Spielen)
 
 - Ein Uhr-Update laesst sich jetzt auch bei installierten Spielen ganz normal unter System > Firmware-Update einspielen.

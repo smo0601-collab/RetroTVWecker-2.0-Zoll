@@ -18,6 +18,7 @@
 */
 #include <new>
 #include "faces_core.h"
+#include "faces_hires.h"
 #include "face_adventure.h"
 #include "face_blocks.h"
 #include "face_hop.h"
@@ -144,6 +145,8 @@ static bool begin(int idx, uint32_t now, bool intro, uint8_t pct) {
 
 static void release() {
   if (fb) { delete fb; fb = nullptr; }
+  hiFree();
+  hiUsed = hiWasUsed = false;
   cur = -1;
   phase = 0;
 }
@@ -154,15 +157,17 @@ static void startOutro(uint32_t now) { phase = 1; pStart = now; }
 static void cancelOutro(uint32_t now) { if (phase == 1) { phase = 2; pStart = now; } }
 static bool outroDone(uint32_t now) { return phase == 1 && now - pStart >= T_OUT; }
 
-// Puffer verdoppeln und geaenderte Kacheln senden (TFT = Adafruit_ST7789 / Adafruit_ILI9341 oder Testattrappe)
+// Puffer verdoppeln und geaenderte Kacheln senden (TFT = Adafruit_ST7789 / Adafruit_ILI9341 oder Testattrappe).
+// Mit Kantenglaettung haengen die Randpixel einer Kachel von den Nachbarn ab: dann wird eine Kachel auch neu
+// gesendet, wenn sich eine Nachbarkachel geaendert hat. Feine Schrift: eigene Pruefsumme je Kachel.
 template <class TFT>
 static int push(TFT& tft) {
   static uint16_t out[32 * 16];
+  static uint8_t chg[(FB_W / 16) * (FB_H / 8)];
+  const int TX = FB_W / 16, TY = FB_H / 8;
   const uint8_t* src = fb->getBuffer();
-  int sent = 0;
-  tft.startWrite();
-  for (int ty = 0; ty < FB_H / 8; ty++) {
-    for (int tx = 0; tx < FB_W / 16; tx++) {
+  for (int ty = 0; ty < TY; ty++) {
+    for (int tx = 0; tx < TX; tx++) {
       const uint8_t* p = src + (ty * 8) * FB_W + tx * 16;
       uint32_t h = 2166136261u;
       for (int r = 0; r < 8; r++) {
@@ -173,20 +178,23 @@ static int push(TFT& tft) {
           h ^= h >> 15;
         }
       }
-      const int idx = ty * (FB_W / 16) + tx;
-      if (!forceAll && h == tileHash[idx]) continue;
+      h ^= hiTileHash(tx, ty) * 0x9E3779B1u;
+      if (hiSmooth) h ^= 0x5bd1e995u;
+      const int idx = ty * TX + tx;
+      chg[idx] = forceAll || h != tileHash[idx];
       tileHash[idx] = h;
-      for (int r = 0; r < 8; r++) {
-        uint16_t* o0 = out + (2 * r) * 32;
-        uint16_t* o1 = o0 + 32;
-        for (int cx = 0; cx < 16; cx++) {
-          const uint8_t i = p[r * FB_W + cx];
-          const uint16_t a = LUT[i];
-          const uint16_t b = scanlines ? LUT2[i] : a;
-          o0[2 * cx] = o0[2 * cx + 1] = a;
-          o1[2 * cx] = o1[2 * cx + 1] = b;
-        }
-      }
+    }
+  }
+  int sent = 0;
+  tft.startWrite();
+  for (int ty = 0; ty < TY; ty++) {
+    for (int tx = 0; tx < TX; tx++) {
+      const int idx = ty * TX + tx;
+      bool d = chg[idx];
+      if (!d && hiSmooth)
+        d = (tx > 0 && chg[idx - 1]) || (tx < TX - 1 && chg[idx + 1]) || (ty > 0 && chg[idx - TX]) || (ty < TY - 1 && chg[idx + TX]);
+      if (!d) continue;
+      hiTile(src, tx, ty, out, LUT, LUT2, scanlines);
       tft.setAddrWindow(tx * 32, ty * 16, 32, 16);
       tft.writePixels(out, 32 * 16);
       sent++;
@@ -206,6 +214,9 @@ static bool frame(TFT& tft, const FaceCtx& c) {
   lastFrame = c.now;
   scanlines = F.scan;
 
+  // Feine Schrift nur im Normalbetrieb: bei Uebergaengen und Laufschrift liegt etwas ueber dem Text
+  txtRec = hiTextOn && phase == 0 && !tk::active && hiAlloc();
+  txtN = 0; txtUsed = 0;
   F.draw(c);
 
   // Statuspunkt unten rechts: rot = kein WLAN, orange = Wetterdaten fehlen/veraltet
@@ -218,6 +229,8 @@ static bool frame(TFT& tft, const FaceCtx& c) {
     txtc(FB_W / 2, FB_H - 8, c.info, I_WHITE);
   }
 
+  txtRec = false;
+  if (hiLayer) hiRasterize();                             // gemerkte Texte fein darueberlegen
   if (tk::active) tk::drawFb(c.now);                      // Laufschrift liegt ueber der Szene
 
   if (phase == 1) {

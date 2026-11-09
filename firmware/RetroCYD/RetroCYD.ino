@@ -1,6 +1,6 @@
 /*
   ============================================================================
-   RETRO CYD 3.5  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.6  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
@@ -70,6 +70,13 @@
   ---------------------------------------------------------------------------
   STEUERUNG
   ---------------------------------------------------------------------------
+  OHNE CONTROLLER (ab 3.6): Touch-Steuerung
+    Menue: Spiel antippen = auswaehlen, noch einmal antippen = starten.
+    Im Spiel ist der Bildschirm das Steuerkreuz: Mitte = Aktion, ausserhalb = Richtung,
+    Ecke oben rechts = Pause-Menue. Shooter feuern automatisch, Sunset Race gibt
+    automatisch Gas; bei Girder/Puff Jump heissen die oberen Ecken "laufen + springen".
+    Vor dem ersten Spiel 3 Kreuze antippen (Touch einrichten, auch im Halte-Menue).
+    Spielende: antippen = nochmal, lange halten = Menue.
   Menue:      Steuerkreuz/Stick waehlen (halten = schnell scrollen), A starten
   Allgemein:  Menu-Taste = Pause, View-Taste = zurueck, Y = Screenshot (SD)
   Snake:      Richtung
@@ -112,13 +119,14 @@
 #include <ESPmDNS.h>
 #include <Update.h>
 #include "cyd_shared.h"
+#include "touchpad.h"      // Datentypen der Touch-Steuerung
 
 // Kennung dieses Programms im Klartext (die Wetteruhr erkennt daran RetroCYD im anderen Programmbereich)
 const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.5"
+#define FW_VERSION "3.6"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -387,6 +395,9 @@ int numPlayers = 0;
 
 #define PRESSED(k) (cur.k && !prv.k)
 
+void touchKeys(Keys& k);     // Touch-Steuerung (weiter unten)
+bool touchActive();
+
 void readInput() {
   prv = cur;
   pkPrev[0] = pk[0]; pkPrev[1] = pk[1];
@@ -401,6 +412,12 @@ void readInput() {
     slot++;
   }
   numPlayers = slot;
+  if (touchActive()) {                       // kein Controller: Bildschirm als Steuerkreuz
+    Keys t{};
+    touchKeys(t);
+    cur.merge(t);
+    pk[0].merge(t);
+  }
   E.latch(cur, prv);
   PE[0].latch(pk[0], pkPrev[0]);
   PE[1].latch(pk[1], pkPrev[1]);
@@ -445,7 +462,10 @@ struct Repeat {
 #define T_CS   33
 #define BOOT_PIN 0
 
+void tcalLoad();
 void touchInit() {
+  cyd::touchBegin();
+  tcalLoad();
   pinMode(T_CLK, OUTPUT);
   pinMode(T_MOSI, OUTPUT);
   pinMode(T_CS, OUTPUT);
@@ -686,8 +706,8 @@ bool holdOpen = false;       // Menue ist offen
 bool holdReq = false;        // im Spiel angefordert (wird in handlePause geoeffnet)
 bool holdInGame = false;
 int holdSel = 0, holdN = 0;
-const char* holdItems[3];
-const char* holdIds[3];
+const char* holdItems[4];
+const char* holdIds[4];
 bool holdT = false, holdWait = true;
 uint32_t holdT0 = 0, holdAct = 0;
 
@@ -700,7 +720,7 @@ const char* holdId(int i) { return (i >= 0 && i < holdN) ? holdIds[i] : "back"; 
 
 // true, sobald Bildschirm oder BOOT 1,5 s gehalten wurden (einmal pro Beruehrung)
 bool longPress() {
-  bool t = touchDown() || bootDown();
+  bool t = (touchActive() ? false : touchDown()) || bootDown();   // im Spiel mit Touch-Steuerung: nur BOOT
   if (t && !touchPrev) { touchSince = millis(); touchFired = false; }
   touchPrev = t;
   if (t && !touchFired && millis() - touchSince > 1500) { touchFired = true; return true; }
@@ -733,6 +753,7 @@ void holdOpenMenu(bool inGame) {
     holdItems[holdN] = "WEITERSPIELEN"; holdIds[holdN++] = "back";
   } else {
     holdItems[holdN] = "SETUP / WLAN";  holdIds[holdN++] = "setup";
+    holdItems[holdN] = "TOUCH EINRICHTEN"; holdIds[holdN++] = "tcal";
     holdItems[holdN] = "ZURUECK";       holdIds[holdN++] = "back";
   }
   holdSel = 0;
@@ -836,6 +857,8 @@ void gameOverText(const char* title, uint32_t score) {
 
 void gameOver(uint32_t score) { gameOverText("GAME OVER", score); }
 
+bool touchTapped();
+
 void gameOverLoop() {
   if (holdOpen) {
     int c = holdTick();
@@ -845,6 +868,7 @@ void gameOverLoop() {
   }
   if (longPress()) { holdOpenMenu(true); return; }
   if ((int32_t)(millis() - overGuardUntil) < 0) { prv = cur; return; }
+  if (connectedPads() == 0 && touchTapped()) { startGame(curGame); return; }   // Touch: antippen = nochmal
   if (PRESSED(a) || PRESSED(start)) startGame(curGame);
   else if (PRESSED(b) || PRESSED(back)) toMenu();
 }
@@ -953,6 +977,9 @@ void toMenu() {
   drawMenu();
 }
 
+bool menuTouch();
+void touchCalibrate();
+
 void menuLoop() {
   // Touch oder BOOT 1,5 s halten -> Halte-Menue (ZUR UHR / SETUP / ZURUECK), geht auch ohne Controller
   if (holdOpen) {
@@ -961,10 +988,12 @@ void menuLoop() {
     const char* id = holdId(c);
     if (!strcmp(id, "clock")) toClock();
     else if (!strcmp(id, "setup")) enterSetup();
+    else if (!strcmp(id, "tcal")) { touchCalibrate(); drawMenu(); }
     else drawMenu();
     return;
   }
   if (longPress()) { holdOpenMenu(false); return; }
+  if (menuTouch()) return;                 // Spiel antippen
 
   if (connectedPads() != lastPadCount || wifiOn != lastWifi) drawMenuStatus();
   if (menuRepUp.tick(cur.up, 300, 90)) {
@@ -1535,7 +1564,202 @@ void setupLoop() {
 // ============================================================================
 //  START / HAUPTSCHLEIFE
 // ============================================================================
+// ============================================================================
+//  TOUCH-STEUERUNG  (ohne Controller: der Bildschirm ist das Steuerkreuz)
+//  Mitte antippen = Aktion (je Spiel A oder B), ausserhalb der Mitte = Richtung,
+//  Ecke oben rechts = Pause/Menue. Resistiver Touch kennt nur EINEN Punkt, deshalb
+//  feuern Shooter automatisch, das Rennauto gibt automatisch Gas, und bei den
+//  Huepfspielen bedeuten die oberen Ecken "laufen + springen".
+//  Kalibrierung: 3 Kreuze antippen (beim ersten Spiel ohne Controller, oder Halte-Menue).
+// ============================================================================
+TCal tcal{};
+uint8_t tOrient() { return (cfg.rot & 3) | (cfg.mirror ? 4 : 0) | (cfg.st7789 ? 8 : 0); }
+void tcalLoad() {
+  if (prefs.getBytesLength("tcal") == sizeof(TCal)) prefs.getBytes("tcal", &tcal, sizeof(TCal));
+  else tcal.ok = 0;
+}
+bool tcalValid() { return tcal.ok && tcal.ver == 1 && tcal.orient == tOrient() && tcal.x0 != tcal.x1 && tcal.y0 != tcal.y1; }
+
+// Beruehrpunkt in Bildschirmkoordinaten; false = nicht beruehrt oder nicht eingerichtet
+bool touchXY(int& x, int& y) {
+  if (!tcalValid()) return false;
+  int a, b;
+  if (cyd::touchRaw(a, b) < 300) return false;
+  const int rx = tcal.swap ? b : a, ry = tcal.swap ? a : b;
+  x = 20 + (long)(rx - tcal.x0) * (SCR_W - 40) / (tcal.x1 - tcal.x0);
+  y = 20 + (long)(ry - tcal.y0) * (SCR_H - 40) / (tcal.y1 - tcal.y0);
+  x = constrain(x, 0, SCR_W - 1); y = constrain(y, 0, SCR_H - 1);
+  return true;
+}
+
+bool tWaitTap(int& a, int& b, uint32_t timeout) {
+  const uint32_t t0 = millis();
+  int ra, rb;
+  while (cyd::touchRaw(ra, rb) >= 300) { if (millis() - t0 > timeout) return false; delay(10); }
+  uint32_t since = 0;
+  while (millis() - t0 < timeout) {
+    if (cyd::touchRaw(ra, rb) >= 300) {
+      if (!since) since = millis();
+      if (millis() - since > 120) {
+        long sa = 0, sb = 0; int n = 0;
+        const uint32_t t1 = millis();
+        while (millis() - t1 < 150) { if (cyd::touchRaw(ra, rb) >= 300) { sa += ra; sb += rb; n++; } delay(5); }
+        if (n >= 3) {
+          a = sa / n; b = sb / n;
+          while (cyd::touchRaw(ra, rb) >= 300 && millis() - t0 < timeout) delay(10);
+          return true;
+        }
+        since = 0;
+      }
+    } else since = 0;
+    BP32.update();
+    delay(10);
+  }
+  return false;
+}
+
+void touchCalibrate() {
+  const int PX[3] = {20, SCR_W - 20, 20}, PY[3] = {20, 20, SCR_H - 20};
+  int A[3], B[3];
+  for (int i = 0; i < 3; i++) {
+    tft.fillScreen(C_BG);
+    txt("TOUCH EINRICHTEN", SCR_W / 2, SCR_H / 2 - 12, 2, C_YELLOW, C_BG);
+    txt("Auf das rote Kreuz tippen", SCR_W / 2, SCR_H / 2 + 12, 1.5, C_WHITE, C_BG);
+    tft.drawFastHLine(PX[i] - 12, PY[i], 25, C_WHITE);
+    tft.drawFastVLine(PX[i], PY[i] - 12, 25, C_WHITE);
+    tft.drawCircle(PX[i], PY[i], 6, C_RED);
+    if (!tWaitTap(A[i], B[i], 20000)) { tft.fillScreen(C_BG); return; }
+  }
+  TCal c{};
+  c.ver = 1; c.orient = tOrient();
+  c.swap = abs(B[1] - B[0]) > abs(A[1] - A[0]);
+  const int* X = c.swap ? B : A;
+  const int* Y = c.swap ? A : B;
+  c.x0 = X[0]; c.x1 = X[1]; c.y0 = Y[0]; c.y1 = Y[2];
+  const bool ok = abs(c.x1 - c.x0) > 800 && abs(c.y1 - c.y0) > 600;
+  tft.fillScreen(C_BG);
+  if (ok) {
+    c.ok = 1; tcal = c;
+    prefs.putBytes("tcal", &tcal, sizeof(TCal));
+    txt("TOUCH EINGERICHTET", SCR_W / 2, SCR_H / 2, 2, C_GREEN, C_BG);
+  } else {
+    txt("BITTE NOCH EINMAL", SCR_W / 2, SCR_H / 2, 2, C_RED, C_BG);
+  }
+  delay(900);
+  tft.fillScreen(C_BG);
+  clearEdges();
+}
+
+// Je Spiel: was die Mitte bedeutet und was automatisch passiert (TouchCfg: touchpad.h)
+TouchCfg touchCfg(int g) {
+  const char* n = (g >= 0 && g < NUM_GAMES) ? GAMES[g].name : "";
+  if (!strcmp(n, "SUNSET RACE")) return {0,   false, true,  false, false, "Links/rechts lenken, unten bremsen, Gas automatisch"};
+  if (!strcmp(n, "SKY ACE"))     return {'B', true,  false, false, false, "Zum Finger fliegen, Feuer automatisch, Mitte = Bombe"};
+  if (!strcmp(n, "ASTRO ROCKS")) return {'B', true,  false, false, false, "Links/rechts drehen, oben Schub, Mitte = Sprung"};
+  if (!strcmp(n, "ALIEN WAVE") || !strcmp(n, "STAR SWARM"))
+                                 return {0,   true,  false, false, false, "Links/rechts fahren, Feuer automatisch"};
+  if (!strcmp(n, "GIRDER"))      return {'A', false, false, true,  false, "Mitte springen, obere Ecken = laufen + springen"};
+  if (!strcmp(n, "PUFF JUMP"))   return {'B', false, false, true,  true,  "Oben schweben, Mitte einsaugen/spucken"};
+  if (!strcmp(n, "BLOCKS"))      return {'A', false, false, false, false, "Mitte drehen, links/rechts schieben, unten fallen"};
+  if (!strcmp(n, "SNAKE") || !strcmp(n, "ROAD HOP"))
+                                 return {0,   false, false, false, false, "In die Richtung tippen"};
+  return {'A', false, false, false, false, "Richtung tippen, Mitte = Aktion"};
+}
+TouchCfg tcfg;
+bool tPausePrev = false;
+
+bool touchActive() { return state == ST_GAME && !holdOpen && connectedPads() == 0 && tcalValid(); }
+
+void touchKeys(Keys& k) {
+  int x, y;
+  const bool t = touchXY(x, y);
+  const bool inPause = t && x > SCR_W - 52 && y < 40;
+  if (inPause) { if (!tPausePrev) holdReq = true; tPausePrev = true; return; }   // Ecke oben rechts: Menue
+  tPausePrev = false;
+  if (t) {
+    const int dx = x - SCR_W / 2, dy = y - SCR_H / 2;
+    const int zx = SCR_W * 16 / 100, zy = SCR_H * 20 / 100;
+    if (abs(dx) < zx && abs(dy) < zy) {                 // Mitte = Aktion
+      if (tcfg.center == 'A') k.a = true;
+      else if (tcfg.center == 'B') k.b = true;
+    } else {
+      const long nx = (long)dx * SCR_H, ny = (long)dy * SCR_W;   // Seitenverhaeltnis ausgleichen
+      if (abs(dx) >= zx && 2 * labs(nx) >= labs(ny)) { if (dx < 0) k.left = true; else k.right = true; }
+      if (abs(dy) >= zy && 2 * labs(ny) >= labs(nx)) { if (dy < 0) k.up = true; else k.down = true; }
+      k.ax = (int16_t)constrain((long)dx * 512 / (SCR_W * 35 / 100), -512L, 512L);
+      k.ay = (int16_t)constrain((long)dy * 512 / (SCR_H * 35 / 100), -512L, 512L);
+      if (tcfg.diagA && k.up && (k.left || k.right)) { k.up = false; k.a = true; }
+      else if (tcfg.upIsA && k.up) { k.up = false; k.a = true; }
+    }
+  }
+  if (tcfg.autoA) k.a |= ((millis() / 110) % 2) == 0;   // Dauerfeuer (Druecken/Loslassen im Wechsel)
+  if (tcfg.autoGas) k.a = !k.down;
+}
+
+// kurzes Antippen erkennen (beim Loslassen), fuer Spielende und Menue
+bool tTapDown = false; uint32_t tTapAt = 0; int tTapX = 0, tTapY = 0;
+bool touchTapped() {
+  int x, y;
+  const bool t = touchXY(x, y);
+  if (t) { if (!tTapDown) { tTapDown = true; tTapAt = millis(); } tTapX = x; tTapY = y; return false; }
+  if (!tTapDown) return false;
+  tTapDown = false;
+  return millis() - tTapAt < 600;
+}
+
+// Menue: Spiel antippen = auswaehlen, ausgewaehltes noch einmal antippen = starten; Pfeile rechts = blaettern
+bool menuTouch() {
+  if (!touchTapped()) return false;
+  int top, itemH, visible;
+  menuLayout(top, itemH, visible);
+  const int w = min(250, SCR_W - 24), x0 = (SCR_W - w) / 2;
+  if (tTapX > SCR_W - 20 && tTapY < top + 20) { menuSel = max(0, menuTop - 1); drawMenuItems(); return true; }
+  if (tTapX > SCR_W - 20 && tTapY > top + visible * itemH - 20) { menuSel = min(MENU_ITEMS - 1, menuTop + visible); drawMenuItems(); return true; }
+  if (tTapX < x0 || tTapX > x0 + w || tTapY < top) return false;
+  const int v = (tTapY - top) / itemH;
+  if (v < 0 || v >= visible || menuTop + v >= MENU_ITEMS) return false;
+  const int i = menuTop + v;
+  if (i != menuSel) { menuSel = i; drawMenuItems(); return true; }
+  if (i == NUM_GAMES + 1) toClock();
+  else if (i == NUM_GAMES) enterSetup();
+  else startGame(i);
+  return true;
+}
+
+// Vor dem Spiel ohne Controller: Touch einrichten (falls noetig) und kurz die Bedienung zeigen
+void touchIntro(int g) {
+  if (connectedPads() > 0) return;
+  if (!tcalValid()) touchCalibrate();
+  if (!tcalValid()) return;
+  tcfg = touchCfg(g);
+  tft.fillScreen(C_BG);
+  const int zx = SCR_W * 16 / 100, zy = SCR_H * 20 / 100;
+  tft.drawRoundRect(SCR_W / 2 - zx, SCR_H / 2 - zy, 2 * zx, 2 * zy, 8, C_YELLOW);
+  if (tcfg.center) txt(tcfg.center == 'A' ? "AKTION" : "B", SCR_W / 2, SCR_H / 2, 1.5, C_YELLOW, C_BG);
+  tft.fillTriangle(12, SCR_H / 2, 30, SCR_H / 2 - 14, 30, SCR_H / 2 + 14, C_CYAN);
+  tft.fillTriangle(SCR_W - 12, SCR_H / 2, SCR_W - 30, SCR_H / 2 - 14, SCR_W - 30, SCR_H / 2 + 14, C_CYAN);
+  tft.fillTriangle(SCR_W / 2, 50, SCR_W / 2 - 14, 68, SCR_W / 2 + 14, 68, C_CYAN);
+  tft.fillTriangle(SCR_W / 2, SCR_H - 12, SCR_W / 2 - 14, SCR_H - 30, SCR_W / 2 + 14, SCR_H - 30, C_CYAN);
+  tft.fillRect(SCR_W - 40, 8, 6, 20, C_WHITE); tft.fillRect(SCR_W - 30, 8, 6, 20, C_WHITE);
+  txt("Menue", SCR_W - 32, 38, 1, C_GRAY, C_BG);
+  txt("TOUCH-STEUERUNG", SCR_W / 2, 16, 1.5, C_YELLOW, C_BG);
+  txt(tcfg.hint, SCR_W / 2, SCR_H / 2 + zy + 22, 1, C_WHITE, C_BG);
+  txt("Antippen zum Starten", SCR_W / 2, SCR_H / 2 + zy + 38, 1, C_GRAY, C_BG);
+  const uint32_t t0 = millis();
+  int a, b;
+  while (cyd::touchRaw(a, b) >= 300 && millis() - t0 < 3000) delay(10);   // Finger vom Menue erst loslassen
+  while (millis() - t0 < 6000) {
+    if (cyd::touchRaw(a, b) >= 300) { while (cyd::touchRaw(a, b) >= 300) delay(10); break; }
+    BP32.update();
+    if (connectedPads() > 0) break;
+    delay(15);
+  }
+  tTapDown = false;
+}
+
 void startGame(int g) {
+  if (state != ST_GAME && state != ST_GAMEOVER) touchIntro(g);
+  else tcfg = touchCfg(g);
   curGame = g;
   paused = false;
   clearEdges();

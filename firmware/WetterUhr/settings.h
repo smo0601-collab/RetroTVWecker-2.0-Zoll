@@ -55,6 +55,7 @@ struct Settings {
   uint8_t  sleigh;     // ISS-Tracker: 0 ISS, 1 Schlitten, 2 Schlitten im Dezember (1.-26.)
   bool     nyeAuto;    // Silvester-Automatik
   bool     holAuto;    // Feiertags-Designs vor dem Termin automatisch im Wechsel
+  uint8_t  fine;       // Themen-Designs: Bit 0 Kanten glaetten, Bit 1 feine Schrift
   uint8_t  panel;      // Display-Controller: 0 automatisch, 1 ILI9341, 2 ST7789
   uint8_t  pflags;     // Display-Anpassung (board.h: PF_SWAPXY, PF_MIRX, PF_MIRY, PF_BGR, PF_INV)
   uint8_t  lang;       // Sprache: 0 Deutsch, 1 Englisch, 2 Franzoesisch, 3 Spanisch, 4 Italienisch
@@ -123,6 +124,7 @@ static void settingsLoad() {
   gSet.sleigh  = prefs.getUChar("sled", DEFAULT_SLEIGH);
   gSet.nyeAuto = prefs.getBool("nyeauto", DEFAULT_NYE_AUTO != 0);
   gSet.holAuto = prefs.getBool("holauto", DEFAULT_HOL_AUTO != 0);
+  gSet.fine    = prefs.getUChar("fine", DEFAULT_FINE) & 3;
   gSet.panel   = prefs.getUChar("panel", DEFAULT_PANEL);
   if (gSet.panel > 2) gSet.panel = 0;
   gSet.pflags  = prefs.getUChar("pflg", DEFAULT_PANEL_FLAGS) & 0x1F;
@@ -244,6 +246,7 @@ static void settingsSave() {
   prefs.putUChar("sled", gSet.sleigh);
   prefs.putBool("nyeauto", gSet.nyeAuto);
   prefs.putBool("holauto", gSet.holAuto);
+  prefs.putUChar("fine", gSet.fine);
   prefs.putUChar("panel", gSet.panel);
   prefs.putUChar("pflg", gSet.pflags);
   prefs.putUChar("lang", gSet.lang);
