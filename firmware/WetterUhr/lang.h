@@ -146,6 +146,20 @@ static uint8_t gLang = L_DE;
   X(K_OTA_IDE,      "Arduino IDE, bitte warten ...", "Arduino IDE, please wait ...", "Arduino IDE, patientez ...", "Arduino IDE, espere ...", "Arduino IDE, attendere ...") \
   X(K_OTA_DONE,     "Fertig - Neustart", "Done - restarting", "Termine - redemarrage", "Listo - reiniciando", "Fatto - riavvio") \
   X(K_OTA_RECV,     "Daten werden empfangen ...", "Receiving data ...", "Reception des donnees ...", "Recibiendo datos ...", "Ricezione dati ...") \
+  /* CYD: Startauswahl, Menue, Touch-Kalibrierung */ \
+  X(K_CHOOSE,       "Was soll starten?", "What should start?", "Que lancer ?", "Que iniciar?", "Cosa avviare?") \
+  X(K_CLOCK,        "Uhr", "Clock", "Horloge", "Reloj", "Orologio") \
+  X(K_GAMES,        "Spiele", "Games", "Jeux", "Juegos", "Giochi") \
+  X(K_CLOCK_IN,     "Uhr startet in %d s", "Clock starts in %d s", "Horloge dans %d s", "Reloj en %d s", "Orologio tra %d s") \
+  X(K_GAMES_START,  "Spiele werden gestartet ...", "Starting games ...", "Lancement des jeux ...", "Iniciando juegos ...", "Avvio giochi ...") \
+  X(K_MENU,         "Menue", "Menu", "Menu", "Menu", "Menu") \
+  X(K_STANDBY,      "Standby", "Standby", "Veille", "En espera", "Standby") \
+  X(K_BACK,         "Zurueck", "Back", "Retour", "Volver", "Indietro") \
+  X(K_NO_GAMES,     "Spiele (RetroCYD) nicht installiert", "Games (RetroCYD) not installed", "Jeux (RetroCYD) non installes", "Juegos (RetroCYD) no instalados", "Giochi (RetroCYD) non installati") \
+  X(K_CAL_TITLE,    "Touch einrichten", "Touch setup", "Reglage tactile", "Ajuste tactil", "Taratura touch") \
+  X(K_CAL_TAP,      "Auf das rote Kreuz tippen", "Tap the red cross", "Touchez la croix rouge", "Toca la cruz roja", "Tocca la croce rossa") \
+  X(K_CAL_OK,       "Touch eingerichtet", "Touch set up", "Tactile regle", "Tactil ajustado", "Touch tarato") \
+  X(K_CAL_FAIL,     "Bitte noch einmal", "Please try again", "Veuillez recommencer", "Intentalo de nuevo", "Riprova") \
   /* Wetterzustand (WMO-Code), klassische Anzeige */ \
   X(K_WX_CLEAR,     "Klar", "Clear", "Degage", "Despejado", "Sereno") \
   X(K_WX_MCLEAR,    "Meist klar", "Mostly clear", "Peu nuageux", "Poco nuboso", "Poco nuvoloso") \

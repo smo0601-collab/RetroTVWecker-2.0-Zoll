@@ -121,51 +121,28 @@ static String boardPanelInfo() {
 // Touchscreen XPT2046 (CYD): einfache Abfrage per Software-SPI, nur "beruehrt ja/nein"
 // ---------------------------------------------------------------------
 #if TOUCH_XPT2046
+#include "cyd_shared.h"          // Touchscreen, Kalibrierung, zweites Programm (RetroCYD)
 namespace xpt {
 static uint16_t lastZ = 0;
-
-static uint16_t xfer(uint8_t cmd) {
-  for (int i = 7; i >= 0; i--) {                       // Befehl senden
-    digitalWrite(PIN_XPT_MOSI, (cmd >> i) & 1);
-    digitalWrite(PIN_XPT_CLK, HIGH); delayMicroseconds(1);
-    digitalWrite(PIN_XPT_CLK, LOW);  delayMicroseconds(1);
-  }
-  digitalWrite(PIN_XPT_MOSI, LOW);                     // beim Lesen LOW halten (sonst Startbit eines neuen Befehls)
-  uint16_t v = 0;
-  for (int i = 0; i < 16; i++) {                       // 12-Bit-Ergebnis lesen (16 Takte)
-    digitalWrite(PIN_XPT_CLK, HIGH); delayMicroseconds(1);
-    v = (v << 1) | (digitalRead(PIN_XPT_MISO) ? 1 : 0);
-    digitalWrite(PIN_XPT_CLK, LOW);  delayMicroseconds(1);
-  }
-  return (v >> 3) & 0x0FFF;
-}
-
-static void init() {
-  pinMode(PIN_XPT_CS, OUTPUT);   digitalWrite(PIN_XPT_CS, HIGH);
-  pinMode(PIN_XPT_CLK, OUTPUT);  digitalWrite(PIN_XPT_CLK, LOW);
-  pinMode(PIN_XPT_MOSI, OUTPUT); digitalWrite(PIN_XPT_MOSI, LOW);
-  pinMode(PIN_XPT_MISO, INPUT);
-  pinMode(PIN_XPT_IRQ, INPUT);
-}
-
-// Druck messen: z = Z1 + 4095 - Z2 (gross = fester gedrueckt)
+static int lastA = 0, lastB = 0;
 static bool touched() {
-  if (digitalRead(PIN_XPT_IRQ) == HIGH) { lastZ = 0; return false; }   // schneller Ausschluss ohne SPI
-  digitalWrite(PIN_XPT_CS, LOW);
-  const int z1 = xfer(0xB0), z2 = xfer(0xC0);
-  xfer(0x90);                                          // letzter Befehl mit PD=00: Stift-Interrupt bleibt aktiv
-  digitalWrite(PIN_XPT_CS, HIGH);
-  int z = z1 + 4095 - z2;
-  if (z < 0) z = 0;
+  const int z = cyd::touchRaw(lastA, lastB);
   lastZ = (uint16_t)z;
   return z >= XPT_Z_MIN;
+}
+// Beruehrpunkt in Bildschirmkoordinaten (320x240, nach Kalibrierung); false = nicht beruehrt
+static bool point(int& x, int& y, uint8_t rot) {
+  if (!touched()) return false;
+  cyd::calMap(lastA, lastB, rot, x, y);
+  return true;
 }
 }  // namespace xpt
 #endif
 
 static void boardTouchInit() {
 #if TOUCH_XPT2046
-  xpt::init();
+  cyd::touchBegin();
+  cyd::calLoad();
 #elif PIN_TOUCH >= 0
   pinMode(PIN_TOUCH, TOUCH_ACTIVE_HIGH ? INPUT_PULLDOWN : INPUT_PULLUP);
 #endif

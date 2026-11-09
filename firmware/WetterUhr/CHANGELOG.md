@@ -4,6 +4,20 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.09 - Spiele (RetroCYD) als zweites Programm auf dem CYD
+
+- Nur CYD: RetroCYD 3.2 kann als zweites Programm neben der Uhr liegen. Beim Einschalten Auswahl "Uhr" oder "Spiele"
+  am Touchscreen (sonst nach 6 s die Uhr), langes Halten oeffnet ein Menue mit "Spiele", "Standby", "Zurueck".
+- Touchscreen mit Koordinaten und Kalibrierung (3 Kreuze; beim ersten Start mit Spielen automatisch, sonst im Browser).
+- Browser: System > Spiele (RetroCYD) mit "Spiele starten" und "Touch kalibrieren"; Status zeigt RetroCYD.
+- Firmware-Update erkennt RetroCYD-Dateien und installiert sie neben der Uhr; ein Uhr-Update, das die Spiele
+  ueberschreiben wuerde, wird abgelehnt (dann ueber RetroCYD einspielen). Inhalt der Datei wird geprueft.
+- Neue Datei fuer die Erstinstallation mit Uhr und Spielen: `..._CYD_mitSpielen_erstinstallation.bin`.
+- ESP32-C3: unveraendert (nur neue Texte).
+
+Geaenderte Dateien: `cyd_shared.h` (neu), `dualboot.h` (neu), `board.h`, `WetterUhr.ino`, `webui.h`, `lang.h`,
+`lang_web.h`, `config.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.08 - Display-Anpassung im Browser
 
 - Neu unter *System > Display-Anpassung*: Display-Controller (automatisch, ILI9341, ST7789), Achsen tauschen,

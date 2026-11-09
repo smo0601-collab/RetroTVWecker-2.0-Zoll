@@ -587,6 +587,9 @@ static void handleRoot() {
   row(W_R_HEAP, String(ESP.getFreeHeap()) + " Bytes");
   row(W_R_BOARD, boardName());
   row(W_R_PANEL, boardPanelInfo());
+#if BOARD_CYD
+  rowh(W_R_GAMES, TR(dual::games() ? W_G_YES : W_G_NO));
+#endif
   row(W_R_FW, String(FW_VERSION) + "  (" + TR(W_BUILT) + " " + __DATE__ + " " + __TIME__ + ")");
   p += F("</table>");
   if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }
@@ -835,11 +838,17 @@ static void handleRoot() {
            "if(!confirm(f.name+'\\n'+L.conf))return;"
            "b.disabled=true;const x=new XMLHttpRequest();x.open('POST','/update?size='+f.size);"
            "x.upload.onprogress=e=>{if(e.lengthComputable)o.textContent=L.sent+Math.round(e.loaded*100/e.total)+' %';};"
-           "x.onload=()=>{if(x.status==200){o.textContent=L.done;setTimeout(()=>location.href='/',20000);}"
+           "x.onload=()=>{if(x.status==200){if(x.responseText!='OK'){o.textContent=x.responseText;b.disabled=false;}else{o.textContent=L.done;setTimeout(()=>location.href='/',20000);}}"
            "else{o.textContent=L.err+x.responseText;b.disabled=false;}};"
            "x.onerror=()=>{o.textContent=L.lost;b.disabled=false;};"
            "const d=new FormData();d.append('firmware',f,f.name);x.send(d);}</script>");
   }
+#if BOARD_CYD
+  // Zweites Programm RetroCYD (Spiele) und Touch-Kalibrierung
+  p += F("<h2>"); T(W_H_GAMES); p += F("</h2><p>"); T(dual::games() ? W_G_YES : W_G_NO); p += F("</p>");
+  if (dual::games()) { p += F("<button type=submit class=sec formaction=/games formmethod=post formnovalidate>"); T(W_G_START); p += F("</button> "); }
+  p += F("<button type=submit class=sec formaction=/tcal formmethod=post formnovalidate>"); T(W_TCAL); p += F("</button><small>"); T(W_G_HINT); p += F("</small>");
+#endif
   // Display-Anpassung: Controller, Drehung/Spiegelung, Farben (wirkt sofort nach "Speichern")
   p += F("<h2>"); T(W_H_PANEL); p += F("</h2>");
 #if BOARD_CYD
@@ -1139,6 +1148,10 @@ static void handleVisit() { if (!authOk()) return; f_aqua::requestVisit(); showA
 // ---- Firmware-Update per Browser (POST /update, multipart) ----
 static String gOtaErr;
 static size_t gOtaSize = 0;
+#if BOARD_CYD
+static cyd::App gOtaApp = cyd::APP_NONE;   // welches Programm gerade hochgeladen wird
+static cyd::MarkScan gOtaScan;             // prueft die Kennung in der Datei
+#endif
 
 static void handleUpdateUpload() {
   HTTPUpload& up = server.upload();
@@ -1153,6 +1166,13 @@ static void handleUpdateUpload() {
       gOtaErr = e;
       return;
     }
+#if BOARD_CYD
+    // Zwei Programme: das Update wird in den anderen Programmbereich geschrieben. Dort steckt RetroCYD,
+    // wenn es installiert ist - eine Uhr-Datei wuerde die Spiele ueberschreiben.
+    gOtaApp = cyd::appFromName(up.filename);
+    if (gOtaApp != cyd::APP_GAMES && dual::games()) { gOtaErr = TR(W_E_CLOCK_IN_GAMES); return; }
+    gOtaScan.begin(gOtaApp == cyd::APP_GAMES ? cyd::APP_GAMES : cyd::APP_CLOCK);
+#endif
     LOGF("Update: %s, %u Bytes\n", up.filename.c_str(), (unsigned)gOtaSize);
     gOtaActive = true;
     otaScreen(0, TR(K_OTA_RECV));
@@ -1170,6 +1190,9 @@ static void handleUpdateUpload() {
         return;
       }
     }
+#if BOARD_CYD
+    gOtaScan.feed(up.buf, up.currentSize);
+#endif
     if (Update.write(up.buf, up.currentSize) != up.currentSize) {
       gOtaErr = String(TR(W_E_WRITE)) + Update.errorString();
       Update.abort();
@@ -1179,8 +1202,27 @@ static void handleUpdateUpload() {
     if (gOtaSize) otaScreen((int)((uint64_t)Update.progress() * 100 / gOtaSize), nullptr);
   } else if (up.status == UPLOAD_FILE_END) {
     if (gOtaErr.length()) return;
+#if BOARD_CYD
+    if (!gOtaScan.found) {                             // Datei passt nicht zum Namen bzw. ist kein Programm fuer das CYD
+      Update.abort();
+      gOtaErr = TR(gOtaApp == cyd::APP_GAMES ? W_E_NOT_GAMES : W_E_NOT_CLOCK);
+      otaResume();
+      return;
+    }
+#endif
     if (!Update.end(true)) { gOtaErr = String(TR(W_E_CHECK)) + Update.errorString(); otaResume(); }
-    else { otaScreen(100, TR(K_OTA_DONE)); LOGF("Update ok: %u Bytes\n", (unsigned)up.totalSize); }
+    else {
+#if BOARD_CYD
+      if (gOtaApp == cyd::APP_GAMES) {                 // Spiele installiert: Uhr bleibt das Startprogramm
+        cyd::bootSelf();
+        dual::detect();
+        otaResume();
+        LOGF("RetroCYD installiert: %u Bytes\n", (unsigned)up.totalSize);
+        return;
+      }
+#endif
+      otaScreen(100, TR(K_OTA_DONE)); LOGF("Update ok: %u Bytes\n", (unsigned)up.totalSize);
+    }
   } else if (up.status == UPLOAD_FILE_ABORTED) {
     Update.abort();
     gOtaErr = TR(W_E_ABORT);
@@ -1195,6 +1237,9 @@ static void handleUpdateDone() {
     if (gOtaActive) otaResume();
     return;
   }
+#if BOARD_CYD
+  if (gOtaApp == cyd::APP_GAMES) { server.send(200, "text/plain; charset=utf-8", TR(W_G_INSTALLED)); return; }   // kein Neustart
+#endif
   server.send(200, "text/plain", "OK");
   needReboot = true;
   rebootAt = millis() + 1500;
@@ -1228,6 +1273,21 @@ static void webBegin() {
   server.on("/feed", HTTP_POST, handleFeed);
   server.on("/visit", HTTP_POST, handleVisit);
   server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
+#if BOARD_CYD
+  server.on("/games", HTTP_POST, []() {
+    if (!authOk()) return;
+    if (!dual::games()) { server.sendHeader("Location", "/"); server.send(303); return; }
+    server.send(200, "text/html; charset=utf-8", String(F("<!doctype html><meta charset=utf-8><body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'><h2>")) +
+                TR(W_G_START) + "</h2><p>" + TR(W_G_STARTED) + "</p></body>");
+    dual::gamesReq = true;
+  });
+  server.on("/tcal", HTTP_POST, []() {
+    if (!authOk()) return;
+    dual::calReq = true;
+    server.sendHeader("Location", "/");
+    server.send(303);
+  });
+#endif
   server.onNotFound(handleNotFound);
   server.begin();
 }

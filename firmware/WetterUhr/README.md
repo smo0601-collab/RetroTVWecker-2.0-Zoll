@@ -298,7 +298,7 @@ Verstaerker fuer einen Lautsprecher, RGB-LED, USB. **Es muss nichts verdrahtet w
 | RGB-LED (Rueckseite) | GPIO4/16/17 | aus; blinkt rot, solange der Wecker klingelt |
 
 **Bedienung am Touchscreen** (wie beim Touch-Taster): kurz tippen = naechstes Design aus der Wechsel-Liste,
-doppelt tippen = Laufschrift, 1 s halten = Standby an/aus, im Standby weckt jede Beruehrung, klingelt der Wecker,
+doppelt tippen = Laufschrift, 1 s halten = Menue (Spiele, Standby, Zurueck), im Standby weckt jede Beruehrung, klingelt der Wecker,
 stellt jede Beruehrung ihn ab. Ein Stift ist nicht noetig, ein Finger reicht (resistiver Touch: kurz etwas fester tippen).
 Die Empfindlichkeit stellt `XPT_Z_MIN` in `config.h` ein (kleiner = empfindlicher); unter *Status > Touch-Taster*
 steht der gemessene Druck (Z).
@@ -319,6 +319,40 @@ Farben, im Browser unter *System > Display-Anpassung* einstellen, ohne neu zu ko
 
 Jede Aenderung wirkt sofort nach "Speichern". Unter *Status* steht, welcher Controller erkannt wurde.
 Steht das Bild nur auf dem Kopf: *Anzeige > Darstellung > Ausrichtung* auf "180 Grad gedreht".
+
+### Spiele: RetroCYD als zweites Programm
+
+Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** (16 Spiele, Xbox-Controller per Bluetooth) liegen.
+Beide sind eigene Programme in den zwei Programmbereichen des Flash; es laeuft immer eines davon.
+
+- **Einschalten** (Strom an oder Reset-Taste): Auswahl **Uhr** oder **Spiele** am Bildschirm antippen.
+  Ohne Auswahl startet nach 6 s die Uhr. Nach einem Neustart aus der Software (Update, "Zur Uhr") kommt direkt die Uhr.
+- **In der Uhr lange halten** (1 s): Menue mit **Spiele**, **Standby**, **Zurueck** (Knopf antippen).
+- **In RetroCYD lange halten** (1,5 s, Bildschirm oder BOOT): Menue mit **ZUR UHR**, **SETUP / WLAN**, **ZURUECK**
+  (im Spiel: ZUR UHR, SPIELMENUE, WEITERSPIELEN). Tippen = naechster Punkt, halten = waehlen; mit Controller
+  hoch/runter und A. Im Spielemenue gibt es ausserdem den Punkt **ZUR UHR**.
+- Im Browser der Uhr: *System > Spiele (RetroCYD)* mit "Spiele starten" und "Touch kalibrieren"; *Status* zeigt, ob
+  RetroCYD installiert ist.
+- **Touch einrichten:** Beim ersten Start mit Spielen zeigt die Uhr drei rote Kreuze zum Antippen, damit die Knoepfe
+  genau getroffen werden. Spaeter jederzeit ueber "Touch kalibrieren".
+- Waehrend gespielt wird, laeuft die Uhr nicht (kein Wecker). RetroCYD uebernimmt beim ersten Start den
+  Display-Chip und das WLAN der Uhr.
+
+**Installieren:**
+- neu: `WetterUhr_<Version>_CYD_mitSpielen_erstinstallation.bin` per USB an `0x0` (Uhr und Spiele in einem Rutsch), oder
+- zu einer laufenden Uhr: im Browser der Uhr unter *System > Firmware-Update* die Datei `RetroCYD_<Version>_update.bin`
+  einspielen. Die Uhr laeuft danach einfach weiter.
+
+**Updates** (ein Programm kann sich nicht selbst ueberschreiben, deshalb ueber Kreuz):
+- **RetroCYD-Update:** im Browser der **Uhr** (System > Firmware-Update), Datei `RetroCYD_..._update.bin`.
+- **Uhr-Update:** im **RetroCYD**-Setup (lange halten > SETUP / WLAN > Browser > Firmware-Update), Datei
+  `WetterUhr_..._CYD_update.bin`. Danach startet die neue Uhr.
+- Die Dateinamen muessen "RetroCYD" bzw. "WetterUhr" enthalten; beide Seiten pruefen zusaetzlich den Inhalt und
+  lehnen eine Datei ab, die den anderen Teil ueberschreiben wuerde.
+- Ohne RetroCYD gehen Uhr-Updates wie bisher direkt im Browser der Uhr.
+
+RetroCYD wird mit dem Boardpaket *esp32_bluepad32* und der Bibliothek *LovyanGFX* gebaut (siehe `RetroCYD.ino`); die
+Datei `cyd_shared.h` ist in beiden Projekten gleich.
 
 **Erstinstallation ohne Arduino IDE:** <https://espressif.github.io/esptool-js/> in Chrome oder Edge oeffnen, CYD per USB
 verbinden, *Connect*, Adresse `0x0`, Datei `WetterUhr_<Version>_CYD_erstinstallation.bin`, *Program*. Danach den
@@ -419,6 +453,8 @@ eine Zeile pro Text mit allen Sprachen nebeneinander; eine weitere Sprache bekom
 | `settings.h` | Dauerhafte Einstellungen (Flash) |
 | `webui.h` | Browser-Einstellungsseite |
 | `board.h` | Unterschiede der Boards: Display-Treiber, Touchscreen, RGB-LED |
+| `cyd_shared.h` | CYD: Touch-Koordinaten und Kalibrierung, Erkennen/Umschalten des zweiten Programms (gleich in RetroCYD) |
+| `dualboot.h` | CYD: Startauswahl Uhr/Spiele, Halte-Menue, Touch-Kalibrierung |
 | `lang.h`, `lang_web.h` | Texte in allen Sprachen (Display bzw. Browser-Seite), Wochentage, Datumsformat |
 | `icons.h` | Farben, Akzentfarben, Wettersymbole, Wettercode-Texte |
 | `types.h` | Gemeinsame Typen (Weather, Align) |

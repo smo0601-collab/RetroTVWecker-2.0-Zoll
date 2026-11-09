@@ -63,9 +63,22 @@ Zwei Varianten, gleicher Quellcode, gleiche Funktionen. Das Board wird beim Komp
 | kleiner Lautsprecher 8 Ω, 0,5–2 W, Stecker JST 1,25 mm | optional, an „SPEAK“, für Wecker und Stundensignal |
 
 Nichts zu verdrahten. Der **Touchscreen** ersetzt den Touch-Taster (tippen = nächstes Design, doppelt = Laufschrift,
-1 s halten = Standby), die **Helligkeit** wird echt über das Backlight geregelt, und die **RGB-LED** blinkt rot,
+1 s halten = Menü mit Spiele/Standby), die **Helligkeit** wird echt über das Backlight geregelt, und die **RGB-LED** blinkt rot,
 solange der Wecker klingelt. CYDs gibt es mit ILI9341 oder ST7789 – die Uhr erkennt das selbst. Ist das Bild
 gedreht, gespiegelt oder farbig falsch, lässt es sich im Browser unter *System → Display-Anpassung* korrigieren. Details in der [Anleitung](firmware/WetterUhr/README.md#cyd-28-zoll-esp32-2432s028r).
+
+#### Spiele: RetroCYD als zweites Programm (nur CYD)
+
+Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (16 Spiele, Xbox-Controller per Bluetooth,
+Quellcode in [`firmware/RetroCYD`](firmware/RetroCYD)). Uhr und Spiele sind zwei Programme in den beiden
+Programmbereichen des Flash:
+
+- **Einschalten:** am Bildschirm **Uhr** oder **Spiele** antippen (sonst startet nach 6 s die Uhr).
+- **Lange halten:** in der Uhr Menü mit *Spiele / Standby / Zurück*, in RetroCYD Menü mit *ZUR UHR / SETUP / ZURÜCK*.
+- **Installieren:** neu mit `WetterUhr_<Version>_CYD_mitSpielen_erstinstallation.bin`, oder zu einer laufenden Uhr
+  `RetroCYD_<Version>_update.bin` im Browser der Uhr einspielen.
+- **Updates über Kreuz:** RetroCYD-Updates im Browser der Uhr, Uhr-Updates im RetroCYD-Setup (ein Programm kann sich
+  nicht selbst überschreiben). Beide Seiten erkennen die Datei und warnen bei der falschen.
 
 ### Variante B: ESP32-C3 SuperMini + 2,0-Zoll-Display
 
@@ -132,15 +145,18 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.08`](releases/2026.11.08)), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.09`](releases/2026.11.09)), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
-| `WetterUhr_<Version>_CYD_erstinstallation.bin` | CYD 2,8 Zoll: komplette Firmware für die Erstinstallation per USB (an Adresse `0x0`) |
+| `WetterUhr_<Version>_CYD_mitSpielen_erstinstallation.bin` | CYD 2,8 Zoll: Uhr **und** RetroCYD-Spiele, Erstinstallation per USB (an `0x0`) |
+| `WetterUhr_<Version>_CYD_erstinstallation.bin` | CYD 2,8 Zoll: nur die Uhr, Erstinstallation per USB (an Adresse `0x0`) |
 | `WetterUhr_<Version>_CYD_update.bin` | CYD 2,8 Zoll: Update-Datei zum Einspielen über WLAN |
 | `WetterUhr_<Version>_erstinstallation.bin` | ESP32-C3: komplette Firmware für die Erstinstallation per USB (an Adresse `0x0`) |
 | `WetterUhr_<Version>_update.bin` | ESP32-C3: Update-Datei zum Einspielen über WLAN |
 | `WetterUhr_<Version>_komplett.zip` | kompletter Quellcode für die Arduino IDE (beide Boards) |
+| `RetroCYD_<Version>_update.bin` | CYD: Spiele installieren bzw. aktualisieren (im Browser der Uhr einspielen) |
+| `RetroCYD_<Version>_komplett.zip` | Quellcode RetroCYD (Boardpaket *esp32_bluepad32*, Bibliothek *LovyanGFX*) |
 
 Eine Update-Datei für das falsche Board lehnt die Uhr ab.
 
@@ -180,10 +196,12 @@ Alle Einzelheiten – Designs, Dimmung, Wecker, Touch-Bedienung, Fehlersuche –
 ## Projektaufbau
 
 ```
+firmware/RetroCYD/         Spielekonsole RetroCYD (zweites Programm auf dem CYD)
 firmware/WetterUhr/        Arduino-Sketch (diesen Ordner in der Arduino IDE öffnen)
   WetterUhr.ino            Hauptprogramm: Anzeige, WLAN, Wetter, Flugradar, ISS, Update
   config.h                 Pins (CYD bzw. ESP32-C3, automatisch), Standardwerte, Firmware-Version
   board.h                  Display-Treiber, Touchscreen, RGB-LED je Board
+  cyd_shared.h, dualboot.h CYD: Touch-Kalibrierung, Startauswahl Uhr/Spiele, Umschalten zu RetroCYD
   settings.h               Einstellungen im Flash
   webui.h                  Einstellungsseite im Browser
   lang.h, lang_web.h       Texte in fünf Sprachen (Display, Browser)

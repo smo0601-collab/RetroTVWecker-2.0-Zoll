@@ -583,6 +583,12 @@ static void soundTick(uint32_t now) {
 // ---------------------------------------------------------------------
 // Touch (TTP223 bzw. Touchscreen beim CYD): kurz = naechstes Design (aus der Wechsel-Liste), doppelt = Laufschrift, lang = Standby
 // ---------------------------------------------------------------------
+#if BOARD_CYD
+// Kennung dieses Programms im Klartext (RetroCYD erkennt daran die Uhr im anderen Programmbereich)
+const char CYD_SELF_MARK[] = "WETTERUHR-APP-ID-1";
+#include "dualboot.h"           // zweites Programm RetroCYD: Startauswahl, Halte-Menue, Touch-Kalibrierung
+#endif
+
 #if HAS_TOUCH
 static void touchTick(uint32_t now) {
   static bool down = false, longDone = false, pending = false;
@@ -616,9 +622,13 @@ static void touchTick(uint32_t now) {
       }
     }
   }
-  if (down && !longDone && now - downAt >= TOUCH_LONG_MS) {   // lange Beruehrung: Standby
+  if (down && !longDone && now - downAt >= TOUCH_LONG_MS) {   // lange Beruehrung: Standby (CYD: Menue)
     longDone = true; pending = false;
+#if BOARD_CYD
+    if (!standby) dual::menuOpen();
+#else
     if (!standby) enterStandby();
+#endif
   }
   if (pending && now - tapAt > TOUCH_DOUBLE_MS) {       // einzelner Tipp: naechstes Design
     pending = false;
@@ -1488,6 +1498,15 @@ void setup() {
 
   displayInit();
   blApply();
+#if BOARD_CYD
+  (void)*(volatile const char*)CYD_SELF_MARK;   // Kennung sicher im Programm behalten
+  {                              // erkannten Display-Controller merken (RetroCYD uebernimmt ihn beim ersten Start)
+    Preferences p;
+    if (p.begin("wuhr", false)) { if (p.getUChar("pused", 0) != gPanelUsed) p.putUChar("pused", gPanelUsed); p.end(); }
+  }
+  dual::detect();                // steckt RetroCYD im zweiten Programmbereich?
+  dual::bootChooser();           // nach dem Einschalten: Uhr oder Spiele
+#endif
   drawText(&FreeSans12pt7b, 1, TR(K_STARTING), tft.width() / 2, tft.height() / 2, C_GREY, AL_CENTER,
            0, tft.height() / 2 - 30, tft.width(), 45);
 
@@ -1530,16 +1549,21 @@ void loop() {
   dimTick(now, false);
   styleTick(now);
   soundTick(now);
-  tickerTick(now);
+#if BOARD_CYD
+  const bool dualUi = dual::tick(now);   // Menue oder Kalibrierung auf dem Bildschirm
+#else
+  const bool dualUi = false;
+#endif
+  if (!dualUi) tickerTick(now);
 #if HAS_TOUCH
-  touchTick(now);
+  if (!dualUi) touchTick(now);
 #endif
 #if PIN_LED_R >= 0
   boardLed(gAlarmRinging && (now / 400) % 2, false, false);   // Wecker: RGB-LED blinkt rot
 #endif
   if (wakePending && (int32_t)(now - wakeAt) >= 0) finishWake();
   m0 = micros();
-  if (!standby && !wakePending && !gOtaActive) renderTick(now);
+  if (!standby && !wakePending && !gOtaActive && !dualUi) renderTick(now);
   lap(2);
   if (setDirty && now - setDirtyAt > 3000) {   // Helligkeit erst nach Ruhephase speichern
     settingsSave();
