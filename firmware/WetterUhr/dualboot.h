@@ -20,6 +20,7 @@ enum Ui : uint8_t { UI_NONE = 0, UI_MENU };
 static Ui ui = UI_NONE;
 static bool calReq = false;                      // Kalibrierung vom Browser angefordert
 static bool gamesReq = false;                    // Spiele vom Browser angefordert
+static bool relayReq = false;                    // Uhr-Update ueber RetroCYD angefordert
 
 static const uint16_t BTN_BG = 0x2124, BTN_HI = 0x041F, BTN_OFF = 0x18E3, BTN_FR = 0x8410;
 
@@ -195,6 +196,17 @@ static void menuTick(uint32_t now) {
 // in loop(): true = Dual-Oberflaeche aktiv (Uhr-Anzeige und normale Touch-Gesten pausieren)
 static bool tick(uint32_t now) {
   if (gamesReq) { gamesReq = false; startGames(); }
+  if (relayReq) {                                    // Uhr-Update: RetroCYD im Update-Modus starten
+    relayReq = false;
+    delay(300);                                      // Antwort an den Browser noch rausschicken
+    if (games() && cyd::bootOther()) {
+      tft.fillScreen(C_BG);
+      title(TR(K_FW_UPDATE), 110);
+      hint("RetroCYD ...", 140);
+      delay(200);
+      ESP.restart();
+    }
+  }
   if (calReq) { calReq = false; ui = UI_NONE; calibrate(); return true; }
   if (ui == UI_MENU) { menuTick(now); return ui != UI_NONE; }
   return false;

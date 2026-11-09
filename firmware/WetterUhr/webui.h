@@ -794,14 +794,29 @@ static void handleRoot() {
     p += F("</button><div id=fwp style='margin-top:.6em'></div><small>"); T(W_FW_HINT1);
     p += esc(gSet.host);
     T(W_FW_HINT2);
+    // Ablauf im Browser: /fwprep fragt, ob direkt oder ueber RetroCYD (CYD mit Spielen: die Uhr kann sich nicht
+    // selbst ueberschreiben). Bei "relay" startet die Uhr RetroCYD im Update-Modus, die Seite wartet auf /fwready
+    // (gleiche IP) und schickt die Datei dann dorthin; RetroCYD schreibt die neue Uhr und startet sie.
     p += F("</small><script>function fwUp(){const f=$('fw').files[0],o=$('fwp'),b=$('fwb');"
            "if(!f){o.textContent=L.pick;return;}"
            "if(!/\\.bin$/i.test(f.name)||/merged|bootloader|partitions|erstinstallation/i.test(f.name)){o.textContent=L.wrong;return;}"
            "if(!confirm(f.name+'\\n'+L.conf))return;"
-           "b.disabled=true;const x=new XMLHttpRequest();x.open('POST','/update?size='+f.size);"
+           "b.disabled=true;const fail=m=>{o.textContent=m;b.disabled=false;};"
+           "fetch('/fwprep?name='+encodeURIComponent(f.name),{cache:'no-store'}).then(r=>r.text()).then(m=>{"
+           "if(m!='relay'){fwSend(f,'');return;}"
+           "o.textContent=L.relay;"
+           "fetch('/fwrelay',{method:'POST'}).then(r=>r.text()).then(t=>{const t0=Date.now();"
+           "const poll=()=>{if(Date.now()-t0>120000){fail(L.lost);return;}"
+           "fetch('/fwready?t='+t,{cache:'no-store'}).then(r=>r.text()).then(x=>{if(x=='ready')fwSend(f,t);else setTimeout(poll,2000);})"
+           ".catch(()=>setTimeout(poll,2000));};setTimeout(poll,5000);}).catch(()=>fail(L.lost));"
+           "}).catch(()=>fail(L.lost));}"
+           "function fwSend(f,t){const o=$('fwp'),b=$('fwb');const x=new XMLHttpRequest();"
+           "x.open('POST','/update?size='+f.size+(t?'&t='+t:''));"
            "x.upload.onprogress=e=>{if(e.lengthComputable)o.textContent=L.sent+Math.round(e.loaded*100/e.total)+' %';};"
-           "x.onload=()=>{if(x.status==200){if(x.responseText!='OK'){o.textContent=x.responseText;b.disabled=false;}else{o.textContent=L.done;setTimeout(()=>location.href='/',20000);}}"
-           "else{o.textContent=L.err+x.responseText;b.disabled=false;}};"
+           "x.onload=()=>{let j=null;try{j=JSON.parse(x.responseText);}catch(e){}"
+           "if(x.status==200&&(x.responseText=='OK'||(j&&j.ok))){o.textContent=L.done;setTimeout(()=>location.href='/',25000);}"
+           "else if(x.status==200&&!j){o.textContent=x.responseText;b.disabled=false;}"
+           "else{o.textContent=L.err+(j&&j.err?j.err:x.responseText);b.disabled=false;}};"
            "x.onerror=()=>{o.textContent=L.lost;b.disabled=false;};"
            "const d=new FormData();d.append('firmware',f,f.name);x.send(d);}</script>");
   }
@@ -837,7 +852,7 @@ static void handleRoot() {
   auto js = [&](const char* k, uint16_t id) { p += k; p += F(":\""); p += jsonEsc(TR(id)); p += F("\","); };
   p += F("<script>const L={");
   js("scan", W_SCANNING); js("found", W_FOUND); js("scanb", W_SCAN); js("pick", J_PICK); js("wrong", J_WRONG); js("conf", J_CONFIRM);
-  js("sent", J_SENT); js("done", J_DONE); js("err", J_ERR); js("lost", J_LOST); js("reset", W_RESET_Q);
+  js("sent", J_SENT); js("relay", J_RELAY); js("done", J_DONE); js("err", J_ERR); js("lost", J_LOST); js("reset", W_RESET_Q);
   p += F("};</script>");
   p += FPSTR(PAGE_JS);
   server.sendContent(p);
@@ -1242,6 +1257,22 @@ static void webBegin() {
     server.send(200, "text/html; charset=utf-8", String(F("<!doctype html><meta charset=utf-8><body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'><h2>")) +
                 TR(W_G_START) + "</h2><p>" + TR(W_G_STARTED) + "</p></body>");
     dual::gamesReq = true;
+  });
+  // Uhr-Update bei installierten Spielen: ueber RetroCYD (siehe fwUp im Browser)
+  server.on("/fwprep", HTTP_GET, []() {
+    if (!authOk()) return;
+    const bool relay = dual::games() && cyd::appFromName(server.arg("name")) != cyd::APP_GAMES;
+    server.send(200, "text/plain", relay ? "relay" : "direct");
+  });
+  server.on("/fwrelay", HTTP_POST, []() {
+    if (!authOk()) return;
+    if (!dual::games()) { server.send(400, "text/plain", "no"); return; }
+    uint32_t tok = esp_random() | 1;
+    Preferences p;
+    if (p.begin("wuhr", false)) { p.putUInt("relay", tok); p.end(); }
+    char b[12]; snprintf(b, sizeof(b), "%08lx", (unsigned long)tok);
+    server.send(200, "text/plain", b);
+    dual::relayReq = true;                 // in loop(): RetroCYD im Update-Modus starten
   });
   server.on("/tcal", HTTP_POST, []() {
     if (!authOk()) return;

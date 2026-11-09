@@ -81,8 +81,7 @@ Programmbereichen des Flash:
 
 - **Installieren:** neu mit `…_CYD_mitSpielen_erstinstallation.bin`, oder zu einer laufenden Uhr
   `RetroCYD_<Version>_update.bin` im Browser der Uhr einspielen.
-- **Updates über Kreuz:** RetroCYD-Updates im Browser der Uhr, Uhr-Updates im RetroCYD-Setup (ein Programm kann sich
-  nicht selbst überschreiben). Beide Seiten erkennen die Datei und warnen bei der falschen.
+- **Updates:** Uhr und Spiele beide im Browser der Uhr. Für ein Uhr-Update wechselt die Uhr kurz in RetroCYD, die Seite erledigt das von selbst.
 
 ### Variante B: ESP32-C3 SuperMini + 2,0-Zoll-Display
 
@@ -149,7 +148,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.09-4`](releases/2026.11.09-4), mit RetroCYD 3.4), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.09-5`](releases/2026.11.09-5), mit RetroCYD 3.5), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|

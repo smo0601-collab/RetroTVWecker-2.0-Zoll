@@ -1,6 +1,6 @@
 /*
   ============================================================================
-   RETRO CYD 3.4  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.5  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
@@ -116,8 +116,9 @@
 // Kennung dieses Programms im Klartext (die Wetteruhr erkennt daran RetroCYD im anderen Programmbereich)
 const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
+uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.4"
+#define FW_VERSION "3.5"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -1161,6 +1162,12 @@ void otaProgress(size_t done, size_t total) {
 }
 
 void otaFinish(bool ok) {
+  if (relayToken) {                                // Update-Modus: in jedem Fall zurueck zur Uhr
+    txt(ok ? "Fertig - Uhr startet..." : "Update fehlgeschlagen", SCR_W / 2, SCR_H / 2 + 60, 1.5, ok ? C_GREEN : C_RED, C_BG);
+    if (!ok) txt(otaErr.c_str(), SCR_W / 2, SCR_H / 2 + 80, 1, C_GRAY, C_BG);
+    restartAt = millis() + (ok ? 1500 : 4000);
+    return;
+  }
   if (ok) {
     txt("Fertig - Neustart...", SCR_W / 2, SCR_H / 2 + 60, 1.5, C_GREEN, C_BG);
     restartAt = millis() + 1500;
@@ -1338,6 +1345,7 @@ void handleUploadData() {
     otaErr = "";
     otaBegun = false;
     size_t sz = server.hasArg("size") ? (size_t)server.arg("size").toInt() : 0;
+    if (relayToken && strtoul(server.arg("t").c_str(), nullptr, 16) != relayToken) { otaErr = "Ungueltige Anfrage"; return; }
     otaErr = otaCheckTarget(cyd::appFromName(up.filename));
     if (!otaErr.isEmpty()) return;
     if (otaExpect != cyd::APP_NONE) otaScan.begin(otaExpect);
@@ -1546,6 +1554,61 @@ void startGame(int g) {
   GAMES[g].start();
 }
 
+// ============================================================================
+//  UPDATE-MODUS FUER DIE UHR
+//  Die Uhr kann sich nicht selbst ueberschreiben. Bei einem Uhr-Update im Browser der
+//  Uhr startet sie RetroCYD mit einem Einmal-Schluessel ("relay" im NVS der Uhr). RetroCYD
+//  verbindet sich dann mit dem WLAN der Uhr (gleicher Name, gleiche IP), nimmt die Datei
+//  entgegen, schreibt sie in den Bereich der Uhr und startet die neue Uhr. Kein Bluetooth,
+//  keine Spiele; nach 3 Minuten ohne Datei geht es zur Uhr zurueck.
+// ============================================================================
+void relayMode() {
+  tft.fillScreen(C_BG);
+  drawStripes(8);
+  txt("UHR-UPDATE", SCR_W / 2, SCR_H / 2 - 40, 2, C_YELLOW, C_BG);
+  txt("WLAN verbindet...", SCR_W / 2, SCR_H / 2 - 10, 1.5, C_CYAN, C_BG);
+  String ss, pw, host = "wetteruhr";
+  {
+    Preferences u;
+    if (u.begin("wuhr", true)) { host = u.getString("host", "wetteruhr"); u.end(); }
+  }
+  bool ok = cyd::clockWifi(ss, pw);
+  if (ok) {
+    WiFi.persistent(false);
+    WiFi.setHostname(host.c_str());          // gleicher Name wie die Uhr -> gleiche IP vom Router
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ss.c_str(), pw.c_str());
+    uint32_t t = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - t < 20000) delay(100);
+    ok = WiFi.status() == WL_CONNECTED;
+  }
+  if (!ok) {
+    txt("Kein WLAN - zurueck zur Uhr", SCR_W / 2, SCR_H / 2 + 20, 1.5, C_RED, C_BG);
+    delay(3000);
+    ESP.restart();                           // Start-Partition steht auf der Uhr
+  }
+  MDNS.begin(host.c_str());
+  MDNS.addService("http", "tcp", 80);
+  server.on("/fwready", HTTP_GET, []() {
+    bool m = strtoul(server.arg("t").c_str(), nullptr, 16) == relayToken;
+    server.send(200, "text/plain", m ? "ready" : "no");
+  });
+  server.on("/update", HTTP_POST, handleUploadDone, handleUploadData);
+  server.onNotFound([]() { server.send(404, "text/plain", "RetroCYD Update-Modus"); });
+  server.begin();
+  wifiOn = true;
+  tft.fillRect(0, SCR_H / 2 - 22, SCR_W, 30, C_BG);
+  txt("Warte auf die Datei", SCR_W / 2, SCR_H / 2 - 10, 1.5, C_WHITE, C_BG);
+  txt(WiFi.localIP().toString().c_str(), SCR_W / 2, SCR_H / 2 + 14, 1.5, C_CYAN, C_BG);
+  const uint32_t t0 = millis();
+  while (true) {
+    server.handleClient();
+    if (restartAt && (int32_t)(millis() - restartAt) >= 0) ESP.restart();
+    if (!restartAt && !otaBegun && millis() - t0 > 180000) ESP.restart();   // nichts gekommen
+    delay(2);
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -1569,6 +1632,16 @@ void setup() {
   tft.init();
   applyDisplay();
   tft.fillScreen(C_BG);
+
+  if (clockPresent) {                            // Uhr-Update angefordert? (Einmal-Schluessel von der Uhr)
+    Preferences u;
+    if (u.begin("wuhr", false)) {
+      relayToken = u.getUInt("relay", 0);
+      if (relayToken) u.remove("relay");
+      u.end();
+    }
+    if (relayToken) relayMode();                 // kehrt nicht zurueck
+  }
 
   touchInit();
 

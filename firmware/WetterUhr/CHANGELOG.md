@@ -4,6 +4,18 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.09-5 - Uhr-Update direkt im Browser der Uhr (CYD mit Spielen)
+
+- Ein Uhr-Update laesst sich jetzt auch bei installierten Spielen ganz normal unter System > Firmware-Update einspielen.
+  Die Uhr startet dafuer kurz RetroCYD im Update-Modus (WLAN der Uhr, gleiche IP, Einmal-Schluessel), die Seite
+  schickt die Datei automatisch dorthin, RetroCYD schreibt die neue Uhr und startet sie. Kein Umweg ueber das
+  RetroCYD-Setup mehr.
+- RetroCYD 3.5: Update-Modus fuer die Uhr (ohne Bluetooth/Spiele, nach 3 Minuten ohne Datei zurueck zur Uhr).
+- Einmalig: Diese Version selbst muss noch ueber das RetroCYD-Setup (oder per USB) auf die Uhr, weil die alte Uhr den
+  neuen Ablauf noch nicht kennt.
+
+Geaenderte Dateien: `webui.h`, `dualboot.h`, `lang_web.h`, `config.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.09-4 - WLAN bleibt beim Wechsel Uhr/Spiele erhalten (CYD)
 
 - Uhr und RetroCYD teilen sich den kleinen Einstellungsspeicher (NVS, 20 KB). Wird er voll oder unlesbar, loescht der

@@ -345,12 +345,15 @@ Beide sind eigene Programme in den zwei Programmbereichen des Flash; es laeuft i
 - zu einer laufenden Uhr: im Browser der Uhr unter *System > Firmware-Update* die Datei `RetroCYD_<Version>_update.bin`
   einspielen. Die Uhr laeuft danach einfach weiter.
 
-**Updates** (ein Programm kann sich nicht selbst ueberschreiben, deshalb ueber Kreuz):
-- **RetroCYD-Update:** im Browser der **Uhr** (System > Firmware-Update), Datei `RetroCYD_..._update.bin`.
-- **Uhr-Update:** im **RetroCYD**-Setup (lange halten > SETUP / WLAN > Browser > Firmware-Update), Datei
-  `WetterUhr_..._CYD_update.bin`. Danach startet die neue Uhr.
-- Die Dateinamen muessen "RetroCYD" bzw. "WetterUhr" enthalten; beide Seiten pruefen zusaetzlich den Inhalt und
-  lehnen eine Datei ab, die den anderen Teil ueberschreiben wuerde.
+**Updates:** beide im Browser der Uhr unter *System > Firmware-Update*.
+- **RetroCYD-Update:** Datei `RetroCYD_..._update.bin`; die Uhr schreibt sie neben sich und laeuft weiter.
+- **Uhr-Update:** Datei `WetterUhr_..._CYD_update.bin`. Weil sich ein laufendes Programm nicht selbst ueberschreiben
+  kann, startet die Uhr dafuer kurz RetroCYD im Update-Modus (Anzeige "UHR-UPDATE"). Die Browser-Seite wartet, bis
+  RetroCYD unter derselben Adresse bereit ist, schickt die Datei dorthin, und RetroCYD startet die neue Uhr. Das
+  dauert etwa eine halbe Minute; die Seite nicht schliessen. Kommt keine Datei, geht RetroCYD nach 3 Minuten zur Uhr
+  zurueck.
+- Alternativ geht ein Uhr-Update auch im RetroCYD-Setup (lange halten > SETUP / WLAN > Browser > Firmware-Update).
+- Die Dateinamen muessen "RetroCYD" bzw. "WetterUhr" enthalten; beide Seiten pruefen zusaetzlich den Inhalt.
 - Ohne RetroCYD gehen Uhr-Updates wie bisher direkt im Browser der Uhr.
 
 RetroCYD wird mit dem Boardpaket *esp32_bluepad32* und der Bibliothek *LovyanGFX* gebaut (siehe `RetroCYD.ino`); die
