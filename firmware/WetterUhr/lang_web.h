@@ -103,11 +103,11 @@
                   "Se aplica al pulsar «Guardar». Un clic en una tarjeta de arriba la muestra al instante; después la rotación continúa. El botón táctil avanza por esta lista (sin lista: por todos los diseños); después la rotación sigue con el intervalo completo.", \
                   "Vale dopo «Salva». Un clic su una scheda qui sopra la mostra subito; poi la rotazione continua. Il tasto touch scorre questa lista (senza lista: tutti i design); poi la rotazione riprende con l'intervallo completo.") \
   X(W_H_EXTRAS,   "Extras", "Extras", "Extras", "Extras", "Extra") \
-  X(W_HOL_CB,     "Feiertags-Designs automatisch in den Design-Wechsel aufnehmen (jeweils 10 Tage vorher bis zum Fest: Weihnachten mit Weihnachtself, Silvester, Valentinstag, Halloween, Ostern)", \
-                  "Add holiday designs to the rotation automatically (10 days before until the day: Christmas with Christmas elf, New Year's Eve, Valentine's Day, Halloween, Easter)", \
-                  "Ajouter automatiquement les designs de fête à la rotation (10 jours avant jusqu'au jour J : Noël avec le lutin, Saint-Sylvestre, Saint-Valentin, Halloween, Pâques)", \
-                  "Añadir automáticamente los diseños festivos a la rotación (10 días antes hasta el día: Navidad con el elfo, Nochevieja, San Valentín, Halloween, Pascua)", \
-                  "Aggiungi automaticamente i design delle feste alla rotazione (da 10 giorni prima fino al giorno: Natale con l'elfo, San Silvestro, San Valentino, Halloween, Pasqua)") \
+  X(W_HOL_CB,     "Feiertags-Designs automatisch in den Design-Wechsel aufnehmen (jeweils 10 Tage vorher bis zum Fest: Weihnachten, Silvester, Valentinstag, Halloween, Ostern)", \
+                  "Add holiday designs to the rotation automatically (10 days before until the day: Christmas, New Year's Eve, Valentine's Day, Halloween, Easter)", \
+                  "Ajouter automatiquement les designs de fête à la rotation (10 jours avant jusqu'au jour J : Noël, Saint-Sylvestre, Saint-Valentin, Halloween, Pâques)", \
+                  "Añadir automáticamente los diseños festivos a la rotación (10 días antes hasta el día: Navidad, Nochevieja, San Valentín, Halloween, Pascua)", \
+                  "Aggiungi automaticamente i design delle feste alla rotazione (da 10 giorni prima fino al giorno: Natale, San Silvestro, San Valentino, Halloween, Pasqua)") \
   X(W_HOL_HINT,   "Wirkt, wenn der automatische Design-Wechsel an ist. Die eigene Liste bleibt unver&auml;ndert; nach dem Fest f&auml;llt das Design von selbst wieder heraus.", \
                   "Works when the automatic rotation is on. Your own list stays unchanged; after the holiday the design drops out by itself.", \
                   "Actif si la rotation automatique est activée. Votre liste reste inchangée ; après la fête le design disparaît tout seul.", \
@@ -372,7 +372,6 @@
   X(W_CAT2,       "Tiere &amp; Natur", "Animals &amp; nature", "Animaux &amp; nature", "Animales y naturaleza", "Animali e natura") \
   X(W_CAT3,       "Technik &amp; Retro", "Tech &amp; retro", "Technique &amp; rétro", "Técnica y retro", "Tecnica e retrò") \
   X(W_CAT4,       "Traum &amp; Gef&uuml;hl", "Dreams &amp; feelings", "Rêve &amp; émotion", "Sueños y emociones", "Sogni ed emozioni") \
-  X(W_CAT5,       "Heimat &amp; Familie", "Home &amp; family", "Foyer &amp; famille", "Hogar y familia", "Casa e famiglia") \
   X(W_CAT6,       "Himmel &amp; Weltraum", "Sky &amp; space", "Ciel &amp; espace", "Cielo y espacio", "Cielo e spazio") \
   X(W_CAT7,       "Feiertage", "Holidays", "Fêtes", "Fiestas", "Feste") \
   /* Designs (gleiche Reihenfolge wie die Design-Nummern) */ \
@@ -380,12 +379,10 @@
   X(W_ST1,        "Digital + Balken", "Digital + bar", "Numérique + barre", "Digital + barra", "Digitale + barra") \
   X(W_ST2,        "Abenteuer", "Adventure", "Aventure", "Aventura", "Avventura") \
   X(W_ST3,        "Fallende Bl&ouml;cke", "Falling blocks", "Blocs qui tombent", "Bloques que caen", "Blocchi cadenti") \
-  X(W_ST4,        "Labyrinth", "Maze", "Labyrinthe", "Laberinto", "Labirinto") \
   X(W_ST5,        "H&uuml;pfwelt", "Jump world", "Monde à sauts", "Mundo de saltos", "Mondo dei salti") \
   X(W_ST6,        "Neon-Raster", "Neon grid", "Grille néon", "Rejilla neón", "Griglia neon") \
   X(W_ST7,        "Asteroiden", "Asteroids", "Astéroïdes", "Asteroides", "Asteroidi") \
   X(W_ST8,        "Code-Regen", "Code rain", "Pluie de code", "Lluvia de código", "Pioggia di codice") \
-  X(W_ST9,        "Zahnrad-Werk", "Gearworks", "Engrenages", "Engranajes", "Ingranaggi") \
   X(W_ST10,       "Ziegelbrecher", "Brick breaker", "Casse-briques", "Rompeladrillos", "Spaccamattoni") \
   X(W_ST11,       "Froschfurt", "Frog crossing", "Gué des grenouilles", "Cruce de ranas", "Guado delle rane") \
   X(W_ST12,       "Raketenabwehr", "Missile defence", "Défense antimissile", "Defensa antimisiles", "Difesa missilistica") \
@@ -398,14 +395,10 @@
   X(W_ST19,       "Flugradar", "Flight radar", "Radar aérien", "Radar de vuelos", "Radar voli") \
   X(W_ST20,       "Traumsand", "Dream sand", "Sable des rêves", "Arena de sueños", "Sabbia dei sogni") \
   X(W_ST21,       "Aquarium", "Aquarium", "Aquarium", "Acuario", "Acquario") \
-  X(W_ST22,       "Blockwelt", "Block world", "Monde de blocs", "Mundo de bloques", "Mondo a blocchi") \
-  X(W_ST23,       "Familie", "Family", "Famille", "Familia", "Famiglia") \
   X(W_ST24,       "ISS-Tracker", "ISS tracker", "Suivi ISS", "Rastreador ISS", "Tracker ISS") \
   X(W_ST25,       "Sonne und Mond", "Sun and moon", "Soleil et lune", "Sol y luna", "Sole e luna") \
   X(W_ST26,       "Weihnachten", "Christmas", "Noël", "Navidad", "Natale") \
-  X(W_ST27,       "Weihnachtself", "Christmas elf", "Lutin de Noël", "Elfo navideño", "Elfo di Natale") \
   X(W_ST28,       "Halloween", "Halloween", "Halloween", "Halloween", "Halloween") \
   X(W_ST29,       "Ostern", "Easter", "Pâques", "Pascua", "Pasqua") \
   X(W_ST30,       "Valentinstag", "Valentine's Day", "Saint-Valentin", "San Valentín", "San Valentino") \
-  X(W_ST31,       "Silvester", "New Year's Eve", "Saint-Sylvestre", "Nochevieja", "San Silvestro") \
-  X(W_ST32,       "Squishy Dumpling", "Squishy dumpling", "Raviolo tout mou", "Dumpling blandito", "Raviolo morbidoso")
+  X(W_ST31,       "Silvester", "New Year's Eve", "Saint-Sylvestre", "Nochevieja", "San Silvestro")

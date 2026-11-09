@@ -36,7 +36,7 @@
 #define DEFAULT_DIM_END      (7 * 60)   // Ende der Dimmung = 07:00
 #define DEFAULT_DIM_LEVEL    15        // Helligkeit waehrend der Dimmung, 5..100 %
 #define DEFAULT_DIM_TESTCARD 0         // 1 = im Nachtmodus (Dimm-Zeitfenster) das Testbild zeigen
-#define DEFAULT_CLOCK_STYLE  0         // 0..32, siehe CLOCK_STYLE_COUNT (0 = Flip-Karten)
+#define DEFAULT_CLOCK_STYLE  0         // 0..26, siehe CLOCK_STYLE_COUNT (0 = Flip-Karten)
 #define DEFAULT_ACCENT       0         // 0..8 (Cyan, Gruen, Orange, Gelb, Rot, Pink, Blau, Weiss, Violett)
 #define DEFAULT_HOSTNAME     "wetteruhr"   // erreichbar als http://wetteruhr.local
 
@@ -60,12 +60,12 @@
 #define DEFAULT_AUTO_MASK    0         // Bitmaske der Designs im Wechsel (Bit n = Design n)
 #define DEFAULT_AUTO_SEC     300       // Wechselintervall in Sekunden (10..86400)
 #define DEFAULT_TICK_TEXT    "Willkommen! Sch\xC3\xB6ne Gr\xC3\xBC\xC3\x9F" "e von deiner Wetteruhr"   // Laufschrift (UTF-8)
-#define CLOCK_STYLE_COUNT    33        // Anzahl der Uhr-Designs: 2 klassische + 31 Themen (nicht aendern)
+#define CLOCK_STYLE_COUNT    27        // Anzahl der Uhr-Designs: 2 klassische + 25 Themen (nicht aendern)
 
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION "2026.11.09"
+#define FW_VERSION "2026.11.09-3"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1

@@ -62,9 +62,13 @@ static Preferences prefs;
 
 // Design-Nummern, Version 2 (Oktober 2026): 8 klassische und 6 Themen-Designs entfernt, 6 neue angehaengt.
 // Gespeicherte Auswahl und Wechsel-Liste aus Version 1 (40 Designs) werden beim ersten Start umgerechnet.
-#define STYLE_VERSION 2
+// Version 3 (November 2026): Labyrinth, Zahnrad-Werk, Blockwelt, Familie, Weihnachtself, Squishy Dumpling entfernt.
+#define STYLE_VERSION 3
 static const int8_t STYLE_V1_SEL[40]  = {1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 18, 23, 6, 19, 20, 20, 21, 22, 22, 23, 25, 24, 25};   // alte Nummer -> neue (aehnliches Design)
 static const int8_t STYLE_V1_LIST[40] = {-1, -1, -1, -1, -1, -1, -1, 0, 1, -1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, -1, -1, -1, 19, 20, -1, 21, -1, 22, 23, -1, 24, 25};   // alte Nummer -> neue, -1 = entfernt
+
+static const int8_t STYLE_V2_SEL[33]  = {0, 1, 2, 3, 2, 4, 5, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2, 16, 20, 21, 22, 22, 23, 24, 25, 26, 16};
+static const int8_t STYLE_V2_LIST[33] = {0, 1, 2, 3, -1, 4, 5, 6, 7, -1, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, -1, -1, 20, 21, 22, -1, 23, 24, 25, 26, -1};
 
 static void settingsSave();
 
@@ -120,15 +124,23 @@ static void settingsLoad() {
   gSet.lang    = prefs.getUChar("lang", DEFAULT_LANG);
   if (gSet.lang >= LANG_COUNT) gSet.lang = 0;
   gLang = gSet.lang;
-  const bool hasOld = prefs.isKey("cs") && prefs.getUChar("sver", 1) < STYLE_VERSION;
+  const uint8_t sver = prefs.isKey("cs") ? prefs.getUChar("sver", 1) : STYLE_VERSION;
   prefs.end();
 
-  if (hasOld) {                                    // Design-Nummern aus Version 1 umrechnen
+  if (sver < 2) {                                  // Design-Nummern aus Version 1 umrechnen
     const uint8_t oldCs = gSet.clockStyle;
     gSet.clockStyle = (oldCs < 40) ? (uint8_t)STYLE_V1_SEL[oldCs] : 0;
     uint64_t m = 0;
     for (int i = 0; i < 40; i++)
       if ((gSet.autoMask >> i) & 1) { const int n = STYLE_V1_LIST[i]; if (n >= 0) m |= (1ULL << n); }
+    gSet.autoMask = m;
+  }
+  if (sver < 3) {                                  // Version 2 -> 3: sechs Designs entfernt
+    const uint8_t oldCs = gSet.clockStyle;
+    gSet.clockStyle = (oldCs < 33) ? (uint8_t)STYLE_V2_SEL[oldCs] : 0;
+    uint64_t m = 0;
+    for (int i = 0; i < 33; i++)
+      if ((gSet.autoMask >> i) & 1) { const int n = STYLE_V2_LIST[i]; if (n >= 0) m |= (1ULL << n); }
     gSet.autoMask = m;
   }
 
@@ -155,7 +167,7 @@ static void settingsLoad() {
   if (gSet.sleigh > 2) gSet.sleigh = DEFAULT_SLEIGH;
   if (gSet.dimLevel < 5 || gSet.dimLevel > 100) gSet.dimLevel = DEFAULT_DIM_LEVEL;
   if (gSet.tz[0] == 0)   strlcpy(gSet.tz, DEFAULT_TZ, sizeof(gSet.tz));
-  if (hasOld) { settingsSave(); }
+  if (sver < STYLE_VERSION) { settingsSave(); }   // umgerechnete Design-Nummern gleich speichern
   if (gSet.ntp[0] == 0)  strlcpy(gSet.ntp, DEFAULT_NTP, sizeof(gSet.ntp));
   if (gSet.host[0] == 0) strlcpy(gSet.host, DEFAULT_HOSTNAME, sizeof(gSet.host));
 }

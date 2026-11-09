@@ -20,12 +20,10 @@
 #include "faces_core.h"
 #include "face_adventure.h"
 #include "face_blocks.h"
-#include "face_maze.h"
 #include "face_hop.h"
 #include "face_neon.h"
 #include "face_space.h"
 #include "face_rain.h"
-#include "face_works.h"
 #include "face_bricks.h"
 #include "face_frog.h"
 #include "face_missile.h"
@@ -38,31 +36,26 @@
 #include "face_radar.h"
 #include "face_dream.h"
 #include "face_aqua.h"
-#include "face_voxel.h"
-#include "face_family.h"
 #include "face_iss.h"
 #include "face_sunmoon.h"
 #include "face_xmas.h"
-#include "face_elf.h"
 #include "face_halloween.h"
 #include "face_easter.h"
 #include "face_valentine.h"
 #include "face_newyear.h"
-#include "face_dumpling.h"
 #include "ticker.h"
 
 #define FACE_FIRST_STYLE 2       // clockStyle 0 = Flip-Karten, 1 = Digital + Balken, ab 2 = Themen-Zifferblaetter
-#define FACE_COUNT       31
-#define TESTCARD_STYLE   (FACE_FIRST_STYLE + 15)   // Testbild: Index 15 in FACES[] (Nachtmodus)
-#define RADAR_STYLE      (FACE_FIRST_STYLE + 17)   // Flugradar: Index 17 in FACES[]
-#define ISS_STYLE        (FACE_FIRST_STYLE + 22)   // ISS-Tracker: Index 22 in FACES[]
-#define AQUA_STYLE       (FACE_FIRST_STYLE + 19)   // Aquarium: Index 19 in FACES[]
-#define XMAS_STYLE       (FACE_FIRST_STYLE + 24)   // Weihnachten
-#define ELF_STYLE        (FACE_FIRST_STYLE + 25)   // Weihnachtself
-#define HALLOWEEN_STYLE  (FACE_FIRST_STYLE + 26)   // Halloween
-#define EASTER_STYLE     (FACE_FIRST_STYLE + 27)   // Ostern
-#define VALENTINE_STYLE  (FACE_FIRST_STYLE + 28)   // Valentinstag
-#define NEWYEAR_STYLE    (FACE_FIRST_STYLE + 29)   // Silvester: Index 29 in FACES[] (Silvester-Automatik)
+#define FACE_COUNT       25
+#define TESTCARD_STYLE   (FACE_FIRST_STYLE + 13)   // Testbild: Index 13 in FACES[] (Nachtmodus)
+#define RADAR_STYLE      (FACE_FIRST_STYLE + 15)   // Flugradar: Index 15 in FACES[]
+#define ISS_STYLE        (FACE_FIRST_STYLE + 18)   // ISS-Tracker: Index 18 in FACES[]
+#define AQUA_STYLE       (FACE_FIRST_STYLE + 17)   // Aquarium: Index 17 in FACES[]
+#define XMAS_STYLE       (FACE_FIRST_STYLE + 20)   // Weihnachten
+#define HALLOWEEN_STYLE  (FACE_FIRST_STYLE + 21)   // Halloween
+#define EASTER_STYLE     (FACE_FIRST_STYLE + 22)   // Ostern
+#define VALENTINE_STYLE  (FACE_FIRST_STYLE + 23)   // Valentinstag
+#define NEWYEAR_STYLE    (FACE_FIRST_STYLE + 24)   // Silvester: Index 24 in FACES[] (Silvester-Automatik)
 // Neue Zifferblaetter immer am Ende von FACES[] anhaengen, damit gespeicherte Nummern gueltig bleiben.
 
 namespace fc {
@@ -79,12 +72,10 @@ struct Face {
 static const Face FACES[FACE_COUNT] = {
   {"Abenteuer",        f_adv::enter,   f_adv::draw,   f_adv::cover,   false, 50},
   {"Fallende Bloecke", f_blk::enter,   f_blk::draw,   f_blk::cover,   false, 50},
-  {"Labyrinth",        f_maze::enter,  f_maze::draw,  f_maze::cover,  false, 50},
   {"Huepfwelt",        f_hop::enter,   f_hop::draw,   f_hop::cover,   false, 50},
   {"Neon-Raster",      f_neon::enter,  f_neon::draw,  f_neon::cover,  true,  50},
   {"Asteroiden",       f_space::enter, f_space::draw, f_space::cover, true,  50},
   {"Code-Regen",       f_rain::enter,  f_rain::draw,  f_rain::cover,  false, 55},
-  {"Zahnrad-Werk",     f_fab::enter,   f_fab::draw,   f_fab::cover,   false, 50},
   {"Ziegelbrecher",    f_brk::enter,   f_brk::draw,   f_brk::cover,   false, 40},
   {"Froschfurt",       f_frog::enter,  f_frog::draw,  f_frog::cover,  false, 50},
   {"Raketenabwehr",    f_msl::enter,   f_msl::draw,   f_msl::cover,   false, 50},
@@ -97,17 +88,13 @@ static const Face FACES[FACE_COUNT] = {
   {"Flugradar",        f_radar::enter, f_radar::draw, f_radar::cover, false, 33},
   {"Traumsand",        f_dream::enter, f_dream::draw, f_dream::cover, false, 40},
   {"Aquarium",         f_aqua::enter,  f_aqua::draw,  f_aqua::cover,  false, 40},
-  {"Blockwelt",        f_voxel::enter, f_voxel::draw, f_voxel::cover, false, 40},
-  {"Familie",          f_family::enter, f_family::draw, f_family::cover, false, 50},
   {"ISS-Tracker",      f_iss::enter,   f_iss::draw,   f_iss::cover,   false, 50},
   {"Sonne und Mond",   f_sunmoon::enter, f_sunmoon::draw, f_sunmoon::cover, false, 100},
   {"Weihnachten",      f_xmas::enter,  f_xmas::draw,  f_xmas::cover,  false, 50},
-  {"Weihnachtself",    f_elf::enter,   f_elf::draw,   f_elf::cover,   false, 50},
   {"Halloween",        f_hal::enter,   f_hal::draw,   f_hal::cover,   false, 50},
   {"Ostern",           f_egg::enter,   f_egg::draw,   f_egg::cover,   false, 50},
   {"Valentinstag",     f_val::enter,   f_val::draw,   f_val::cover,   false, 50},
   {"Silvester",        f_nye::enter,   f_nye::draw,   f_nye::cover,   false, 40},
-  {"Squishy Dumpling", f_dump::enter,  f_dump::draw,  f_dump::cover,  false, 40},
 };
 
 static const uint32_t T_OUT = 650;     // Dauer des Verlassens

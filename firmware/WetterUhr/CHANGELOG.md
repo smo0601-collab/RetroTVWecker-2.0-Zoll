@@ -4,6 +4,17 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.09-3 - Sechs Designs entfernt
+
+- Entfernt: Labyrinth, Zahnrad-Werk, Blockwelt, Familie, Weihnachtself, Squishy Dumpling (jetzt 27 Designs:
+  2 klassische + 25 Themen). Die Nummern ab 4 sind nachgerueckt; gespeicherte Auswahl und Wechsel-Liste werden beim
+  ersten Start umgerechnet, ein entferntes Design wird durch ein aehnliches ersetzt.
+- Weihnachten kommt im Feiertags-Wechsel jetzt allein (ohne Elf). Kategorie "Heimat & Familie" entfaellt.
+- Programm rund 35 KB kleiner.
+
+Geaenderte Dateien: `faces.h`, `config.h`, `settings.h`, `webui.h`, `lang.h`, `lang_web.h`, `WetterUhr.ino`, `README.md`,
+`CHANGELOG.md`; entfernt: `face_maze.h`, `face_works.h`, `face_voxel.h`, `face_family.h`, `face_elf.h`, `face_dumpling.h`
+
 ## 2026.11.09 - Spiele (RetroCYD) als zweites Programm auf dem CYD
 
 - Nur CYD: RetroCYD 3.2 kann als zweites Programm neben der Uhr liegen. Beim Einschalten Auswahl "Uhr" oder "Spiele"

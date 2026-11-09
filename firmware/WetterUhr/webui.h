@@ -196,14 +196,13 @@ show(t0);
 
 // ---------- Uhr-Designs: Namen und Vorschaubilder (SVG, folgen der Akzentfarbe) ----------
 // Namen der Designs, Kategorien und Akzentfarben: lang_web.h (W_ST0.., W_CAT0.., W_AC0..)
-#define CAT_COUNT 8
+#define CAT_COUNT 7
 static const uint8_t STYLE_CAT[CLOCK_STYLE_COUNT] = {
   0, 0,                                         // 0 Flip-Karten, 1 Digital + Balken
-  1, 1, 1, 1, 3, 1, 3, 3, 1, 1, 1, 1,           // 2 Abenteuer .. 13 Neonbrecher (6 Neon-Raster, 8 Code-Regen, 9 Zahnrad-Werk = Technik)
-  4, 3, 1, 3, 2,                                // 14 Herz, 15 Sinuskurve, 16 Badminton, 17 Testbild, 18 Dackel
-  6, 4, 2, 1, 5, 6, 6,                          // 19 Flugradar, 20 Traumsand, 21 Aquarium, 22 Blockwelt, 23 Familie, 24 ISS, 25 Sonne und Mond
-  7, 7, 7, 7, 7, 7,                             // 26-31 Feiertage
-  4                                             // 32 Squishy Dumpling
+  1, 1, 1, 3, 1, 3, 1, 1, 1, 1,                 // 2 Abenteuer .. 11 Neonbrecher (5 Neon-Raster, 7 Code-Regen = Technik)
+  4, 3, 1, 3, 2,                                // 12 Herz, 13 Sinuskurve, 14 Badminton, 15 Testbild, 16 Dackel
+  5, 4, 2, 5, 5,                                // 17 Flugradar, 18 Traumsand, 19 Aquarium, 20 ISS, 21 Sonne und Mond
+  6, 6, 6, 6, 6                                 // 22-26 Feiertage
 };
 
 #define SVG_OPEN "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#000'/>"
@@ -237,14 +236,6 @@ static const char SVG_11[] PROGMEM =
   "<text x='6' y='24' font-family='monospace' font-weight='bold' font-size='17' fill='#3ce0e8'>12:34</text>"
   "<rect x='6' y='30' width='56' height='3' fill='#2a2e50'/><rect x='6' y='30' width='34' height='3' fill='#f0dc00'/>"
   "<rect x='6' y='42' width='16' height='16' fill='none' stroke='#5a64a0'/><rect x='10' y='48' width='8' height='4' fill='#fa961e'/></svg>";
-static const char SVG_12[] PROGMEM =
-  "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#000'/>"
-  "<rect x='8' y='8' width='104' height='54' rx='8' fill='none' stroke='#2846dc' stroke-width='2'/>"
-  "<rect x='20' y='20' width='80' height='30' rx='4' fill='none' stroke='#2846dc' stroke-width='2'/>"
-  "<text x='60' y='42' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='20' fill='#ffeb78'>12:34</text>"
-  "<g fill='#c8aa78'><rect x='30' y='13' width='2' height='2'/><rect x='44' y='13' width='2' height='2'/><rect x='58' y='13' width='2' height='2'/></g>"
-  "<circle cx='76' cy='14' r='3.5' fill='#aaaab8'/><circle cx='95' cy='14' r='4' fill='#f08228'/><circle cx='14' cy='40' r='4' fill='#9646c8'/>"
-  "<path d='M9 56l8 0 0-6z' fill='#ffd228'/></svg>";
 static const char SVG_13[] PROGMEM =
   "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#5c94fc'/>"
   "<g fill='#f0be3c' stroke='#96600a' stroke-width='1.5'><rect x='9' y='9' width='16' height='16'/><rect x='28' y='9' width='16' height='16'/>"
@@ -275,13 +266,6 @@ static const char SVG_16[] PROGMEM =
   "<rect x='20' y='42' width='80' height='16' fill='#000' stroke='#00a03c'/>"
   "<text x='25' y='51' font-family='monospace' font-size='6' fill='#00eb5f'>&gt; 12C  H63%</text><text x='25' y='56' font-family='monospace' font-size='6' fill='#00eb5f'>&gt; WIND 14_</text></svg>";
 
-static const char SVG_17[] PROGMEM =
-  "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#000'/>"
-  "<text x='60' y='22' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='22' fill='#fff4d2' stroke='#6e1814' stroke-width='.8'>12:34</text>"
-  "<g fill='#c83228'><rect x='0' y='28' width='105' height='2'/><rect x='15' y='44' width='105' height='2'/><rect x='0' y='60' width='105' height='2'/></g>"
-  "<g stroke='#3c78ff' stroke-width='1' fill='none'><path d='M30 30V44M27 33h6M27 37h6M27 41h6M92 46V60M89 49h6M89 53h6M89 57h6'/></g>"
-  "<rect x='4' y='14' width='12' height='14' fill='#7886b4'/><circle cx='10' cy='20' r='2.5' fill='#ff3c3c'/>"
-  "<circle cx='60' cy='26' r='3' fill='#ff961e'/><circle cx='40' cy='42' r='3' fill='#ff961e'/><rect x='64' y='51' width='4' height='8' fill='#3c6ee6'/><rect x='64' y='48' width='4' height='3' fill='#ff961e'/></svg>";
 static const char SVG_18[] PROGMEM =
   "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#000'/>"
   "<g><rect x='3' y='4' width='114' height='4' fill='#e62828'/><rect x='3' y='10' width='114' height='4' fill='#fa8c1e'/><rect x='3' y='16' width='114' height='4' fill='#f0dc28'/>"
@@ -379,19 +363,6 @@ static const char SVG_33[] PROGMEM =
   "<rect y='58' width='120' height='12' fill='#d6be82'/><path d='M12 58q-3-12 2-20M30 58q4-10-1-16M96 58q-4-14 1-22' stroke='#28aa5a' stroke-width='2' fill='none'/>"
   "<ellipse cx='42' cy='34' rx='9' ry='5' fill='#ff8c28'/><path d='M33 34l-7-5v10z' fill='#fff0e6'/><ellipse cx='78' cy='44' rx='8' ry='4.5' fill='#3c96ff'/><path d='M86 44l7-5v10z' fill='#145ab8'/>"
   "<circle cx='60' cy='24' r='2' fill='none' stroke='#aadcff'/><circle cx='100' cy='36' r='1.5' fill='none' stroke='#aadcff'/></svg>";
-static const char SVG_35[] PROGMEM =
-  "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#6ebeff'/>"
-  "<text x='60' y='15' fill='#fff' font-size='12' font-family='monospace' text-anchor='middle'>21:45</text>"
-  "<rect y='46' width='120' height='24' fill='#866040'/><rect y='46' width='120' height='5' fill='#5abe46'/><rect x='80' y='30' width='4' height='16' fill='#6e4c2c'/><rect x='72' y='22' width='20' height='9' fill='#368c36'/>"
-  "<rect x='34' y='36' width='7' height='10' fill='#28aabe'/><rect x='34' y='28' width='7' height='7' fill='#e8be96'/><rect x='34' y='27' width='7' height='3' fill='#5a381e'/></svg>";
-static const char SVG_36[] PROGMEM =
-  "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#78bef5'/><rect y='52' width='120' height='18' fill='#60ac4e'/>"
-  "<rect x='34' y='3' width='52' height='13' fill='#ece2ce' stroke='#6e5030'/><text x='60' y='13' fill='#50464a' font-size='9' font-family='monospace' text-anchor='middle'>21:45</text>"
-  "<rect x='14' y='28' width='11' height='24' fill='#3864be'/><circle cx='19' cy='24' r='5' fill='#ffd4b0'/><rect x='14' y='26' width='10' height='3' fill='#dEb860'/>"
-  "<rect x='30' y='30' width='10' height='22' fill='#c83c46'/><circle cx='35' cy='26' r='5' fill='#ffd4b0'/><rect x='29' y='22' width='11' height='4' fill='#643c26'/>"
-  "<rect x='46' y='30' width='9' height='22' fill='#28aaaa'/><circle cx='50' cy='26' r='5' fill='#ffd4b0'/><rect x='45' y='22' width='10' height='4' fill='#e8c070'/>"
-  "<rect x='60' y='31' width='9' height='21' fill='#f0c83c'/><circle cx='64' cy='27' r='5' fill='#ffd4b0'/><rect x='59' y='23' width='10' height='4' fill='#f6e49e'/>"
-  "<rect x='76' y='40' width='7' height='12' fill='#f082aa'/><circle cx='79' cy='36' r='4' fill='#ffd4b0'/><rect x='75' y='33' width='8' height='3' fill='#c49a54'/></svg>";
 
 static const char SVG_38[] PROGMEM =
   "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#06081a'/>"
@@ -419,14 +390,6 @@ static const char SVG_40[] PROGMEM =
   "<text x='80' y='42' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='14' fill='#fff8e8'>57 <tspan font-size='9'>TAGE</tspan></text>"
   "<g fill='#c81e28'><rect x='62' y='48' width='4' height='9'/><rect x='72' y='48' width='4' height='9'/><rect x='82' y='48' width='4' height='9'/><rect x='92' y='48' width='4' height='9'/></g>"
   "<g fill='#ffd860'><rect x='63' y='44' width='2' height='3'/><rect x='73' y='44' width='2' height='3'/></g></svg>";
-static const char SVG_41[] PROGMEM =
-  "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#704024'/>"
-  "<rect y='58' width='120' height='12' fill='#a87442'/><rect x='4' y='6' width='26' height='18' fill='#121c4a' stroke='#462614' stroke-width='2'/>"
-  "<text x='76' y='22' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='20' fill='#fff0c8'>12:34</text>"
-  "<rect x='50' y='44' width='70' height='5' fill='#32343c'/><rect x='78' y='37' width='8' height='7' fill='#dc3240'/><rect x='100' y='37' width='8' height='7' fill='#3c6ee6'/>"
-  "<ellipse cx='14' cy='52' rx='12' ry='10' fill='#966838'/>"
-  "<path d='M30 22l10 8h-12z' fill='#28aa46'/><rect x='30' y='29' width='12' height='2' fill='#dc2832'/><circle cx='36' cy='35' r='5' fill='#ffcea8'/>"
-  "<rect x='31' y='40' width='10' height='12' fill='#28aa46'/><rect x='32' y='52' width='3' height='5' fill='#dc2832'/><rect x='37' y='52' width='3' height='5' fill='#dc2832'/></svg>";
 static const char SVG_42[] PROGMEM =
   "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#2a0e4a'/>"
   "<circle cx='16' cy='14' r='10' fill='#faf0c4'/><rect y='58' width='120' height='12' fill='#0a0412'/>"
@@ -462,19 +425,10 @@ static const char SVG_45[] PROGMEM =
   "<path d='M0 70V58h8v-6h8v8h8v-12h8v10h8v-6h8v4h8v-14h8v12h8v-8h8v6h8v-10h8v8h8v-4h8v12z' fill='#0c0c18' transform='translate(0 9)'/>"
   "<g fill='#ffd26e' transform='translate(0 6)'><rect x='19' y='60' width='1.5' height='1.5'/><rect x='51' y='62' width='1.5' height='1.5'/><rect x='67' y='56' width='1.5' height='1.5'/><rect x='99' y='62' width='1.5' height='1.5'/></g></svg>";
 
-static const char SVG_46[] PROGMEM =
-  "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#ffe4ce'/>"
-  "<text x='60' y='19' text-anchor='middle' font-family='monospace' font-weight='bold' font-size='17' fill='#784632'>12:34</text>"
-  "<path d='M38 60q0-34 22-34t22 34z' fill='#fcf8f0' stroke='#c8baa6'/><path d='M60 26l-6 6M60 26l6 6M60 26v7' stroke='#c8baa6'/>"
-  "<circle cx='52' cy='45' r='1.8' fill='#32221e'/><circle cx='68' cy='45' r='1.8' fill='#32221e'/>"
-  "<ellipse cx='48' cy='50' rx='3' ry='1.5' fill='#ff96a0'/><ellipse cx='72' cy='50' rx='3' ry='1.5' fill='#ff96a0'/>"
-  "<path d='M57 50l1.5 1.5 1.5-1.5 1.5 1.5 1.5-1.5' fill='none' stroke='#c84650'/>"
-  "<rect x='26' y='56' width='68' height='14' fill='#c49652'/><path d='M26 60h68M26 64h68M26 68h68' stroke='#a07438'/>"
-  "<rect x='26' y='56' width='68' height='2' fill='#deb670'/></svg>";
 
 static const char* const STYLE_SVG[CLOCK_STYLE_COUNT] = {SVG_7, SVG_8,
-  SVG_10, SVG_11, SVG_12, SVG_13, SVG_14, SVG_15, SVG_16, SVG_17, SVG_18, SVG_19, SVG_20, SVG_21, SVG_22, SVG_23, SVG_24, SVG_25, SVG_26,
-  SVG_30, SVG_31, SVG_33, SVG_35, SVG_36, SVG_38, SVG_39, SVG_40, SVG_41, SVG_42, SVG_43, SVG_44, SVG_45, SVG_46};
+  SVG_10, SVG_11, SVG_13, SVG_14, SVG_15, SVG_16, SVG_18, SVG_19, SVG_20, SVG_21, SVG_22, SVG_23, SVG_24, SVG_25, SVG_26,
+  SVG_30, SVG_31, SVG_33, SVG_38, SVG_39, SVG_40, SVG_42, SVG_43, SVG_44, SVG_45};
 
 static String autoInfo() {                     // Ergebnis ist HTML (Design-Namen mit Entities)
   const uint32_t now = millis();

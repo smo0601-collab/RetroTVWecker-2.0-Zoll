@@ -97,12 +97,12 @@ Ein Klick auf eine Design-Karte zeigt das Design sofort und startet das Interval
 
 **Feiertage automatisch:** Weihnachten, Silvester, Valentinstag, Halloween und Ostern kommen jeweils 10 Tage vor dem
 Termin von selbst in den Wechsel und fallen nach dem Fest wieder heraus - ohne dass die eigene Liste geaendert wird.
-Zeitfenster: Weihnachten und Weihnachtself 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10., Ostern
+Zeitfenster: Weihnachten 14.-26.12., Silvester 21.12.-1.1., Valentinstag 4.-14.2., Halloween 21.-31.10., Ostern
 10 Tage vor Ostersonntag bis Ostermontag. Abschalten unter *Anzeige > Extras*. Die Status-Seite zeigt beim
 Uhr-Design z. B. "(Wechsel aktiv + Halloween, naechster in 42 s)". Die Zahl der Tage steht in `config.h`
 (`HOL_DAYS_BEFORE`).
 
-### Themen-Designs (Pixel-Retro, Nr. 2-32)
+### Themen-Designs (Pixel-Retro, Nr. 2-26)
 
 Animierte Szenen mit eigenen, festen Farben (die Akzentfarbe wirkt hier nicht). Alle zeigen Uhrzeit,
 Datum, Temperatur und Wetterdaten; Sekunden nur, wenn "Sekunden anzeigen" aktiv ist. Figuren, Namen und Symbole
@@ -112,35 +112,29 @@ sind eigene Erfindungen im Retro-Stil.
 |---|---|---|
 | 2 | Abenteuer | Nachtlandschaft mit Mond und Kiefern, Zeit in goldenen Zellen auf einer Steintafel, Wanderer mit Stab, Gluehwuermchen, Herzen zeigen das Wetter, Funkenregen zur vollen Minute |
 | 3 | Fallende Bloecke | Ein Computerspieler legt Steine in einen Schacht (macht absichtlich Fehler und raeumt ab und zu auf). Links Zeit, Sekundenzellen, naechster Stein, Temperatur, Zeilenzaehler |
-| 4 | Labyrinth | Maus im Ringgang sammelt Kruemel, springt ueber drei Katzen; Kaese in den Ecken macht Katzen zahm; Apfel zur vollen Minute, bunte Waende zur vollen Stunde |
-| 5 | Huepfwelt | Ziffern in Bonus-Bloecken; ein runder Held springt bei jedem Zeitwechsel unter den passenden Block, sammelt Muenzen; Wolken, Gebuesch, Ziegelboden |
-| 6 | Neon-Raster | Leuchtraster mit wandernden Lichtimpulsen, Punktmatrix-Zeit, orangefarbenes Lichtmotorrad umrundet den Rand (Sekunden), Lichtring zur vollen Minute, Scanlines |
-| 7 | Asteroiden | Vektorlook: Sterne mit Parallaxe, trudelnde Brocken, Schiff schiesst lenkende Geschosse, Splitter, Leben-Symbole; Zeit aus Liniensegmenten |
-| 8 | Code-Regen | Gruener Zeichenregen in drei Tiefenstufen, Uhr im freien Feld, Terminal mit Datum/Temperatur/Wind, Datenimpuls zur Minute, Scanbalken alle 20 s, Glitch zur Stunde |
-| 9 | Zahnrad-Werk | Fabrikhalle mit Traegern und Leitern: ein Roboter rollt Zahnraeder im Zickzack nach unten, ein Monteur steigt Leitern und springt ueber Zahnraeder, BONUS-Blinken zur vollen Stunde |
-| 10 | Ziegelbrecher | Fuenf bunte Steinreihen, Ball und Schlaeger spielen von selbst, Steine zerfallen in Funken, Uhr gross in Reihenfarben in der Mitte, Steine blinken zur Minute |
-| 11 | Froschfurt | Ufer mit Uhr, Wasser mit Staemmen und Schildkroeten, Insel, drei Fahrspuren; ein Frosch huepft nach oben (mit gelegentlichen Fehlspruengen) |
-| 12 | Raketenabwehr | Sternenhimmel und Pixelstadt, Raketenspuren werden von Abwehrstellungen abgefangen; Uhr in einer Kommandozentrale, Radarring zur Minute |
-| 13 | Neonbrecher | Neon-Spielfeld, Uhr oben ueber dem Feld, Leuchtball, doppelte Bloecke, Kapsel macht den Schlaeger breiter |
-| 14 | Pulsierendes Herz | Herz schlaegt im Doppelschlag (ca. 70/min) mit Ringen und aufsteigenden Mini-Herzen, EKG-Kurve, Datum links, Wetter rechts, Sekundenbalken; zur vollen Minute Blitz und Herzchen |
-| 15 | Sinuskurve | Oszilloskop mit drei laufenden Wellen (Cyan, Magenta, gelbe Summe), Sekundenpunkt reitet auf der gelben Kurve; zur vollen Minute schlaegt die Amplitude aus |
-| 16 | Badminton | Rot gegen Blau vor jubelndem Publikum, gezaehlt nach Badminton-Regeln (Satz bis 21 mit 2 Punkten Vorsprung, hoechstens 30, zwei Gewinnsaetze, fast immer ueber 3 Saetze). Clear, Drop, Smash im Sprung mit Geschwindigkeitsanzeige und Leuchtspur, Drive, Netzball; Punkte durch Gewinnschlag (Gegner hechtet vergeblich), Netz oder Aus, knappe Aus-Baelle per Hawk-Eye (kann das Urteil kippen). Momentum mit Serien und Aufholjagden, Rallye-Zaehler, SATZBALL/MATCHBALL/VERLAENGERUNG, Sieger jubelt, Konfetti zum Matchgewinn; zur vollen Minute Funken am Netz. Der Spielstand bleibt erhalten: nach einem Designwechsel geht das Match genau dort weiter, nach Neustart oder Stromausfall ab dem zuletzt gesicherten Stand (Sicherung im Flash nach jedem Punkt, hoechstens alle 8 s; Satz- und Seitenwechsel sofort). Erst wenn ein Sieger feststeht, beginnt ein neues Match |
-| 17 | Testbild | Fernseh-Testbild (eigene Gestaltung): Raster, Farbbalken, Kreis, Graukeil, Uhrzeit im schwarzen Streifen, rollender Balken, Schnee und Stoerstreifen; auch fuer den Nachtmodus |
-| 18 | Dackelwelpe | Schwarz-brauner Dackelwelpe jagt auf der Wiese einem Ball nach, setzt sich, schnueffelt, bellt zur vollen Minute "WUFF!"; Tag und Nacht |
-| 19 | Flugradar | Radarschirm mit echten Flugzeugen im Umkreis (siehe unten); optional ab und zu ein UFO |
-| 20 | Traumsand | Ein erfundener Wicht auf einer Wolke streut goldenen Sand, Sterne, Mondsichel, Sternschnuppe; Sandschauer zur vollen Minute |
-| 21 | Aquarium | Korallenriff mit Farbverlauf, Lichtstrahlen und tanzenden Lichtmustern auf dem Sand, Korallen, Seeanemone, wogender Seetang, Seestern, Schatztruhe (klappt ab und zu auf). Clownfische (verstecken sich in der Anemone), Doktorfische, Segelflosser, Kugelfisch, Neon-Schwarm, Qualle, Krebs. Fuettern zur vollen und halben Stunde und per Knopf. Alle paar Minuten Besuch, abwechselnd: eine freundliche Seeschlange (die Fische fliehen, der Kugelfisch blaest sich auf, der Krebs versteckt sich) oder ein Forschungs-U-Boot mit Scheinwerfer, das anhaelt und "PING" macht. Knoepfe unter Anzeige > Extras: "Fische fuettern", "Besuch: Seeschlange / U-Boot" |
-| 22 | Blockwelt | Scrollende Wuerfelwelt mit Baeumen, Sonne/Mond nach echter Uhrzeit |
-| 23 | Familie | Vater, Mutter und drei Toechter winken abwechselnd, die Juengste huepft, zur vollen Minute steigen Herzen auf |
-| 24 | ISS-Tracker | Weltkarte mit Tag/Nacht und der echten ISS-Position (Abruf alle 5 s von open-notify.org); optional Weihnachtsschlitten (siehe unten) |
-| 25 | Sonne und Mond | Tagesdiagramm der Hoehe von Sonne und Mond, Auf-/Untergang, Mondphase; ohne Internet aus Standort und Uhrzeit gerechnet |
-| 26 | Weihnachten | Verschneite Winternacht, geschmueckter Tannenbaum mit blinkenden Lichtern, Geschenke, Schneefall; Countdown bis Heiligabend 18 Uhr (Tage und Std:Min:Sek), der Adventskranz zuendet an jedem Adventssonntag eine Kerze mehr; am 24. ab 18 Uhr bis 26.12. "FROHE WEIHNACHTEN"; zur vollen Minute Lauflicht am Baum |
-| 27 | Weihnachtself | Ein lustiger Elf in der Werkstatt holt Geschenke vom Foerderband und wirft sie in den Sack (Zaehler am Sack), rutscht ab und zu aus und sieht Sterne ("HOPPLA!"); zur vollen Minute huepft er und ruft "HO HO HO!", die Tage bis Weihnachten oder die Zahl der gepackten Geschenke |
-| 28 | Halloween | Vollmond, Fledermaeuse, Spinne am Faden, Friedhof mit totem Baum, flackernder Kuerbis, schwebendes Gespenst; Countdown bis 31.10., am Tag selbst "HAPPY HALLOWEEN"; zur vollen Minute saust das Gespenst heran: "BUH!" |
-| 29 | Ostern | Fruehlingswiese, Osterhase hoppelt und wackelt mit den Ohren, versteckte bemalte Eier, Schmetterlinge, Uhrzeit in Ostereier-Farben; Countdown bis Ostersonntag (echtes Osterdatum), an Ostersonntag und -montag "FROHE OSTERN"; zur vollen Minute schluepft im Nest ein Kueken: "PIEP!" |
-| 30 | Valentinstag | Aufsteigende Herzen, zwei schnaebelnde Turteltauben auf einem Ast, Amors Pfeil fliegt durchs Bild; Countdown bis 14.02., am Tag selbst "ALLES LIEBE"; zur vollen Minute oeffnet sich ein Liebesbrief und ein grosses Herz zerplatzt |
-| 31 | Silvester | Stadt-Silhouette mit Feuerwerk (Ring, Chrysantheme, goldene Weide, Knistersterne); Countdown bis Neujahr, am 31.12. als Std:Min:Sek, letzte Minute mit riesigen Sekunden, um Mitternacht Lichtblitz, "PROSIT NEUJAHR" und Dauerfeuerwerk, am 1.1. "FROHES NEUES JAHR" |
-| 32 | Squishy Dumpling | Ein knautschiger Teigknoedel (eigene Figur) im Bambus-Daempfkorb: atmet, blinzelt, huepft mit Quetschen und Strecken, wird mit Essstaebchen angestupst ("SQUISH!") und wabbelt nach, wird rot und pufft Dampf ("HIHI!"), schaut sich um, schuettelt sich; nachts (22-6 Uhr) schlaeft er ("Zz"); zur vollen Minute grosser Sprung mit platschender Landung ("BOING!") |
+| 4 | Huepfwelt | Ziffern in Bonus-Bloecken; ein runder Held springt bei jedem Zeitwechsel unter den passenden Block, sammelt Muenzen; Wolken, Gebuesch, Ziegelboden |
+| 5 | Neon-Raster | Leuchtraster mit wandernden Lichtimpulsen, Punktmatrix-Zeit, orangefarbenes Lichtmotorrad umrundet den Rand (Sekunden), Lichtring zur vollen Minute, Scanlines |
+| 6 | Asteroiden | Vektorlook: Sterne mit Parallaxe, trudelnde Brocken, Schiff schiesst lenkende Geschosse, Splitter, Leben-Symbole; Zeit aus Liniensegmenten |
+| 7 | Code-Regen | Gruener Zeichenregen in drei Tiefenstufen, Uhr im freien Feld, Terminal mit Datum/Temperatur/Wind, Datenimpuls zur Minute, Scanbalken alle 20 s, Glitch zur Stunde |
+| 8 | Ziegelbrecher | Fuenf bunte Steinreihen, Ball und Schlaeger spielen von selbst, Steine zerfallen in Funken, Uhr gross in Reihenfarben in der Mitte, Steine blinken zur Minute |
+| 9 | Froschfurt | Ufer mit Uhr, Wasser mit Staemmen und Schildkroeten, Insel, drei Fahrspuren; ein Frosch huepft nach oben (mit gelegentlichen Fehlspruengen) |
+| 10 | Raketenabwehr | Sternenhimmel und Pixelstadt, Raketenspuren werden von Abwehrstellungen abgefangen; Uhr in einer Kommandozentrale, Radarring zur Minute |
+| 11 | Neonbrecher | Neon-Spielfeld, Uhr oben ueber dem Feld, Leuchtball, doppelte Bloecke, Kapsel macht den Schlaeger breiter |
+| 12 | Pulsierendes Herz | Herz schlaegt im Doppelschlag (ca. 70/min) mit Ringen und aufsteigenden Mini-Herzen, EKG-Kurve, Datum links, Wetter rechts, Sekundenbalken; zur vollen Minute Blitz und Herzchen |
+| 13 | Sinuskurve | Oszilloskop mit drei laufenden Wellen (Cyan, Magenta, gelbe Summe), Sekundenpunkt reitet auf der gelben Kurve; zur vollen Minute schlaegt die Amplitude aus |
+| 14 | Badminton | Rot gegen Blau vor jubelndem Publikum, gezaehlt nach Badminton-Regeln (Satz bis 21 mit 2 Punkten Vorsprung, hoechstens 30, zwei Gewinnsaetze, fast immer ueber 3 Saetze). Clear, Drop, Smash im Sprung mit Geschwindigkeitsanzeige und Leuchtspur, Drive, Netzball; Punkte durch Gewinnschlag (Gegner hechtet vergeblich), Netz oder Aus, knappe Aus-Baelle per Hawk-Eye (kann das Urteil kippen). Momentum mit Serien und Aufholjagden, Rallye-Zaehler, SATZBALL/MATCHBALL/VERLAENGERUNG, Sieger jubelt, Konfetti zum Matchgewinn; zur vollen Minute Funken am Netz. Der Spielstand bleibt erhalten: nach einem Designwechsel geht das Match genau dort weiter, nach Neustart oder Stromausfall ab dem zuletzt gesicherten Stand (Sicherung im Flash nach jedem Punkt, hoechstens alle 8 s; Satz- und Seitenwechsel sofort). Erst wenn ein Sieger feststeht, beginnt ein neues Match |
+| 15 | Testbild | Fernseh-Testbild (eigene Gestaltung): Raster, Farbbalken, Kreis, Graukeil, Uhrzeit im schwarzen Streifen, rollender Balken, Schnee und Stoerstreifen; auch fuer den Nachtmodus |
+| 16 | Dackelwelpe | Schwarz-brauner Dackelwelpe jagt auf der Wiese einem Ball nach, setzt sich, schnueffelt, bellt zur vollen Minute "WUFF!"; Tag und Nacht |
+| 17 | Flugradar | Radarschirm mit echten Flugzeugen im Umkreis (siehe unten); optional ab und zu ein UFO |
+| 18 | Traumsand | Ein erfundener Wicht auf einer Wolke streut goldenen Sand, Sterne, Mondsichel, Sternschnuppe; Sandschauer zur vollen Minute |
+| 19 | Aquarium | Korallenriff mit Farbverlauf, Lichtstrahlen und tanzenden Lichtmustern auf dem Sand, Korallen, Seeanemone, wogender Seetang, Seestern, Schatztruhe (klappt ab und zu auf). Clownfische (verstecken sich in der Anemone), Doktorfische, Segelflosser, Kugelfisch, Neon-Schwarm, Qualle, Krebs. Fuettern zur vollen und halben Stunde und per Knopf. Alle paar Minuten Besuch, abwechselnd: eine freundliche Seeschlange (die Fische fliehen, der Kugelfisch blaest sich auf, der Krebs versteckt sich) oder ein Forschungs-U-Boot mit Scheinwerfer, das anhaelt und "PING" macht. Knoepfe unter Anzeige > Extras: "Fische fuettern", "Besuch: Seeschlange / U-Boot" |
+| 20 | ISS-Tracker | Weltkarte mit Tag/Nacht und der echten ISS-Position (Abruf alle 5 s von open-notify.org); optional Weihnachtsschlitten (siehe unten) |
+| 21 | Sonne und Mond | Tagesdiagramm der Hoehe von Sonne und Mond, Auf-/Untergang, Mondphase; ohne Internet aus Standort und Uhrzeit gerechnet |
+| 22 | Weihnachten | Verschneite Winternacht, geschmueckter Tannenbaum mit blinkenden Lichtern, Geschenke, Schneefall; Countdown bis Heiligabend 18 Uhr (Tage und Std:Min:Sek), der Adventskranz zuendet an jedem Adventssonntag eine Kerze mehr; am 24. ab 18 Uhr bis 26.12. "FROHE WEIHNACHTEN"; zur vollen Minute Lauflicht am Baum |
+| 23 | Halloween | Vollmond, Fledermaeuse, Spinne am Faden, Friedhof mit totem Baum, flackernder Kuerbis, schwebendes Gespenst; Countdown bis 31.10., am Tag selbst "HAPPY HALLOWEEN"; zur vollen Minute saust das Gespenst heran: "BUH!" |
+| 24 | Ostern | Fruehlingswiese, Osterhase hoppelt und wackelt mit den Ohren, versteckte bemalte Eier, Schmetterlinge, Uhrzeit in Ostereier-Farben; Countdown bis Ostersonntag (echtes Osterdatum), an Ostersonntag und -montag "FROHE OSTERN"; zur vollen Minute schluepft im Nest ein Kueken: "PIEP!" |
+| 25 | Valentinstag | Aufsteigende Herzen, zwei schnaebelnde Turteltauben auf einem Ast, Amors Pfeil fliegt durchs Bild; Countdown bis 14.02., am Tag selbst "ALLES LIEBE"; zur vollen Minute oeffnet sich ein Liebesbrief und ein grosses Herz zerplatzt |
+| 26 | Silvester | Stadt-Silhouette mit Feuerwerk (Ring, Chrysantheme, goldene Weide, Knistersterne); Countdown bis Neujahr, am 31.12. als Std:Min:Sek, letzte Minute mit riesigen Sekunden, um Mitternacht Lichtblitz, "PROSIT NEUJAHR" und Dauerfeuerwerk, am 1.1. "FROHES NEUES JAHR" |
 
 Beim Wechsel von oder zu einem Themen-Design laeuft ein eigener Uebergangseffekt. Die Szene wird in einen
 160x120-Puffer mit 256 Farben gezeichnet (ca. 19 KB RAM, nur waehrend ein Themen-Design aktiv ist), auf 320x240
@@ -149,13 +143,18 @@ auf Design 0 (Flip-Karten) zurueck.
 
 **Kategorien:** Auf der Seite *Anzeige* filtern Schaltflaechen die Design-Karten. Im automatischen Wechsel sind die
 Designs nach Kategorie gruppiert; ein Haken an der Kategorie waehlt alle ihre Designs. Kategorien: Klassische Uhren,
-Spiele & Arcade, Tiere & Natur, Technik & Retro, Traum & Gefuehl, Heimat & Familie, Himmel & Weltraum, Feiertage.
+Spiele & Arcade, Tiere & Natur, Technik & Retro, Traum & Gefuehl, Himmel & Weltraum, Feiertage.
 
 **Umstellung von der alten Version:** Entfernt wurden die klassischen Designs ausser Flip-Karten und Digital + Balken
 sowie Shiba-Inu-Welpe, Mayen, Tarnmuster, Maerchenschloss, Arena-Duell und Astrologie. Dadurch haben sich die Nummern
 geaendert. Beim ersten Start rechnet die Uhr die gespeicherte Auswahl und die Wechsel-Liste automatisch um:
 entfernte Designs fallen aus der Liste, ein entferntes ausgewaehltes Design wird durch ein aehnliches ersetzt
 (z. B. Shiba -> Dackel, Maerchenschloss -> Traumsand, Astrologie -> Sonne und Mond, Analoguhren -> Flip-Karten).
+
+**Umstellung ab 2026.11.09-3:** Entfernt wurden Labyrinth, Zahnrad-Werk, Blockwelt, Familie, Weihnachtself und
+Squishy Dumpling; die Nummern ab 4 sind nachgerueckt. Auch hier rechnet die Uhr Auswahl und Wechsel-Liste beim ersten
+Start selbst um (Labyrinth/Blockwelt -> Abenteuer, Zahnrad-Werk -> Code-Regen, Familie/Squishy Dumpling -> Dackelwelpe,
+Weihnachtself -> Weihnachten).
 
 ### Feiertage und Extras
 
@@ -260,7 +259,7 @@ dazu die Helligkeit waehrend der Dimmung (5-100 %). Beispiel: 22:00 bis 07:00 mi
 - Es wird eine gueltige Uhrzeit benoetigt (NTP). Ohne Uhrzeit bleibt die normale Helligkeit.
 - Ohne Backlight-Umbau werden nur die Farben abgedunkelt (siehe Abschnitt Dimmung), mit Umbau per PWM.
 - **Nachtmodus mit Testbild:** Haken "Nachtmodus: waehrend der Dimmung das Testbild zeigen". Im Fenster zeigt
-  die Uhr dann das Testbild (Design 17) statt des gewaehlten Designs, auch wenn der automatische Design-Wechsel an
+  die Uhr dann das Testbild (Design 15) statt des gewaehlten Designs, auch wenn der automatische Design-Wechsel an
   ist. Am Ende des Fensters kehrt sie zum gewaehlten Design zurueck. Ein Tipp auf den Touch-Taster waehlt nachts
   das naechste Design fuer den Tag, das Testbild bleibt bis zum Fensterende. Standard: `DEFAULT_DIM_TESTCARD`.
 - Standardwerte: `DEFAULT_DIM_*` in `config.h`.
@@ -465,7 +464,7 @@ eine Zeile pro Text mit allen Sprachen nebeneinander; eine weitere Sprache bekom
 | `buzzer.h` | Aktiver Piezo-Summer: Tonmuster, Wecker-Zustand |
 | `CHANGELOG.md` | Versionen und geaenderte Dateien |
 | `face_*.h`, `pet.h`, `astro.h`, `iss_map.h` | je ein Themen-Zifferblatt bzw. Hilfsdaten (Haustier-Szene, Astronomie, Weltkarte) |
-| `face_xmas.h`, `face_elf.h`, `face_halloween.h`, `face_easter.h`, `face_valentine.h`, `face_newyear.h` | Feiertags-Designs (`face_dumpling.h`: Squishy Dumpling) |
+| `face_xmas.h`, `face_halloween.h`, `face_easter.h`, `face_valentine.h`, `face_newyear.h` | Feiertags-Designs |
 
 ## Funktionsweise
 
@@ -501,7 +500,7 @@ eine Zeile pro Text mit allen Sprachen nebeneinander; eine weitere Sprache bekom
 | Bootschleife | GPIO2/8/9 nicht belegen, Flash Mode DIO, Datenkabel verwenden |
 
 
-## Flugradar (Design 19)
+## Flugradar (Design 17)
 
 Zeigt echte Flugzeuge rund um den Standort (Breiten-/Laengengrad im Reiter "Wetter"; der Radius steht
 direkt darunter, Standard 25 km). Norden ist oben, der Standort liegt in der Mitte.

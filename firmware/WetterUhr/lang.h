@@ -40,11 +40,7 @@ static uint8_t gLang = L_DE;
   X(D_MERRY,        "FROHE", "MERRY", "JOYEUX", "FELIZ", "BUON") \
   X(D_XMAS,         "WEIHNACHTEN", "CHRISTMAS", "NOEL", "NAVIDAD", "NATALE") \
   X(D_MERRY_XMAS,   "FROHE WEIHNACHTEN!", "MERRY CHRISTMAS!", "JOYEUX NOEL!", "FELIZ NAVIDAD!", "BUON NATALE!") \
-  /* Weihnachtself */ \
-  X(D_ELF_DAYS,     "NOCH %d TAGE!", "%d DAYS TO GO!", "ENCORE %d JOURS!", "FALTAN %d DIAS!", "ANCORA %d GIORNI!") \
-  X(D_ELF_GIFTS,    "%d GESCHENKE!", "%d GIFTS!", "%d CADEAUX!", "%d REGALOS!", "%d REGALI!") \
-  X(D_ELF_YAY,      "JUHUU!", "YAY!", "YOUPI!", "YUJU!", "EVVIVA!") \
-  X(D_ELF_OOPS,     "HOPPLA!", "OOPS!", "OUPS!", "UY!", "OPS!") \
+  /* Weihnachten (Countdown-Texte) */ \
   /* Halloween */ \
   X(D_HAPPY_HAL,    "HAPPY", "HAPPY", "JOYEUX", "FELIZ", "BUON") \
   X(D_TO_HAL,       "BIS HALLOWEEN", "TO HALLOWEEN", "AVANT HALLOWEEN", "PARA HALLOWEEN", "A HALLOWEEN") \
@@ -87,9 +83,7 @@ static uint8_t gLang = L_DE;
   X(D_OUT,          "AUS!", "OUT!", "FAUTE!", "FUERA!", "FUORI!") \
   X(D_OUT_CHAL,     "AUS?  CHALLENGE!", "OUT?  CHALLENGE!", "FAUTE?  CHALLENGE!", "FUERA?  CHALLENGE!", "FUORI?  CHALLENGE!") \
   X(D_IN,           "IN!", "IN!", "BONNE!", "DENTRO!", "DENTRO!") \
-  /* Squishy Dumpling, Hund */ \
-  X(D_YAWN,         "GAEHN!", "YAWN!", "BAILLE!", "BOSTEZO!", "SBADIGLIO!") \
-  X(D_GIGGLE,       "HIHI!", "HEHE!", "HIHI!", "JIJI!", "IHIH!") \
+  /* Hund */ \
   X(D_WOOF,         "WUFF!", "WOOF!", "OUAF!", "GUAU!", "BAU!") \
   /* Flugradar */ \
   X(D_LOADING,      "LADE...", "LOADING...", "CHARGE...", "CARGANDO...", "CARICO...") \

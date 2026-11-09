@@ -1,6 +1,6 @@
 # RetroTV-Wecker 2,0 Zoll
 
-Eine kleine WLAN-Uhr mit Wetter, Wecker und **33 Zifferblättern** im Pixel-Retro-Stil – auf einem
+Eine kleine WLAN-Uhr mit Wetter, Wecker und **27 Zifferblättern** im Pixel-Retro-Stil – auf einem
 2,0-Zoll-Farbdisplay (320 × 240) mit einem ESP32-C3 SuperMini **oder fertig auf einem CYD 2,8 Zoll**
 („Cheap Yellow Display“, ESP32-2432S028R, ganz ohne Löten). Alles wird bequem im Browser eingestellt,
 neue Firmware kommt per WLAN.
@@ -15,11 +15,11 @@ neue Firmware kommt per WLAN.
 
 - **Uhrzeit** per Internet (NTP) mit automatischer Sommer-/Winterzeit oder **von Hand** eingestellt.
 - **Wetter** von [Open-Meteo](https://open-meteo.com) (kostenlos, ohne Konto): Temperatur, Feuchte, Wind, Vorhersage.
-- **33 Designs**: 2 klassische Uhren (Flip-Karten, Digital mit Sekundenbalken) und 31 animierte Szenen –
+- **27 Designs**: 2 klassische Uhren (Flip-Karten, Digital mit Sekundenbalken) und 25 animierte Szenen –
   Arcade-Spiele, Tiere, Technik, Himmel und Weltraum, Feiertage.
-- **Automatischer Design-Wechsel** nach Zeitplan durch eine selbst gewählte Liste. Weihnachten (mit Weihnachtself),
+- **Automatischer Design-Wechsel** nach Zeitplan durch eine selbst gewählte Liste. Weihnachten,
   Silvester, Valentinstag, Halloween und Ostern kommen jeweils **10 Tage vor dem Fest von selbst dazu** und danach wieder heraus.
-- **Feiertage mit Countdown**: Weihnachten (mit Adventskranz), Weihnachtself, Halloween, Ostern (echtes Osterdatum),
+- **Feiertage mit Countdown**: Weihnachten (mit Adventskranz), Halloween, Ostern (echtes Osterdatum),
   Valentinstag, Silvester. An Silvester schaltet die Uhr von 23:30 bis 00:30 von selbst auf **Feuerwerk**.
 - **Echte Daten live**: Flugradar mit Flugzeugen in der Umgebung (offene ADS-B-Dienste), ISS-Tracker mit der echten
   Position der Raumstation, Sonne und Mond für deinen Standort.
@@ -41,10 +41,10 @@ neue Firmware kommt per WLAN.
 | ![Badminton](docs/images/design_16.png) | ![Aquarium](docs/images/design_21.png) | ![Weihnachten](docs/images/design_26.png) |
 | Match über drei Sätze bis 21 nach echten Regeln: Smash mit Geschwindigkeit, Hawk-Eye, Satz- und Matchball, jubelndes Publikum. Der Spielstand bleibt auch nach Stromausfall erhalten. | Korallenriff mit Lichtmustern, Clownfischen in der Anemone, Neon-Schwarm, Qualle, Schatztruhe – und ab und zu Besuch. | Countdown bis Heiligabend 18 Uhr, Adventskranz mit einer Kerze mehr an jedem Adventssonntag, Schneefall. |
 
-| Flugradar | Squishy Dumpling | Silvester |
+| Flugradar | Halloween | Silvester |
 |---|---|---|
-| ![Flugradar](docs/images/design_19.png) | ![Squishy Dumpling](docs/images/design_32.png) | ![Silvester](docs/images/design_31.png) |
-| Echte Flugzeuge rund um deinen Standort mit Rufzeichen, Typ, Höhe und Geschwindigkeit. | Ein knautschiger Teigknödel im Dämpfkorb: hüpft, wabbelt, wird mit Stäbchen angestupst und schläft nachts. | Countdown bis Neujahr, in der letzten Minute riesige Sekunden, um Mitternacht Dauerfeuerwerk. |
+| ![Flugradar](docs/images/design_19.png) | ![Halloween](docs/images/design_halloween.png) | ![Silvester](docs/images/design_31.png) |
+| Echte Flugzeuge rund um deinen Standort mit Rufzeichen, Typ, Höhe und Geschwindigkeit. | Vollmond, Fledermäuse, Gespenst und flackernder Kürbis; Countdown bis 31.10., zur vollen Minute „BUH!“. | Countdown bis Neujahr, in der letzten Minute riesige Sekunden, um Mitternacht Dauerfeuerwerk. |
 
 Die vollständige Liste aller Designs mit Beschreibung steht in der
 [ausführlichen Anleitung](firmware/WetterUhr/README.md#uhr-designs-und-farben).
@@ -149,7 +149,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.09`](releases/2026.11.09), Spiele: [`releases/2026.11.09-2`](releases/2026.11.09-2)), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.09-3`](releases/2026.11.09-3), Spiele: RetroCYD 3.3 in [`releases/2026.11.09-2`](releases/2026.11.09-2)), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
