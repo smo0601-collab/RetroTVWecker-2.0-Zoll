@@ -1,21 +1,20 @@
 /*
   ============================================================================
-   RETRO CYD 3.2  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.3  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
 
-  16 Spiele, alle im Hoch- und Querformat spielbar. Jedes Spiel steht in einer
+  13 Spiele, alle im Hoch- und Querformat spielbar. Jedes Spiel steht in einer
   eigenen Datei (g_*.h) im selben Ordner - ALLE Dateien muessen im Ordner
   "RetroCYD" liegen:
     SNAKE        Schlange          g_snake.h    BLOCKS      Steine-Puzzle  g_blocks.h
     BRICKS       Mauer abraeumen   g_bricks.h   PADDLE      Tischtennis    g_paddle.h
     ASTRO ROCKS  Felsen im All     g_rocks.h    ALIEN WAVE  Alien-Formation g_invaders.h
     STAR SWARM   Sturzflug-Shooter g_swarm.h    ROAD HOP    Strasse+Fluss  g_hopper.h
-    MAZE BOT     Labyrinth         g_maze.h     GIRDER      Kletter-Action g_girder.h
-    DIG DEEP     Tunnel graben     g_digger.h   PUFF JUMP   Schwebe-Hupfer g_puff.h
-    DOJO DUEL    Kampfsport (1-2P) g_duel.h     SUNSET RACE 3D-Rennen      g_racer.h
-    SKY ACE      Flieger-Shooter   g_skyace.h   JUNGLE RAID Soldat         g_raid.h
+    GIRDER       Kletter-Action    g_girder.h   DIG DEEP    Tunnel graben  g_digger.h
+    PUFF JUMP    Schwebe-Hupfer    g_puff.h     SUNSET RACE 3D-Rennen      g_racer.h
+    SKY ACE      Flieger-Shooter   g_skyace.h
   Dazu: core_fb.h (flimmerfreier Bildpuffer), webpage.h (Web-Oberflaeche) und
   cyd_shared.h (Zusammenarbeit mit der Wetteruhr, gleiche Datei wie im Uhr-Projekt).
 
@@ -80,15 +79,11 @@
   Astro Rocks: links/rechts drehen, hoch = Schub, A = Feuer, B = Hypersprung
   Alien Wave / Star Swarm: links/rechts, A = Feuer
   Road Hop:   Steuerkreuz = hopsen (Taste halten = weiterhopsen)
-  Maze Bot:   Richtung (wird an der naechsten Kreuzung genommen)
   Girder:     laufen, hoch/runter an Leitern, A = springen
   Dig Deep:   graben, A = Pumpe (mehrmals A = aufblasen)
   Puff Jump:  laufen, A = springen/flattern, B halten = einsaugen, B = spucken
-  Dojo Duel:  laufen (rueckwaerts = blocken), hoch = Sprung, runter = ducken,
-              A = Schlag, B = Tritt, X = Energiekugel; 2 Controller = 2P
   Sunset Race: lenken, A/hoch = Gas, B/runter = Bremse
   Sky Ace:    fliegen, A = Feuer, B = Looping (3x pro Leben)
-  Jungle Raid: laufen (Blickrichtung = Schussrichtung), A = Feuer, B = Granate
 
   ---------------------------------------------------------------------------
   MICRO-SD (optional, FAT32)
@@ -122,7 +117,7 @@
 const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 
-#define FW_VERSION "3.2"
+#define FW_VERSION "3.3"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -499,7 +494,7 @@ bool touchFired = false;
 enum State { ST_MENU, ST_GAME, ST_GAMEOVER, ST_SETUP };
 State state = ST_MENU;
 
-#define NUM_GAMES 16
+#define NUM_GAMES 13
 struct GameDef {
   const char* name;     // Anzeigename (ASCII, ohne Umlaute)
   const char* hsKey;    // Schluessel fuer den Highscore im Flash (max. 15 Zeichen)
@@ -939,11 +934,11 @@ void drawMenu() {
   if (landscape()) {
     txt("RETRO CYD", SCR_W / 2 + 2, 37, 3, C_DIM, C_BG);
     txt("RETRO CYD", SCR_W / 2, 35, 3, C_YELLOW, C_BG);
-    txt("16 ARCADE GAMES", 8, 56, 1, C_CYAN, C_BG, textdatum_t::middle_left);
+    txt("13 ARCADE GAMES", 8, 56, 1, C_CYAN, C_BG, textdatum_t::middle_left);
   } else {
     txt("RETRO CYD", SCR_W / 2 + 2, 48, 4, C_DIM, C_BG);
     txt("RETRO CYD", SCR_W / 2, 46, 4, C_YELLOW, C_BG);
-    txt("16 ARCADE GAMES", 12, 76, 1, C_CYAN, C_BG, textdatum_t::middle_left);
+    txt("13 ARCADE GAMES", 12, 76, 1, C_CYAN, C_BG, textdatum_t::middle_left);
   }
   drawMenuItems();
   drawMenuStatus();
@@ -997,14 +992,11 @@ void menuLoop() {
 #include "g_invaders.h"
 #include "g_swarm.h"
 #include "g_hopper.h"
-#include "g_maze.h"
 #include "g_girder.h"
 #include "g_digger.h"
 #include "g_puff.h"
-#include "g_duel.h"
 #include "g_racer.h"
 #include "g_skyace.h"
-#include "g_raid.h"
 
 const GameDef GAMES[NUM_GAMES] = {
   {"SNAKE",       "hs_snake",  "Schlange wird mit jedem Apfel laenger",        Snake::start,  Snake::loop,  false},
@@ -1015,14 +1007,11 @@ const GameDef GAMES[NUM_GAMES] = {
   {"ALIEN WAVE",  "hs_aliens", "Die anrueckende Alien-Formation abwehren",     Invaders::start, Invaders::loop, true},
   {"STAR SWARM",  "hs_swarm",  "Sturzflug-Angriffe des Insektenschwarms",      Swarm::start,  Swarm::loop,  true},
   {"ROAD HOP",    "hs_hop",    "Kueken ueber Strasse und Fluss ins Nest bringen", Hopper::start, Hopper::loop, true},
-  {"MAZE BOT",    "hs_maze",   "Roboter sammelt Energie im Labyrinth",         Maze::start,   Maze::loop,   true},
   {"GIRDER",      "hs_girder", "Ueber Stahltraeger klettern, Faessern ausweichen", Girder::start, Girder::loop, true},
   {"DIG DEEP",    "hs_dig",    "Tunnel graben und Gegner aufpumpen",           Digger::start, Digger::loop, true},
   {"PUFF JUMP",   "hs_puff",   "Schweben, Gegner einsaugen und ausspucken",    Puff::start,   Puff::loop,   true},
-  {"DOJO DUEL",   "hs_duel",   "Kampfsport gegen den Computer oder zu zweit",  Duel::start,   Duel::loop,   true},
   {"SUNSET RACE", "hs_race",   "3D-Rennen gegen die Zeit in den Sonnenuntergang", Racer::start, Racer::loop, true},
   {"SKY ACE",     "hs_sky",    "Propellerflugzeug-Shooter ueber dem Ozean",    SkyAce::start, SkyAce::loop, true},
-  {"JUNGLE RAID", "hs_raid",   "Soldat kaempft sich durch den Dschungel",      Raid::start,   Raid::loop,   true},
 };
 // ============================================================================
 //  WLAN

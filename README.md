@@ -69,13 +69,17 @@ gedreht, gespiegelt oder farbig falsch, lässt es sich im Browser unter *System 
 
 #### Spiele: RetroCYD als zweites Programm (nur CYD)
 
-Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (16 Spiele, Xbox-Controller per Bluetooth,
+Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (13 Spiele, Xbox-Controller per Bluetooth,
 Quellcode in [`firmware/RetroCYD`](firmware/RetroCYD)). Uhr und Spiele sind zwei Programme in den beiden
 Programmbereichen des Flash:
 
 - **Einschalten:** am Bildschirm **Uhr** oder **Spiele** antippen (sonst startet nach 6 s die Uhr).
 - **Lange halten:** in der Uhr Menü mit *Spiele / Standby / Zurück*, in RetroCYD Menü mit *ZUR UHR / SETUP / ZURÜCK*.
-- **Installieren:** neu mit `WetterUhr_<Version>_CYD_mitSpielen_erstinstallation.bin`, oder zu einer laufenden Uhr
+![Sunset Race](docs/images/sunset_race.png)
+
+*Sunset Race in RetroCYD 3.3: Kurven und Hügel, Palmen, Schilder, Tore – und ein großes eigenes Auto.*
+
+- **Installieren:** neu mit `…_CYD_mitSpielen_erstinstallation.bin`, oder zu einer laufenden Uhr
   `RetroCYD_<Version>_update.bin` im Browser der Uhr einspielen.
 - **Updates über Kreuz:** RetroCYD-Updates im Browser der Uhr, Uhr-Updates im RetroCYD-Setup (ein Programm kann sich
   nicht selbst überschreiben). Beide Seiten erkennen die Datei und warnen bei der falschen.
@@ -145,7 +149,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.09`](releases/2026.11.09)), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.09`](releases/2026.11.09), Spiele: [`releases/2026.11.09-2`](releases/2026.11.09-2)), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|

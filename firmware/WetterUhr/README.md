@@ -322,7 +322,7 @@ Steht das Bild nur auf dem Kopf: *Anzeige > Darstellung > Ausrichtung* auf "180 
 
 ### Spiele: RetroCYD als zweites Programm
 
-Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** (16 Spiele, Xbox-Controller per Bluetooth) liegen.
+Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** (13 Spiele, Xbox-Controller per Bluetooth) liegen.
 Beide sind eigene Programme in den zwei Programmbereichen des Flash; es laeuft immer eines davon.
 
 - **Einschalten** (Strom an oder Reset-Taste): Auswahl **Uhr** oder **Spiele** am Bildschirm antippen.
