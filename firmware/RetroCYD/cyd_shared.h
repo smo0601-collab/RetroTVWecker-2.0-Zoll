@@ -6,6 +6,10 @@
     - Erkennung, welches Programm im anderen Programmbereich (OTA-Partition) steckt
     - Umschalten zwischen den Programmen (Start-Partition setzen, Neustart)
     - Touchscreen XPT2046 mit Koordinaten und gemeinsamer Kalibrierung (gespeichert im NVS der Uhr, "wuhr")
+    - Sicherung von WLAN-Daten und Uhr-Einstellungen ausserhalb des NVS (im ungenutzten Bereich "spiffs").
+      Hintergrund: Uhr und RetroCYD teilen sich den kleinen NVS-Bereich (20 KB). Wird er voll oder unlesbar,
+      loescht der Arduino-Start ihn komplett - dann gingen WLAN und Einstellungen verloren. Aus der Sicherung
+      stellt die Uhr sie beim naechsten Start wieder her, und RetroCYD findet das WLAN der Uhr.
 
   Aufteilung des Flash (Partitionsschema "Minimal SPIFFS (1.9MB APP with OTA)"):
     app0 0x010000 und app1 0x1F0000, je 1,9 MB. In einem Bereich liegt die Uhr, im anderen RetroCYD.
@@ -155,17 +159,22 @@ struct Cal {
 };
 static Cal cal;
 
+static bool bakRead(uint8_t slot, void* data, uint16_t size, uint16_t ver);
+static bool bakWrite(uint8_t slot, const void* data, uint16_t size, uint16_t ver);
 static void calLoad() {
+  bool got = false;
   Preferences p;
   if (p.begin("wuhr", true)) {
-    if (p.getBytesLength("tcal") == sizeof(Cal)) p.getBytes("tcal", &cal, sizeof(Cal));
+    if (p.getBytesLength("tcal") == sizeof(Cal)) { p.getBytes("tcal", &cal, sizeof(Cal)); got = true; }
     p.end();
   }
+  if (!got) bakRead(1, &cal, sizeof(Cal), 1);         // NVS verloren: aus der Sicherung
   if (cal.ver != 1 || cal.x0 == cal.x1 || cal.y0 == cal.y1) cal = Cal();
 }
 static void calSave() {
   Preferences p;
   if (p.begin("wuhr", false)) { p.putBytes("tcal", &cal, sizeof(Cal)); p.end(); }
+  bakWrite(1, &cal, sizeof(Cal), 1);
 }
 // Kalibrierung aus drei Messungen (Rohwerte a/b an den Punkten oben links, oben rechts, unten links)
 static bool calFrom(const int a[3], const int b[3], uint8_t rot) {
@@ -188,6 +197,77 @@ static void calMap(int a, int b, uint8_t rot, int& x, int& y) {
   y = 20 + (long)(ry - cal.y0) * 200 / (cal.y1 - cal.y0);
   if (rot != cal.rot) { x = 319 - x; y = 239 - y; }    // um 180 Grad gedreht gegenueber der Kalibrierung
   x = constrain(x, 0, 319); y = constrain(y, 0, 239);
+}
+
+// ---------------------------------------------------------------------
+// Sicherung ausserhalb des NVS: letzter 4-KB-Sektor des Bereichs "spiffs" (0x3D0000, wird sonst nicht genutzt)
+//   Platz 0 (Offset    0, 256 B):  WLAN (SSID/Passwort der Uhr)
+//   Platz 1 (Offset  256, 256 B):  Touch-Kalibrierung
+//   Platz 2 (Offset 1024, 3 KB):   Einstellungen der Uhr (Struktur Settings)
+// ---------------------------------------------------------------------
+enum : uint8_t { BAK_WIFI = 0, BAK_CAL = 1, BAK_SET = 2 };
+struct BakHdr { uint32_t magic; uint16_t size; uint16_t ver; uint32_t crc; };
+static const uint32_t BAK_MAGIC = 0x4B425557;   // "WUBK"
+struct BakWifi { char ssid[33]; char pass[65]; };
+
+static uint32_t fnv(const uint8_t* d, size_t n) { uint32_t h = 2166136261u; while (n--) { h ^= *d++; h *= 16777619u; } return h; }
+static const esp_partition_t* bakPart() {
+  return esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, nullptr);
+}
+static size_t bakOff(uint8_t slot) { return slot == BAK_WIFI ? 0 : slot == BAK_CAL ? 256 : 1024; }
+static size_t bakMax(uint8_t slot) { return (slot == BAK_SET ? 3072 : 256) - sizeof(BakHdr); }
+
+static bool bakRead(uint8_t slot, void* data, uint16_t size, uint16_t ver = 1) {
+  const esp_partition_t* p = bakPart();
+  if (!p || p->size < 4096 || size > bakMax(slot)) return false;
+  const size_t base = p->size - 4096 + bakOff(slot);
+  BakHdr h;
+  if (esp_partition_read(p, base, &h, sizeof(h)) != ESP_OK) return false;
+  if (h.magic != BAK_MAGIC || h.size != size || h.ver != ver) return false;
+  uint8_t* tmp = (uint8_t*)malloc(size);
+  if (!tmp) return false;
+  bool ok = esp_partition_read(p, base + sizeof(h), tmp, size) == ESP_OK && fnv(tmp, size) == h.crc;
+  if (ok) memcpy(data, tmp, size);
+  free(tmp);
+  return ok;
+}
+
+// Schreibt einen Platz (liest den Sektor, aendert ihn, loescht und schreibt ihn neu). Unveraendert = kein Schreiben.
+static bool bakWrite(uint8_t slot, const void* data, uint16_t size, uint16_t ver = 1) {
+  const esp_partition_t* p = bakPart();
+  if (!p || p->size < 4096 || size > bakMax(slot)) return false;
+  const size_t sec = p->size - 4096;
+  uint8_t* buf = (uint8_t*)malloc(4096);
+  if (!buf) return false;
+  bool ok = esp_partition_read(p, sec, buf, 4096) == ESP_OK;
+  if (ok) {
+    BakHdr h = {BAK_MAGIC, size, ver, fnv((const uint8_t*)data, size)};
+    uint8_t* at = buf + bakOff(slot);
+    if (memcmp(at, &h, sizeof(h)) == 0 && memcmp(at + sizeof(h), data, size) == 0) { free(buf); return true; }
+    memcpy(at, &h, sizeof(h));
+    memcpy(at + sizeof(h), data, size);
+    ok = esp_partition_erase_range(p, sec, 4096) == ESP_OK && esp_partition_write(p, sec, buf, 4096) == ESP_OK;
+  }
+  free(buf);
+  return ok;
+}
+
+static void bakClear() {
+  const esp_partition_t* p = bakPart();
+  if (p && p->size >= 4096) esp_partition_erase_range(p, p->size - 4096, 4096);
+}
+
+// WLAN-Daten der Uhr: zuerst aus dem NVS der Uhr, sonst aus der Sicherung
+static bool clockWifi(String& ssid, String& pass) {
+  Preferences u;
+  if (u.begin("wuhr", true)) {
+    ssid = u.getString("ssid", ""); pass = u.getString("pass", "");
+    u.end();
+    if (ssid.length()) return true;
+  }
+  BakWifi w;
+  if (bakRead(BAK_WIFI, &w, sizeof(w)) && w.ssid[0]) { w.ssid[32] = 0; w.pass[64] = 0; ssid = w.ssid; pass = w.pass; return true; }
+  return false;
 }
 
 }  // namespace cyd

@@ -6,6 +6,9 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include "config.h"
+#if BOARD_CYD
+#include "cyd_shared.h"
+#endif
 #include "lang.h"
 
 struct Settings {
@@ -71,9 +74,11 @@ static const int8_t STYLE_V2_SEL[33]  = {0, 1, 2, 3, 2, 4, 5, 6, 7, 7, 8, 9, 10,
 static const int8_t STYLE_V2_LIST[33] = {0, 1, 2, 3, -1, 4, 5, 6, 7, -1, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, -1, -1, 20, 21, 22, -1, 23, 24, 25, 26, -1};
 
 static void settingsSave();
+static bool gSetRestored = false;   // CYD: Einstellungen kamen aus der Sicherung (NVS war leer)
 
 static void settingsLoad() {
   prefs.begin("wuhr", true);   // nur lesen
+  const bool nvsEmpty = !prefs.isKey("ssid");
   strlcpy(gSet.ssid,  prefs.getString("ssid",  DEFAULT_WIFI_SSID).c_str(), sizeof(gSet.ssid));
   strlcpy(gSet.pass,  prefs.getString("pass",  DEFAULT_WIFI_PASS).c_str(), sizeof(gSet.pass));
   strlcpy(gSet.tz,    prefs.getString("tz",    DEFAULT_TZ).c_str(),        sizeof(gSet.tz));
@@ -167,6 +172,25 @@ static void settingsLoad() {
   if (gSet.sleigh > 2) gSet.sleigh = DEFAULT_SLEIGH;
   if (gSet.dimLevel < 5 || gSet.dimLevel > 100) gSet.dimLevel = DEFAULT_DIM_LEVEL;
   if (gSet.tz[0] == 0)   strlcpy(gSet.tz, DEFAULT_TZ, sizeof(gSet.tz));
+#if BOARD_CYD
+  // NVS leer (neu oder geloescht, z. B. weil der gemeinsame NVS-Bereich mit RetroCYD voll war):
+  // Einstellungen aus der Sicherung ausserhalb des NVS zurueckholen, sonst wenigstens das WLAN.
+  if (nvsEmpty) {
+    Settings b;
+    cyd::BakWifi w;
+    if (cyd::bakRead(cyd::BAK_SET, &b, sizeof(Settings), STYLE_VERSION)) { gSet = b; gSetRestored = true; }
+    else if (cyd::bakRead(cyd::BAK_WIFI, &w, sizeof(w)) && w.ssid[0]) {
+      strlcpy(gSet.ssid, w.ssid, sizeof(gSet.ssid)); strlcpy(gSet.pass, w.pass, sizeof(gSet.pass)); gSetRestored = true;
+    }
+    if (gSetRestored) { gLang = gSet.lang < LANG_COUNT ? gSet.lang : 0; settingsSave(); }
+  } else {                                         // Sicherung anlegen bzw. aktuell halten (schreibt nur bei Aenderung)
+    cyd::BakWifi w;
+    memset(&w, 0, sizeof(w));
+    strlcpy(w.ssid, gSet.ssid, sizeof(w.ssid)); strlcpy(w.pass, gSet.pass, sizeof(w.pass));
+    cyd::bakWrite(cyd::BAK_WIFI, &w, sizeof(w));
+    cyd::bakWrite(cyd::BAK_SET, &gSet, sizeof(Settings), STYLE_VERSION);
+  }
+#endif
   if (sver < STYLE_VERSION) { settingsSave(); }   // umgerechnete Design-Nummern gleich speichern
   if (gSet.ntp[0] == 0)  strlcpy(gSet.ntp, DEFAULT_NTP, sizeof(gSet.ntp));
   if (gSet.host[0] == 0) strlcpy(gSet.host, DEFAULT_HOSTNAME, sizeof(gSet.host));
@@ -225,6 +249,14 @@ static void settingsSave() {
   prefs.putUChar("lang", gSet.lang);
   gLang = gSet.lang;
   prefs.end();
+#if BOARD_CYD
+  // Sicherung ausserhalb des NVS (siehe cyd_shared.h); schreibt nur, wenn sich etwas geaendert hat
+  cyd::BakWifi w;
+  memset(&w, 0, sizeof(w));
+  strlcpy(w.ssid, gSet.ssid, sizeof(w.ssid)); strlcpy(w.pass, gSet.pass, sizeof(w.pass));
+  cyd::bakWrite(cyd::BAK_WIFI, &w, sizeof(w));
+  cyd::bakWrite(cyd::BAK_SET, &gSet, sizeof(Settings), STYLE_VERSION);
+#endif
 }
 
 // Nur die Helligkeit schreiben (haeufig geaendert, schont den Flash)
@@ -238,4 +270,7 @@ static void settingsFactoryReset() {
   prefs.begin("wuhr", false);
   prefs.clear();
   prefs.end();
+#if BOARD_CYD
+  cyd::bakClear();               // sonst wuerden die alten Einstellungen beim Start wiederhergestellt
+#endif
 }

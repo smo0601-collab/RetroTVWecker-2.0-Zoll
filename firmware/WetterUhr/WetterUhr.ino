@@ -734,6 +734,7 @@ static void stopAp() {
 }
 
 static void wifiBegin() {
+  WiFi.persistent(false);                 // VOR dem ersten WiFi-Aufruf: WLAN-Treiber schreibt nichts ins NVS
   if (gSet.ssid[0] == 0) {                // keine WLAN-Daten -> Einrichtung
     setupMode = true;
     startAp();

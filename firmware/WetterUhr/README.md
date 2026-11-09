@@ -334,6 +334,9 @@ Beide sind eigene Programme in den zwei Programmbereichen des Flash; es laeuft i
   RetroCYD installiert ist.
 - **Touch einrichten:** Beim ersten Start mit Spielen zeigt die Uhr drei rote Kreuze zum Antippen, damit die Knoepfe
   genau getroffen werden. Spaeter jederzeit ueber "Touch kalibrieren".
+- WLAN, Einstellungen und Touch-Kalibrierung der Uhr werden zusaetzlich ausserhalb des gemeinsamen Einstellungsspeichers
+  gesichert; geht der Speicher beim Wechsel verloren, stellt die Uhr alles beim naechsten Start wieder her. RetroCYD
+  nutzt im Setup das WLAN der Uhr, wenn es kein eigenes hat.
 - Waehrend gespielt wird, laeuft die Uhr nicht (kein Wecker). RetroCYD uebernimmt beim ersten Start den
   Display-Chip und das WLAN der Uhr.
 

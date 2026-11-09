@@ -1,6 +1,6 @@
 /*
   ============================================================================
-   RETRO CYD 3.3  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.4  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
@@ -117,7 +117,7 @@
 const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 
-#define FW_VERSION "3.3"
+#define FW_VERSION "3.4"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -1071,9 +1071,18 @@ void wifiStart() {
   WiFi.persistent(false);
   WiFi.setHostname(HOSTNAME);
   bool connected = false;
-  if (cfg.ssid.length()) {
+  // Heimnetz: zuerst die eigenen WLAN-Daten, dann (neben der Wetteruhr) die der Uhr -
+  // aus deren Einstellungen oder, falls der Speicher geloescht wurde, aus der Sicherung (cyd_shared.h).
+  String ss[2], pw[2];
+  int nTry = 0;
+  if (cfg.ssid.length()) { ss[nTry] = cfg.ssid; pw[nTry] = cfg.pass; nTry++; }
+  {
+    String cs, cp;
+    if (clockPresent && cyd::clockWifi(cs, cp) && (nTry == 0 || cs != ss[0] || cp != pw[0])) { ss[nTry] = cs; pw[nTry] = cp; nTry++; }
+  }
+  for (int i = 0; i < nTry && !connected; i++) {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(cfg.ssid.c_str(), cfg.pass.c_str());
+    WiFi.begin(ss[i].c_str(), pw[i].c_str());
     uint32_t t = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - t < 15000) {
       delay(100);
@@ -1081,11 +1090,12 @@ void wifiStart() {
     }
     connected = (WiFi.status() == WL_CONNECTED);
     if (!connected) {
-      Serial.println("Heimnetz nicht erreichbar -> eigenes WLAN");
+      Serial.printf("WLAN %s nicht erreichbar\n", ss[i].c_str());
       WiFi.disconnect(true);
       delay(100);
     }
   }
+  if (!connected && nTry) Serial.println("Heimnetz nicht erreichbar -> eigenes WLAN");
   if (connected) {
     apMode = false;
     ipStr = WiFi.localIP().toString();
@@ -1544,11 +1554,10 @@ void setup() {
   clockPresent = cyd::partHas(cyd::otherPart(), cyd::APP_CLOCK);
   if (clockPresent) {
     cyd::bootOther();          // naechster Neustart (Strom aus, "ZUR UHR") startet wieder die Uhr
-    // Erster Start neben der Uhr: Display-Chip und WLAN von der Uhr uebernehmen
+    // Erster Start neben der Uhr: Display-Chip von der Uhr uebernehmen (WLAN der Uhr nutzt wifiStart direkt)
     Preferences u;
     if (u.begin("wuhr", true)) {
       if (!prefs.isKey("st7789") && u.isKey("pused")) prefs.putBool("st7789", u.getUChar("pused", 1) == 2);
-      if (!prefs.isKey("ssid") && u.isKey("ssid")) { prefs.putString("ssid", u.getString("ssid", "")); prefs.putString("pass", u.getString("pass", "")); }
       u.end();
     }
   }

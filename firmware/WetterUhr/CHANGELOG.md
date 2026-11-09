@@ -4,6 +4,20 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.09-4 - WLAN bleibt beim Wechsel Uhr/Spiele erhalten (CYD)
+
+- Uhr und RetroCYD teilen sich den kleinen Einstellungsspeicher (NVS, 20 KB). Wird er voll oder unlesbar, loescht der
+  Start ihn komplett - dann waren WLAN und Einstellungen weg. Neu: Die Uhr sichert WLAN, Einstellungen und
+  Touch-Kalibrierung zusaetzlich ausserhalb des NVS (ungenutzter Bereich "spiffs") und stellt sie beim naechsten Start
+  selbst wieder her.
+- Der WLAN-Treiber schreibt nichts mehr ins NVS (`WiFi.persistent(false)` vor dem ersten WLAN-Aufruf); das entlastet
+  den gemeinsamen Speicher.
+- Status zeigt die Belegung des Einstellungsspeichers und ob aus der Sicherung wiederhergestellt wurde.
+- RetroCYD 3.4: nutzt im Setup automatisch das WLAN der Uhr (auch aus der Sicherung), wenn das eigene fehlt oder nicht
+  erreichbar ist.
+
+Geaenderte Dateien: `cyd_shared.h`, `settings.h`, `WetterUhr.ino`, `webui.h`, `lang_web.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.09-3 - Sechs Designs entfernt
 
 - Entfernt: Labyrinth, Zahnrad-Werk, Blockwelt, Familie, Weihnachtself, Squishy Dumpling (jetzt 27 Designs:

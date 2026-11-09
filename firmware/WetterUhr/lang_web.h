@@ -276,6 +276,9 @@
   X(W_FW_HINT2,   "&ldquo; w&auml;hlen und normal hochladen (Passwort = Web-Passwort).", "” in the Arduino IDE and upload as usual (password = web password).", " » et téléversez normalement (mot de passe = mot de passe web).", \
                   "» y carga como siempre (contraseña = contraseña web).", "» e carica come sempre (password = password web).") \
   X(W_R_GAMES,    "Spiele (RetroCYD)", "Games (RetroCYD)", "Jeux (RetroCYD)", "Juegos (RetroCYD)", "Giochi (RetroCYD)") \
+  X(W_R_NVS,      "Einstellungsspeicher (NVS)", "Settings storage (NVS)", "Mémoire des réglages (NVS)", "Memoria de ajustes (NVS)", "Memoria impostazioni (NVS)") \
+  X(W_NVS_FMT,    "%u von %u Eintr&auml;gen belegt", "%u of %u entries used", "%u sur %u entrées utilisées", "%u de %u entradas usadas", "%u di %u voci usate") \
+  X(W_NVS_RESTORED, " &ndash; Einstellungen wurden aus der Sicherung wiederhergestellt", " – settings were restored from the backup", " – réglages restaurés depuis la sauvegarde", " – ajustes restaurados desde la copia", " – impostazioni ripristinate dal backup") \
   X(W_H_GAMES,    "Spiele (RetroCYD)", "Games (RetroCYD)", "Jeux (RetroCYD)", "Juegos (RetroCYD)", "Giochi (RetroCYD)") \
   X(W_G_YES,      "installiert", "installed", "installés", "instalados", "installati") \
   X(W_G_NO,       "nicht installiert &ndash; Datei <b>RetroCYD_&hellip;_update.bin</b> unten bei Firmware-Update einspielen", "not installed – upload <b>RetroCYD_…_update.bin</b> below under firmware update", \

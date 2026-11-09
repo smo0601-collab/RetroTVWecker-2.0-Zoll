@@ -1,4 +1,5 @@
 #pragma once
+#include <nvs.h>
 /*
   Einstellungsseite im Browser (WebServer, Port 80).
 
@@ -543,6 +544,13 @@ static void handleRoot() {
   row(W_R_PANEL, boardPanelInfo());
 #if BOARD_CYD
   rowh(W_R_GAMES, TR(dual::games() ? W_G_YES : W_G_NO));
+  {
+    nvs_stats_t st;
+    if (nvs_get_stats(nullptr, &st) == ESP_OK) {
+      snprintf(fb, sizeof(fb), TR(W_NVS_FMT), (unsigned)st.used_entries, (unsigned)st.total_entries);
+      rowh(W_R_NVS, String(fb) + (gSetRestored ? TR(W_NVS_RESTORED) : ""));
+    }
+  }
 #endif
   row(W_R_FW, String(FW_VERSION) + "  (" + TR(W_BUILT) + " " + __DATE__ + " " + __TIME__ + ")");
   p += F("</table>");
