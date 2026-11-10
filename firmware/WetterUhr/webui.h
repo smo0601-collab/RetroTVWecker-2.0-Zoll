@@ -941,25 +941,36 @@ static void handleRoot() {
     // Ablauf im Browser: /fwprep fragt, ob direkt oder ueber RetroCYD (CYD mit Spielen: die Uhr kann sich nicht
     // selbst ueberschreiben). Bei "relay" startet die Uhr RetroCYD im Update-Modus, die Seite wartet auf /fwready
     // (gleiche IP) und schickt die Datei dann dorthin; RetroCYD schreibt die neue Uhr und startet sie.
-    p += F("</small><script>function fwUp(){const f=$('fw').files[0],o=$('fwp'),b=$('fwb');"
+    p += F("</small><script>"
+           // Inhalt pruefen (nicht den Namen): Chip im Kopf, Programm-Kennung (kein Bootloader/Erstinstallation),
+           // welches Programm (Uhr / RetroCYD) - die Kennungen stehen um 1 verschoben hier, damit sie nicht in der Uhr selbst stecken
+           "async function fwKind(f){const b=new Uint8Array(await f.arrayBuffer()),n=b.length;if(n<4096)return'bad';"
+           "if(b[0]!=0xE9)return(b[0]==0xFF&&n>0x9000&&b[0x1000]==0xE9)?'merged':'bad';"
+           "if(!(b[32]==0x32&&b[33]==0x54&&b[34]==0xCD&&b[35]==0xAB))return'merged';"
+           "if((b[12]|b[13]<<8)!=L.chip)return'board';"
+           "const has=e=>{const m=[...e].map(c=>c.charCodeAt(0)-1),l=m.length;o:for(let i=0;i<=n-l;i++){if(b[i]!=m[0])continue;for(let k=1;k<l;k++)if(b[i+k]!=m[k])continue o;return true;}return false;};"
+           "if(has('SFUSPDZE.BQQ.JE.2'))return'games';if(has('XFUUFSVIS.BQQ.JE.2'))return'clock';return L.cyd?'old':'clock';}"
+           "function fwUp(){const f=$('fw').files[0],o=$('fwp'),b=$('fwb');"
            "if(!f){o.textContent=L.pick;return;}"
-           "if(!/\\.bin$/i.test(f.name)||/merged|bootloader|partitions|erstinstallation/i.test(f.name)){o.textContent=L.wrong;return;}"
-           "if(!confirm(f.name+'\\n'+L.conf))return;"
-           "b.disabled=true;const fail=m=>{o.textContent=m;b.disabled=false;};"
-           "fetch('/fwprep?name='+encodeURIComponent(f.name),{cache:'no-store'}).then(r=>r.text()).then(m=>{"
-           "if(m!='relay'){fwSend(f,'');return;}"
+           "b.disabled=true;const fail=m=>{o.textContent=m;b.disabled=false;};o.textContent=L.fchk;"
+           "fwKind(f).then(k=>{"
+           "if(k=='merged')return fail(L.fmrg);if(k=='board')return fail(L.fbrd);if(k=='old')return fail(L.fold);if(k!='clock'&&k!='games')return fail(L.fbad);"
+           "if(k=='games'&&!L.cyd)return fail(L.fbrd);"
+           "o.textContent=k=='games'?L.fgam:L.fclk;"
+           "if(!confirm(f.name+'\\n'+(k=='games'?L.fgam:L.fclk)+'\\n'+L.conf)){b.disabled=false;return;}"
+           "if(k=='games'||!L.games){fwSend(f,'',k);return;}"
            "o.textContent=L.relay;"
            "fetch('/fwrelay',{method:'POST'}).then(r=>r.text()).then(t=>{const t0=Date.now();"
            "const poll=()=>{if(Date.now()-t0>120000){fail(L.lost);return;}"
-           "fetch('/fwready?t='+t,{cache:'no-store'}).then(r=>r.text()).then(x=>{if(x=='ready')fwSend(f,t);else setTimeout(poll,2000);})"
+           "fetch('/fwready?t='+t,{cache:'no-store'}).then(r=>r.text()).then(x=>{if(x=='ready')fwSend(f,t,k);else setTimeout(poll,2000);})"
            ".catch(()=>setTimeout(poll,2000));};setTimeout(poll,5000);}).catch(()=>fail(L.lost));"
-           "}).catch(()=>fail(L.lost));}"
-           "function fwSend(f,t){const o=$('fwp'),b=$('fwb');const x=new XMLHttpRequest();"
-           "x.open('POST','/update?size='+f.size+(t?'&t='+t:''));"
+           "}).catch(()=>fail(L.fbad));}"
+           "function fwSend(f,t,k){const o=$('fwp'),b=$('fwb');const x=new XMLHttpRequest();"
+           "x.open('POST','/update?size='+f.size+'&app='+k+(t?'&t='+t:''));"
            "x.upload.onprogress=e=>{if(e.lengthComputable){const q=Math.round(e.loaded*100/e.total);o.textContent=L.sent+q+' %';$('fwbar').style.width=q+'%';}};"
            "x.onload=()=>{let j=null;try{j=JSON.parse(x.responseText);}catch(e){}"
            "if(x.status==200&&(x.responseText=='OK'||(j&&j.ok))){o.textContent=L.done;setTimeout(()=>location.href='/',25000);}"
-           "else if(x.status==200&&!j){o.textContent=x.responseText;b.disabled=false;}"
+           "else if(x.status==200&&!j){o.textContent=x.responseText;b.disabled=false;$('fwbar').style.width='100%';if(k=='games'&&confirm(L.gst))fetch('/games',{method:'POST'});}"
            "else{o.textContent=L.err+(j&&j.err?j.err:x.responseText);b.disabled=false;}};"
            "x.onerror=()=>{o.textContent=L.lost;b.disabled=false;};"
            "const d=new FormData();d.append('firmware',f,f.name);x.send(d);}</script>");
@@ -996,6 +1007,14 @@ static void handleRoot() {
   auto js = [&](const char* k, uint16_t id) { p += k; p += F(":\""); p += jsonEsc(TR(id)); p += F("\","); };
   p += F("<script>const L={");
   js("scan", W_SCANNING); js("found", W_FOUND); js("scanb", W_SCAN); js("pick", J_PICK); js("wrong", J_WRONG); js("conf", J_CONFIRM);
+  js("fmrg", J_F_MERGED); js("fbrd", J_F_BOARD); js("fbad", J_F_BAD); js("fold", J_F_OLD); js("fchk", J_F_CHECK);
+  js("fgam", J_F_GAMES); js("fclk", J_F_CLOCK); js("gst", J_F_GSTART);
+  p += F("chip:"); p += String((int)CONFIG_IDF_FIRMWARE_CHIP_ID); p += F(",cyd:"); p += BOARD_CYD ? '1' : '0';
+#if BOARD_CYD
+  p += F(",games:"); p += dual::games() ? '1' : '0'; p += ',';
+#else
+  p += F(",games:0,");
+#endif
   js("sent", J_SENT); js("relay", J_RELAY); js("done", J_DONE); js("err", J_ERR); js("lost", J_LOST); js("reset", W_RESET_Q);
   js("cpub", J_CAL_PUB); js("cspec", J_CAL_SPEC); js("cfer", J_CAL_FER); js("cfok", J_CAL_FEROK); js("cfno", J_CAL_FERNO); js("cferr", J_CAL_FERERR);
   js("gw", J_GEO_WAIT); js("gn", J_GEO_NONE); js("ge", J_GEO_ERR); js("gok", J_GEO_OK); js("gsv", J_GEO_SAVE);
@@ -1339,7 +1358,10 @@ static void handleUpdateUpload() {
 #if BOARD_CYD
     // Zwei Programme: das Update wird in den anderen Programmbereich geschrieben. Dort steckt RetroCYD,
     // wenn es installiert ist - eine Uhr-Datei wuerde die Spiele ueberschreiben.
-    gOtaApp = cyd::appFromName(up.filename);
+    {                                                  // welches Programm: vom Browser (Inhalt geprueft), sonst Dateiname
+      const String a = server.arg("app");
+      gOtaApp = a == "games" ? cyd::APP_GAMES : (a == "clock" ? cyd::APP_CLOCK : cyd::appFromName(up.filename));
+    }
     if (gOtaApp != cyd::APP_GAMES && dual::games()) { gOtaErr = TR(W_E_CLOCK_IN_GAMES); return; }
     gOtaScan.begin(gOtaApp == cyd::APP_GAMES ? cyd::APP_GAMES : cyd::APP_CLOCK);
 #endif
@@ -1351,14 +1373,14 @@ static void handleUpdateUpload() {
     if (gOtaErr.length()) return;
     // Erster Block: Chip im Bild-Kopf pruefen (Byte 12/13), damit keine Firmware fuer das andere Board
     // (CYD = ESP32 bzw. ESP32-C3) eingespielt wird - sie wuerde nicht starten.
-    if (Update.progress() == 0 && up.currentSize >= 16 && up.buf[0] == 0xE9) {
-      const uint16_t chip = up.buf[12] | (up.buf[13] << 8);
-      if (chip != CONFIG_IDF_FIRMWARE_CHIP_ID) {
-        gOtaErr = TR(W_E_BOARD);
-        Update.abort();
-        otaResume();
-        return;
-      }
+    if (Update.progress() == 0 && up.currentSize >= 36) {
+      const uint8_t* q = up.buf;
+      const bool appDesc = q[0] == 0xE9 && q[32] == 0x32 && q[33] == 0x54 && q[34] == 0xCD && q[35] == 0xAB;
+      const uint16_t chip = q[12] | (q[13] << 8);
+      const char* e = nullptr;
+      if (!appDesc) e = TR(W_E_MERGED);                // Erstinstallation / Bootloader / keine Programmdatei
+      else if (chip != CONFIG_IDF_FIRMWARE_CHIP_ID) e = TR(W_E_BOARD);
+      if (e) { gOtaErr = e; Update.abort(); otaResume(); return; }
     }
 #if BOARD_CYD
     gOtaScan.feed(up.buf, up.currentSize);

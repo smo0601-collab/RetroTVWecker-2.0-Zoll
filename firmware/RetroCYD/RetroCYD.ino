@@ -1,6 +1,6 @@
 /*
   ============================================================================
-   RETRO CYD 3.8.1-  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.9  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
@@ -21,6 +21,9 @@
     VIER GEWINNT gegen CPU/zu zweit g_four.h    SIEBZEHN UND VIER Karten   g_blackjack.h
     SPURWECHSEL  Rennen von oben   g_lanes.h
   Gemeinsame Hilfen der Touch-Spiele: g_kit.h.
+  UPDATE (ab 3.9): Die Datei wird am Inhalt erkannt. Uhr-Datei -> Uhr-Update; RetroCYD-Datei bei
+  installierter Uhr -> die Seite startet die Uhr und spielt sie dort ein. Erstinstallations-Dateien und
+  Dateien fuer den ESP32-C3 werden abgelehnt.
   RGB-LED (ab 3.8, fx_led.h): im Menue die Farbe der Kategorie, Blitz bei jeder
   Vibration, Regenbogen bei neuem Rekord/geloestem Raetsel, Startampel bei Sunset
   Race, Spielerfarbe bei Vier gewinnt und Paare finden, Tank-Warnung bei
@@ -152,9 +155,10 @@
 // Kennung dieses Programms im Klartext (die Wetteruhr erkennt daran RetroCYD im anderen Programmbereich)
 const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
+uint32_t toClockAt = 0;      // Browser: zur Uhr wechseln (Zeitpunkt, 0 = nein)
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.8.1"
+#define FW_VERSION "3.9"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -1392,6 +1396,7 @@ void handleState() {
   String j;
   j.reserve(1024);
   j += "{\"fw\":\"" FW_VERSION "\"";
+  j += ",\"clock\":"; j += clockPresent ? "true" : "false";
   j += ",\"ip\":\"" + ipStr + "\"";
   j += ",\"ap\":"; j += jb(apMode);
   j += ",\"apName\":\"" AP_SSID "\"";
@@ -1516,10 +1521,21 @@ bool otaBegun = false;
 
 String otaCheckTarget(cyd::App app) {
   otaExpect = cyd::APP_NONE;
-  if (!clockPresent) return "";                                   // RetroCYD allein: wie bisher
+  if (!clockPresent) {                                            // RetroCYD allein: RetroCYD-Update oder Uhr dazu installieren
+    if (app == cyd::APP_CLOCK) otaExpect = cyd::APP_CLOCK;
+    else if (app == cyd::APP_GAMES) otaExpect = cyd::APP_GAMES;
+    return "";
+  }
   if (app == cyd::APP_CLOCK) { otaExpect = cyd::APP_CLOCK; return ""; }
-  if (app == cyd::APP_GAMES) return "RetroCYD-Updates bitte im Browser der Wetteruhr einspielen (System > Firmware-Update) - hier wuerde die Uhr ueberschrieben.";
-  return "Dateiname muss WetterUhr (Uhr-Update) enthalten.";
+  if (app == cyd::APP_GAMES) return "RetroCYD-Updates spielt die Uhr ein (die Seite startet sie dafuer automatisch) - hier wuerde die Uhr ueberschrieben.";
+  return "Datei nicht erkannt.";
+}
+// Welches Programm: vom Browser (Inhalt geprueft), sonst nach dem Dateinamen
+cyd::App otaAppArg(const String& filename) {
+  const String a = server.arg("app");
+  if (a == "clock") return cyd::APP_CLOCK;
+  if (a == "games") return cyd::APP_GAMES;
+  return cyd::appFromName(filename);
 }
 
 void handleUploadData() {
@@ -1529,20 +1545,27 @@ void handleUploadData() {
     otaBegun = false;
     size_t sz = server.hasArg("size") ? (size_t)server.arg("size").toInt() : 0;
     if (relayToken && strtoul(server.arg("t").c_str(), nullptr, 16) != relayToken) { otaErr = "Ungueltige Anfrage"; return; }
-    otaErr = otaCheckTarget(cyd::appFromName(up.filename));
+    otaErr = otaCheckTarget(otaAppArg(up.filename));
     if (!otaErr.isEmpty()) return;
     if (otaExpect != cyd::APP_NONE) otaScan.begin(otaExpect);
     otaScreen(otaExpect == cyd::APP_CLOCK ? "UHR-UPDATE" : "WLAN-UPDATE");
     otaBegun = true;
     if (!Update.begin(sz > 0 ? sz : UPDATE_SIZE_UNKNOWN, U_FLASH)) otaErr = Update.errorString();
   } else if (up.status == UPLOAD_FILE_WRITE) {
+    if (otaErr.isEmpty() && Update.progress() == 0 && up.currentSize >= 36) {   // erster Block: echte Programmdatei fuer den ESP32?
+      const uint8_t* q = up.buf;
+      const bool appDesc = q[0] == 0xE9 && q[32] == 0x32 && q[33] == 0x54 && q[34] == 0xCD && q[35] == 0xAB;
+      if (!appDesc) otaErr = "Erstinstallations-Datei (mit Bootloader) - nur per USB. Bitte *_update.bin verwenden.";
+      else if ((q[12] | (q[13] << 8)) != 0) otaErr = "Datei ist fuer ein anderes Board (ESP32-C3), nicht fuer das CYD.";
+      if (!otaErr.isEmpty()) { Update.abort(); return; }
+    }
     if (otaExpect != cyd::APP_NONE) otaScan.feed(up.buf, up.currentSize);
     if (otaErr.isEmpty() && Update.write(up.buf, up.currentSize) != up.currentSize)
       otaErr = Update.errorString();
   } else if (up.status == UPLOAD_FILE_END) {
     if (otaErr.isEmpty() && otaExpect != cyd::APP_NONE && !otaScan.found) {
       Update.abort();
-      otaErr = "Die Datei ist keine Wetteruhr-Firmware fuer das CYD";
+      otaErr = otaExpect == cyd::APP_CLOCK ? "Die Datei ist keine Wetteruhr-Firmware fuer das CYD" : "Die Datei ist kein RetroCYD";
     }
     if (otaErr.isEmpty() && !Update.end(true)) otaErr = Update.errorString();
   } else if (up.status == UPLOAD_FILE_ABORTED) {
@@ -1617,6 +1640,11 @@ void webSetup() {
   server.on("/api/hsreset", HTTP_POST, handleHsReset);
   server.on("/api/reboot", HTTP_POST, handleReboot);
   server.on("/api/sdupdate", HTTP_POST, handleSdUpdate);
+  server.on("/api/toclock", HTTP_POST, []() {      // zur Uhr wechseln (z. B. damit sie ein RetroCYD-Update einspielt)
+    if (!clockPresent) { sendJson("{\"ok\":false,\"err\":\"keine Uhr installiert\"}"); return; }
+    sendJson("{\"ok\":true}");
+    toClockAt = millis() + 600;
+  });
   server.on("/update", HTTP_POST, handleUploadDone, handleUploadData);
   server.onNotFound(handleNotFound);
   Update.onProgress(otaProgress);
@@ -2090,6 +2118,7 @@ void loop() {
   BP32.update();
   readInput();
   Led::tick();
+  if (toClockAt && (int32_t)(millis() - toClockAt) >= 0) { toClockAt = 0; toClock(); }
   updateBtScan();             // Kopplungsfenster abgelaufen? -> Suche aus
 
   if (wifiOn) {

@@ -481,6 +481,23 @@
                   "El dise&ntilde;o &laquo;Calendario&raquo; (Pantalla) muestra el mes. Los festivos se calculan en el reloj, las vacaciones vienen de openholidaysapi.org (cada semana).", \
                   "Il design &laquo;Calendario&raquo; (Display) mostra il mese. Le festivit&agrave; sono calcolate nell'orologio, le vacanze arrivano da openholidaysapi.org (ogni settimana).") \
   X(W_H_CALYEAR,  "Jahres&uuml;bersicht", "Year overview", "Aper&ccedil;u de l'ann&eacute;e", "Resumen del a&ntilde;o", "Panoramica dell'anno") \
+  X(J_F_MERGED,   "Das ist eine Erstinstallations-Datei (mit Bootloader). Sie wird nur per USB eingespielt (Adresse 0x0). Hier bitte die Datei *_update.bin wählen.", \
+                  "This is a first-install file (with bootloader). It can only be flashed via USB (address 0x0). Please choose the *_update.bin file here.", \
+                  "Fichier de première installation (avec bootloader) : uniquement par USB (adresse 0x0). Choisissez ici le fichier *_update.bin.", \
+                  "Es un archivo de primera instalación (con bootloader): solo por USB (dirección 0x0). Elige aquí el archivo *_update.bin.", \
+                  "File di prima installazione (con bootloader): solo via USB (indirizzo 0x0). Scegli qui il file *_update.bin.") \
+  X(J_F_BOARD,    "Diese Datei ist für ein anderes Board (CYD bzw. ESP32-C3) und wird nicht eingespielt.", "This file is for another board (CYD or ESP32-C3) and will not be installed.", \
+                  "Ce fichier est pour une autre carte (CYD ou ESP32-C3).", "Este archivo es para otra placa (CYD o ESP32-C3).", "Questo file è per un'altra scheda (CYD o ESP32-C3).") \
+  X(J_F_BAD,      "Das ist keine passende Firmware-Datei.", "This is not a suitable firmware file.", "Ce n'est pas un fichier de firmware adapté.", "No es un archivo de firmware adecuado.", "Non è un file firmware adatto.") \
+  X(J_F_OLD,      "Datei nicht erkannt (zu alte Version?). Bitte eine aktuelle *_update.bin verwenden.", "File not recognised (too old?). Please use a current *_update.bin.", \
+                  "Fichier non reconnu (trop ancien ?). Utilisez un *_update.bin actuel.", "Archivo no reconocido (¿demasiado antiguo?). Usa un *_update.bin actual.", "File non riconosciuto (troppo vecchio?). Usa un *_update.bin attuale.") \
+  X(J_F_CHECK,    "Prüfe Datei ...", "Checking file ...", "Vérification ...", "Comprobando ...", "Verifica ...") \
+  X(J_F_GAMES,    "Erkannt: RetroCYD (Spiele) - wird neben der Uhr installiert.", "Detected: RetroCYD (games) - installed next to the clock.", \
+                  "Détecté : RetroCYD (jeux) - installé à côté de l'horloge.", "Detectado: RetroCYD (juegos) - se instala junto al reloj.", "Rilevato: RetroCYD (giochi) - installato accanto all'orologio.") \
+  X(J_F_CLOCK,    "Erkannt: Uhr-Update.", "Detected: clock update.", "Détecté : mise à jour de l'horloge.", "Detectado: actualización del reloj.", "Rilevato: aggiornamento dell'orologio.") \
+  X(J_F_GSTART,   "Spiele jetzt starten?", "Start the games now?", "Lancer les jeux maintenant ?", "¿Iniciar los juegos ahora?", "Avviare i giochi ora?") \
+  X(W_E_MERGED,   "Erstinstallations-Datei (mit Bootloader) - nur per USB. Bitte *_update.bin verwenden.", "First-install file (with bootloader) - USB only. Please use *_update.bin.", \
+                  "Fichier de première installation - USB uniquement. Utilisez *_update.bin.", "Archivo de primera instalación - solo USB. Usa *_update.bin.", "File di prima installazione - solo USB. Usa *_update.bin.") \
   X(J_CAL_PUB,    "Feiertag", "Public holiday", "Jour férié", "Festivo", "Festività") \
   X(J_CAL_SPEC,   "Besonderer Tag", "Special day", "Jour spécial", "Día especial", "Giorno speciale") \
   X(J_CAL_FER,    "Schulferien", "School holidays", "Vacances scolaires", "Vacaciones escolares", "Vacanze scolastiche") \

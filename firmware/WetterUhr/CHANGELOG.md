@@ -4,6 +4,19 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.11-2 - Firmware-Update: nur passende Dateien, richtiges Programm automatisch
+
+- Der Browser prueft die gewaehlte Datei am **Inhalt** (nicht mehr am Namen), bevor etwas uebertragen wird:
+  Erstinstallations-Dateien (mit Bootloader), Dateien fuer das andere Board (CYD / ESP32-C3), alte Versionen ohne
+  Kennung und fremde Dateien werden mit Erklaerung abgelehnt.
+- Uhr-Datei -> Uhr-Update (bei installierten Spielen automatisch ueber RetroCYD), RetroCYD-Datei -> wird neben der
+  Uhr installiert, danach auf Wunsch die Spiele starten. Der Dateiname spielt keine Rolle mehr.
+- Die Uhr prueft zusaetzlich selbst den ersten Block (Programm-Kennung, Chip) und am Ende die Programm-Kennung.
+- RetroCYD 3.9: gleiche Pruefung; eine RetroCYD-Datei im RetroCYD-Browser startet die Uhr und wird dort eingespielt,
+  danach starten die Spiele wieder.
+
+Geaenderte Dateien: `webui.h`, `lang_web.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.11 - Kalender mit Feiertagen, besonderen Tagen und Schulferien
 
 - Neuer Reiter **Kalender** im Browser: Bundesland waehlen, gesetzliche Feiertage, besondere Tage und Schulferien

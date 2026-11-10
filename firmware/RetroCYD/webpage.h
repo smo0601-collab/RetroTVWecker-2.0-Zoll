@@ -61,7 +61,7 @@ button.warn{background:#a02828}button.sec{background:#33335a}
 
 <section><h2>Firmware-Update</h2>
 <p class="small">Arduino IDE → Sketch → „Kompilierte Binärdatei exportieren“. Dann <b>RetroCYD.ino.bin</b> hier hochladen (nicht die *.merged.bin).</p>
-<p class="small"><b>Zusammen mit der Wetteruhr:</b> Hier wird die <b>Uhr</b> aktualisiert (Datei <b>WetterUhr_…_CYD_update.bin</b>). RetroCYD-Updates (<b>RetroCYD_…_update.bin</b>) im Browser der Uhr unter System → Firmware-Update einspielen.</p>
+<p class="small"><b>Zusammen mit der Wetteruhr:</b> Die Datei wird am Inhalt erkannt. Ein Uhr-Update (<b>WetterUhr_…_CYD_update.bin</b>) wird hier eingespielt; bei einem RetroCYD-Update (<b>RetroCYD_…_update.bin</b>) startet die Seite die Uhr und schickt die Datei dorthin. Erstinstallations-Dateien und Dateien für den ESP32-C3 werden abgelehnt.</p>
 <input type="file" id="fw" accept=".bin"><br>
 <button onclick="upload()">Hochladen &amp; installieren</button><button class="sec" onclick="sdUpdate()">Update von SD-Karte</button>
 <div class="bar"><div id="prog"></div></div><p class="small" id="upmsg"></p></section>
@@ -99,16 +99,50 @@ function saveWifi(){
  post('/api/wifi',{ssid:$('#ssid').value,pass:$('#pass').value,apPass:$('#apPass').value,always:$('#wifiAlways').checked?1:0})
  .then(r=>{ if(r.err){toast(r.err);return;} toast('Gespeichert – Neustart...'); });
 }
-function upload(){
- const f=$('#fw').files[0]; if(!f){toast('Bitte .bin-Datei wählen');return;}
+// Datei am Inhalt pruefen: echte Programmdatei (kein Bootloader/Erstinstallation), Chip ESP32, Uhr oder RetroCYD.
+// Die Kennungen stehen um 1 verschoben hier (sonst wuerden sie im Programm selbst stecken).
+async function fwKind(f){const b=new Uint8Array(await f.arrayBuffer()),n=b.length;if(n<4096)return'bad';
+ if(b[0]!=0xE9)return(b[0]==0xFF&&n>0x9000&&b[0x1000]==0xE9)?'merged':'bad';
+ if(!(b[32]==0x32&&b[33]==0x54&&b[34]==0xCD&&b[35]==0xAB))return'merged';
+ if((b[12]|b[13]<<8)!=0)return'board';
+ const has=e=>{const m=[...e].map(c=>c.charCodeAt(0)-1),l=m.length;o:for(let i=0;i<=n-l;i++){if(b[i]!=m[0])continue;for(let k=1;k<l;k++)if(b[i+k]!=m[k])continue o;return true;}return false;};
+ if(has('SFUSPDZE.BQQ.JE.2'))return'games';if(has('XFUUFSVIS.BQQ.JE.2'))return'clock';return'old';}
+function send(url,f,done){
  const fd=new FormData(); fd.append('firmware',f,f.name);
- const x=new XMLHttpRequest(); x.open('POST','/update?size='+f.size);
+ const x=new XMLHttpRequest(); x.open('POST',url);
  x.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100);$('#prog').style.width=p+'%';$('#upmsg').textContent='Übertrage: '+p+' %';}};
- x.onload=()=>{let r={};try{r=JSON.parse(x.responseText)}catch(e){}
-  if(r.ok){$('#upmsg').textContent='Update erfolgreich – Konsole startet neu...';setTimeout(()=>location.reload(),12000);}
-  else $('#upmsg').textContent='Update fehlgeschlagen: '+(r.err||x.status);};
+ x.onload=()=>done(x);
  x.onerror=()=>$('#upmsg').textContent='Verbindung abgebrochen';
- $('#upmsg').textContent='Übertrage...'; x.send(fd);
+ $('#prog').style.width='0%'; $('#upmsg').textContent='Übertrage...'; x.send(fd);
+}
+async function upload(){
+ const f=$('#fw').files[0]; if(!f){toast('Bitte .bin-Datei wählen');return;}
+ const m=$('#upmsg'); m.textContent='Prüfe Datei...';
+ let k; try{k=await fwKind(f);}catch(e){k='bad';}
+ if(k=='merged'){m.textContent='Das ist eine Erstinstallations-Datei (mit Bootloader) – nur per USB an 0x0. Hier bitte *_update.bin wählen.';return;}
+ if(k=='board'){m.textContent='Diese Datei ist für den ESP32-C3, nicht für das CYD.';return;}
+ if(k=='old'){m.textContent='Datei nicht erkannt (zu alte Version?). Bitte eine aktuelle *_update.bin verwenden.';return;}
+ if(k=='bad'){m.textContent='Das ist keine passende Firmware-Datei.';return;}
+ let st={};try{st=await (await fetch('/api/state',{cache:'no-store'})).json();}catch(e){}
+ if(k=='games'&&st.clock){                       // RetroCYD-Update: das spielt die Uhr ein -> Uhr starten, Datei dorthin
+  if(!confirm(f.name+'\nErkannt: RetroCYD-Update.\nDie Uhr wird gestartet und spielt es ein. Weiter?'))return;
+  m.textContent='Starte die Uhr ...';
+  try{await fetch('/api/toclock',{method:'POST'});}catch(e){}
+  const t0=Date.now();
+  const poll=()=>{if(Date.now()-t0>120000){m.textContent='Uhr meldet sich nicht – bitte im Browser der Uhr einspielen.';return;}
+   fetch('/fwprep?name=retrocyd',{cache:'no-store'}).then(r=>r.text()).then(x=>{
+    if(x=='direct'||x=='relay'){m.textContent='Uhr bereit – übertrage RetroCYD ...';
+     send('/update?size='+f.size+'&app=games',f,x=>{if(x.status==200){$('#prog').style.width='100%';m.textContent='RetroCYD aktualisiert. Spiele starten ...';fetch('/games',{method:'POST'}).catch(()=>{});setTimeout(()=>location.reload(),15000);}
+      else m.textContent='Update fehlgeschlagen: '+x.responseText;});}
+    else setTimeout(poll,2000);}).catch(()=>setTimeout(poll,2000));};
+  setTimeout(poll,5000);
+  return;
+ }
+ const what=k=='clock'?(st.clock?'Uhr-Update (Wetteruhr)':'Wetteruhr neben RetroCYD installieren'):'RetroCYD-Update';
+ if(!confirm(f.name+'\nErkannt: '+what+'. Weiter?'))return;
+ send('/update?size='+f.size+'&app='+k,f,x=>{let r={};try{r=JSON.parse(x.responseText)}catch(e){}
+  if(r.ok){m.textContent=k=='clock'?'Uhr aktualisiert – startet ...':'Update erfolgreich – Konsole startet neu...';setTimeout(()=>location.reload(),12000);}
+  else m.textContent='Update fehlgeschlagen: '+(r.err||x.status);});
 }
 function sdUpdate(){
  if(!confirm('Firmware von /retrocyd/update.bin installieren?'))return;
