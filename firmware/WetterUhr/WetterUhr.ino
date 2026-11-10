@@ -1659,7 +1659,14 @@ void loop() {
 #endif
   if (wakePending && (int32_t)(now - wakeAt) >= 0) finishWake();
   m0 = micros();
-  if (!standby && !wakePending && !gOtaActive && !dualUi) renderTick(now);
+#if BOARD_CYD
+  // Das Halte-Menue kann eben erst in touchTick() aufgegangen sein: dann in diesem Durchlauf nicht mehr
+  // zeichnen, sonst landen geaenderte Teile des Uhrbilds ueber dem Menue
+  const bool uiOpen = dualUi || dual::ui != dual::UI_NONE;
+#else
+  const bool uiOpen = dualUi;
+#endif
+  if (!standby && !wakePending && !gOtaActive && !uiOpen) renderTick(now);
   lap(2);
   if (setDirty && now - setDirtyAt > 3000) {   // Helligkeit erst nach Ruhephase speichern
     settingsSave();

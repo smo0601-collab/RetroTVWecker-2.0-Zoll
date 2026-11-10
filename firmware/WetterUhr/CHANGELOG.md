@@ -4,6 +4,14 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.10-4 - Menue ohne Reste des Uhrbilds
+
+- CYD: Beim Oeffnen des Halte-Menues (Spiele / Standby / Zurueck) wurde im selben Durchlauf noch einmal das Uhrbild
+  aktualisiert - geaenderte Teile (Sekunden, Animationen) lagen dann ueber dem Menue. Jetzt wird in diesem Moment
+  nicht mehr gezeichnet.
+
+Geaenderte Dateien: `WetterUhr.ino`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.10-3 - RGB-LED des CYD steuern
 
 - Browser: Helligkeit > RGB-LED (nur CYD). Modi: aus, feste Farbe, Wetter-Farbe, Temperatur-Farbe, Farbwechsel,
