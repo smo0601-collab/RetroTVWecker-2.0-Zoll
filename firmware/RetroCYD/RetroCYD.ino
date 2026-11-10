@@ -1,13 +1,13 @@
 /*
   ============================================================================
-   RETRO CYD 3.6  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.7  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
 
-  13 Spiele, alle im Hoch- und Querformat spielbar. Jedes Spiel steht in einer
-  eigenen Datei (g_*.h) im selben Ordner - ALLE Dateien muessen im Ordner
-  "RetroCYD" liegen:
+  20 Spiele in 6 Kategorien, alle im Hoch- und Querformat spielbar. Jedes Spiel
+  steht in einer eigenen Datei (g_*.h) im selben Ordner - ALLE Dateien muessen
+  im Ordner "RetroCYD" liegen:
     SNAKE        Schlange          g_snake.h    BLOCKS      Steine-Puzzle  g_blocks.h
     BRICKS       Mauer abraeumen   g_bricks.h   PADDLE      Tischtennis    g_paddle.h
     ASTRO ROCKS  Felsen im All     g_rocks.h    ALIEN WAVE  Alien-Formation g_invaders.h
@@ -15,6 +15,16 @@
     GIRDER       Kletter-Action    g_girder.h   DIG DEEP    Tunnel graben  g_digger.h
     PUFF JUMP    Schwebe-Hupfer    g_puff.h     SUNSET RACE 3D-Rennen      g_racer.h
     SKY ACE      Flieger-Shooter   g_skyace.h
+  Neu in 3.7 (fuer Touch gemacht, mit Controller ebenfalls spielbar):
+    2048         Zahlen schieben   g_2048.h     LICHTER AUS Lights Out     g_lights.h
+    ROHRPOST     Rohre drehen      g_pipes.h    PAARE FINDEN Memory        g_memory.h
+    VIER GEWINNT gegen CPU/zu zweit g_four.h    SIEBZEHN UND VIER Karten   g_blackjack.h
+    SPURWECHSEL  Rennen von oben   g_lanes.h
+  Gemeinsame Hilfen der Touch-Spiele: g_kit.h.
+
+  MENUE (ab 3.7): Kategorien als Kacheln - KLASSIKER, SHOOTER, JUMP & RUN,
+  RENNEN, DENKSPIELE, BRETT & KARTEN. Kategorie antippen zeigt ihre Spiele,
+  "< ZURUECK" (oder B, oder die Kopfzeile antippen) fuehrt zurueck.
   Dazu: core_fb.h (flimmerfreier Bildpuffer), webpage.h (Web-Oberflaeche) und
   cyd_shared.h (Zusammenarbeit mit der Wetteruhr, gleiche Datei wie im Uhr-Projekt).
 
@@ -77,6 +87,7 @@
     automatisch Gas; bei Girder/Puff Jump heissen die oberen Ecken "laufen + springen".
     Vor dem ersten Spiel 3 Kreuze antippen (Touch einrichten, auch im Halte-Menue).
     Spielende: antippen = nochmal, lange halten = Menue.
+    Die Touch-Spiele (siehe unten) bedient man direkt: antippen und wischen.
   Menue:      Steuerkreuz/Stick waehlen (halten = schnell scrollen), A starten
   Allgemein:  Menu-Taste = Pause, View-Taste = zurueck, Y = Screenshot (SD)
   Snake:      Richtung
@@ -91,6 +102,19 @@
   Puff Jump:  laufen, A = springen/flattern, B halten = einsaugen, B = spucken
   Sunset Race: lenken, A/hoch = Gas, B/runter = Bremse
   Sky Ace:    fliegen, A = Feuer, B = Looping (3x pro Leben)
+  Touch-Spiele (3.7): direkt antippen bzw. wischen; Controller: Steuerkreuz
+  bewegt einen Rahmen, A = antippen.
+    2048:          wischen oder Pfeilfelder; ZURUECK = letzter Zug, B ebenso;
+                   4 x 4 oder 5 x 5, das Spiel wird gespeichert (WEITER ...)
+    Lichter aus:   Feld antippen; 5 x 5, 6 x 6, 3 Farben; Sterne nach Zuegen
+    Rohrpost:      Feld antippen = drehen (B = andersherum); 6 x 5 oder 8 x 6
+    Paare finden:  Karte antippen; 1 Spieler, auf Zeit, 2 Spieler;
+                   Symbolsaetze FORMEN (ab 3 Siegen) und ZAHLEN (ab 6)
+    Vier gewinnt:  Spalte antippen; CPU Tiefe 4/6/8, 2 Spieler, Fuenf gewinnt
+    17 und 4:      Knoepfe KARTE, HALTEN, VERDOPPELN, TEILEN; Einsatz - / +;
+                   TRAINER zeigt den besten Zug; Chips werden gespeichert
+    Spurwechsel:   linke/rechte Bildhaelfte = Spur wechseln; Muenzen sammeln,
+                   Autos kaufen; Motorton ueber den Lautsprecher-Anschluss
 
   ---------------------------------------------------------------------------
   MICRO-SD (optional, FAT32)
@@ -126,7 +150,7 @@ const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.6"
+#define FW_VERSION "3.7"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -506,6 +530,8 @@ bool touchDown() {
 bool bootDown() { return digitalRead(BOOT_PIN) == LOW; }
 
 bool touchPrev = false;
+int tPauseW = 52, tPauseH = 40;   // Touch-Steuerung: Ecke oben rechts = Menue (Spiele koennen sie verkleinern)
+bool gameRestart = false;         // Spiel wurde vom Spielende aus neu gestartet (gleiche Spielart)
 uint32_t touchSince = 0;
 bool touchFired = false;
 
@@ -515,7 +541,7 @@ bool touchFired = false;
 enum State { ST_MENU, ST_GAME, ST_GAMEOVER, ST_SETUP };
 State state = ST_MENU;
 
-#define NUM_GAMES 13
+#define NUM_GAMES 20
 struct GameDef {
   const char* name;     // Anzeigename (ASCII, ohne Umlaute)
   const char* hsKey;    // Schluessel fuer den Highscore im Flash (max. 15 Zeichen)
@@ -876,16 +902,26 @@ void gameOverLoop() {
 #include "core_fb.h"
 
 // ============================================================================
-//  MENUE  (scrollbare Liste: alle Spiele + Setup)
+//  MENUE  (Kategorien als Kacheln -> Spiele der Kategorie als Liste)
 // ============================================================================
-#define MENU_ITEMS (NUM_GAMES + 1 + (clockPresent ? 1 : 0))   // Spiele + Setup (+ Zur Uhr)
-int menuSel = 0;
+#define NUM_CATS 6
+struct Category { const char* name; uint16_t col; uint8_t n; uint8_t games[4]; };
+extern const Category CATS[NUM_CATS];
+
+int menuLevel = 0;       // 0 = Kategorien, 1 = Spiele einer Kategorie
+int menuCat = 0;
+int menuSel = 0;         // Auswahl in der aktuellen Ebene
 int menuTop = 0;
 int lastPadCount = -1;
 bool lastWifi = false;
 Repeat menuRepUp, menuRepDown;
 extern bool wifiOn;
 extern String ipStr;
+
+// Ebene 0: Kategorien, dann SETUP (und ZUR UHR)
+int menuItems() { return menuLevel == 0 ? NUM_CATS + 1 + (clockPresent ? 1 : 0) : CATS[menuCat].n + 1; }
+// Ebene 1: Spielnummer des Listenpunkts, -1 = ZURUECK
+int menuGame(int i) { return (menuLevel == 1 && i < CATS[menuCat].n) ? CATS[menuCat].games[i] : -1; }
 
 void menuLayout(int& top, int& itemH, int& visible) {
   top = landscape() ? 66 : 90;
@@ -894,45 +930,83 @@ void menuLayout(int& top, int& itemH, int& visible) {
   if (visible < 1) visible = 1;
 }
 
+// Kachel i der Kategorie-Ebene (2 Spalten)
+void catTile(int i, int& x, int& y, int& w, int& h) {
+  const int top = landscape() ? 64 : 90;
+  const int rows = (menuItems() + 1) / 2;
+  const int avail = SCR_H - 34 - top;
+  const int tw = min(300, SCR_W - 16);
+  h = min(44, avail / rows - 5);
+  w = (tw - 6) / 2;
+  x = (SCR_W - tw) / 2 + (i & 1) * (w + 6);
+  y = top + (i / 2) * (h + 5);
+}
+
+void drawCatTile(int i) {
+  int x, y, w, h;
+  catTile(i, x, y, w, h);
+  const bool sel = i == menuSel;
+  const bool isCat = i < NUM_CATS, isSetup = i == NUM_CATS;
+  const uint16_t col = isCat ? CATS[i].col : (isSetup ? C_PURPLE : C_DGREEN);
+  const uint16_t bg = sel ? RGB(40, 40, 85) : C_PANEL;
+  tft.fillRoundRect(x, y, w, h, 6, bg);
+  tft.fillRoundRect(x, y, 7, h, 3, col);
+  if (sel) tft.drawRoundRect(x, y, w, h, 6, C_WHITE);
+  const char* name = isCat ? CATS[i].name : (isSetup ? "SETUP / WLAN" : "ZUR UHR");
+  const float ts = strlen(name) * 9 <= w - 16 ? 1.5f : 1.0f;
+  if (isCat) {
+    txt(name, x + 13, y + h / 2 - 5, ts, sel ? C_WHITE : RGB(200, 200, 215), bg, textdatum_t::middle_left);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d SPIELE", CATS[i].n);
+    txt(buf, x + 13, y + h / 2 + 8, 1, col, bg, textdatum_t::middle_left);
+  } else {
+    txt(name, x + 13, y + h / 2 + 1, ts, sel ? C_WHITE : RGB(200, 200, 215), bg, textdatum_t::middle_left);
+  }
+}
+
 void drawMenuItems() {
   int top, itemH, visible;
   menuLayout(top, itemH, visible);
+  const int n = menuItems();
+  if (menuSel >= n) menuSel = n - 1;
+  if (menuLevel == 0) {
+    tft.fillRect(0, top - 4, SCR_W, SCR_H - 32 - top + 4, C_BG);
+    for (int i = 0; i < n; i++) drawCatTile(i);
+    return;
+  }
   if (menuSel < menuTop) menuTop = menuSel;
   if (menuSel >= menuTop + visible) menuTop = menuSel - visible + 1;
+  if (menuTop > max(0, n - visible)) menuTop = max(0, n - visible);
 
   int w = min(250, SCR_W - 24);
   int x = (SCR_W - w) / 2;
   char buf[24];
   tft.fillRect(0, top - 4, SCR_W, visible * itemH + 4, C_BG);
-  for (int v = 0; v < visible && menuTop + v < MENU_ITEMS; v++) {
+  const uint16_t cc = CATS[menuCat].col;
+  for (int v = 0; v < visible && menuTop + v < n; v++) {
     int i = menuTop + v;
     int y = top + v * itemH;
     int h = itemH - 4;
     bool sel = (i == menuSel);
-    bool isSetup = (i >= NUM_GAMES);
-    bool isClock = (i == NUM_GAMES + 1);
-    uint16_t bg = sel ? (isClock ? C_DGREEN : (isSetup ? C_PURPLE : C_BLUE)) : C_PANEL;
+    const int g = menuGame(i);
+    uint16_t bg = sel ? (g < 0 ? C_PURPLE : C_BLUE) : C_PANEL;
     tft.fillRoundRect(x, y, w, h, 5, bg);
     if (sel) tft.drawRoundRect(x, y, w, h, 5, C_WHITE);
-    const char* name = isClock ? "ZUR UHR" : (isSetup ? "SETUP / WLAN" : GAMES[i].name);
-    txt(name, x + 10, y + h / 2 + 1, 1.5, sel ? C_WHITE : C_GRAY, bg, textdatum_t::middle_left);
-    if (!isSetup) {
-      snprintf(buf, sizeof(buf), "%lu", (unsigned long)highscore[i]);
+    if (g >= 0) tft.fillRect(x + 3, y + 4, 3, h - 8, cc);
+    const char* name = g < 0 ? "< ZURUECK" : GAMES[g].name;
+    txt(name, x + 12, y + h / 2 + 1, 1.5, sel ? C_WHITE : C_GRAY, bg, textdatum_t::middle_left);
+    if (g >= 0) {
+      snprintf(buf, sizeof(buf), "%lu", (unsigned long)highscore[g]);
       txt(buf, x + w - 8, y + h / 2 + 1, 1, sel ? C_YELLOW : C_DIM, bg, textdatum_t::middle_right);
     }
   }
   // Scroll-Pfeile
   uint16_t up = menuTop > 0 ? C_YELLOW : C_BG;
-  uint16_t dn = menuTop + visible < MENU_ITEMS ? C_YELLOW : C_BG;
+  uint16_t dn = menuTop + visible < n ? C_YELLOW : C_BG;
   int ax = SCR_W - 6;
   tft.fillTriangle(ax - 4, top + 6, ax + 4, top + 6, ax, top, up);
   int by = top + visible * itemH - 10;
   tft.fillTriangle(ax - 4, by, ax + 4, by, ax, by + 6, dn);
-  // Position
-  snprintf(buf, sizeof(buf), "%d/%d", menuSel + 1, MENU_ITEMS);
-  int py = top - (landscape() ? 9 : 12);
-  tft.fillRect(SCR_W - 50, py - 5, 50, 10, C_BG);
-  txt(buf, SCR_W - 8, py, 1, C_DIM, C_BG, textdatum_t::middle_right);
 }
 
 void drawMenuStatus() {
@@ -942,8 +1016,8 @@ void drawMenuStatus() {
   tft.fillCircle(14, y1, 4, n ? C_GREEN : C_RED);
   char buf[32];
   if (n > 1) snprintf(buf, sizeof(buf), "%d Controller verbunden", n);
-  else snprintf(buf, sizeof(buf), n ? "Controller verbunden" : "Controller koppeln...");
-  txt(buf, 24, y1, 1, n ? C_GREEN : C_RED, C_BG, textdatum_t::middle_left);
+  else snprintf(buf, sizeof(buf), n ? "Controller verbunden" : "ohne Controller: Touch");
+  txt(buf, 24, y1, 1, n ? C_GREEN : C_GRAY, C_BG, textdatum_t::middle_left);
   if (wifiOn) txt(ipStr.c_str(), SCR_W - 8, y1, 1, C_CYAN, C_BG, textdatum_t::middle_right);
   tft.fillCircle(14, y2, 4, sdOk ? C_GREEN : C_DIM);
   txt(sdOk ? "SD-Karte OK" : "keine SD", 24, y2, 1, sdOk ? C_GREEN : C_DIM, C_BG,
@@ -956,24 +1030,50 @@ void drawMenuStatus() {
 void drawMenu() {
   tft.fillScreen(C_BG);
   drawStripes(6);
+  char sub[40];
+  if (menuLevel == 0) snprintf(sub, sizeof(sub), "%d SPIELE IN %d KATEGORIEN", NUM_GAMES, NUM_CATS);
+  else snprintf(sub, sizeof(sub), "%s", CATS[menuCat].name);
+  const uint16_t sc = menuLevel == 0 ? C_CYAN : CATS[menuCat].col;
   if (landscape()) {
     txt("RETRO CYD", SCR_W / 2 + 2, 37, 3, C_DIM, C_BG);
     txt("RETRO CYD", SCR_W / 2, 35, 3, C_YELLOW, C_BG);
-    txt("13 ARCADE GAMES", 8, 56, 1, C_CYAN, C_BG, textdatum_t::middle_left);
+    txt(sub, 8, 56, 1, sc, C_BG, textdatum_t::middle_left);
   } else {
     txt("RETRO CYD", SCR_W / 2 + 2, 48, 4, C_DIM, C_BG);
     txt("RETRO CYD", SCR_W / 2, 46, 4, C_YELLOW, C_BG);
-    txt("13 ARCADE GAMES", 12, 76, 1, C_CYAN, C_BG, textdatum_t::middle_left);
+    txt(sub, 12, 76, 1, sc, C_BG, textdatum_t::middle_left);
   }
   drawMenuItems();
   drawMenuStatus();
 }
 
+// Kategorie oeffnen bzw. zurueck zu den Kategorien
+void menuOpenCat(int c) { menuLevel = 1; menuCat = c; menuSel = 0; menuTop = 0; drawMenu(); }
+void menuBack() { menuLevel = 0; menuSel = menuCat; menuTop = 0; drawMenu(); }
+
+// Punkt i der aktuellen Ebene ausfuehren
+void menuPick(int i) {
+  if (menuLevel == 0) {
+    if (i < NUM_CATS) menuOpenCat(i);
+    else if (i == NUM_CATS) enterSetup();
+    else toClock();
+    return;
+  }
+  const int g = menuGame(i);
+  if (g < 0) menuBack(); else startGame(g);
+}
+
+void Kit_silence();
 void toMenu() {
   fbEnd();
   gameMemEnd();
+  Kit_silence();
   state = ST_MENU;
   paused = false;
+  // nach einem Spiel: dessen Kategorie mit dem Spiel ausgewaehlt zeigen
+  for (int c = 0; c < NUM_CATS; c++)
+    for (int k = 0; k < CATS[c].n; k++)
+      if (CATS[c].games[k] == curGame && menuLevel == 1 && menuCat == c) menuSel = k;
   drawMenu();
 }
 
@@ -993,22 +1093,23 @@ void menuLoop() {
     return;
   }
   if (longPress()) { holdOpenMenu(false); return; }
-  if (menuTouch()) return;                 // Spiel antippen
+  if (menuTouch()) return;                 // Kategorie / Spiel antippen
 
   if (connectedPads() != lastPadCount || wifiOn != lastWifi) drawMenuStatus();
-  if (menuRepUp.tick(cur.up, 300, 90)) {
-    menuSel = (menuSel + MENU_ITEMS - 1) % MENU_ITEMS;
-    drawMenuItems();
+  const int n = menuItems();
+  if (menuLevel == 0) {                    // Kacheln: 2 Spalten
+    int s = menuSel;
+    if (PRESSED(left))  s = (s + n - 1) % n;
+    if (PRESSED(right)) s = (s + 1) % n;
+    if (menuRepUp.tick(cur.up, 300, 150))     s = s >= 2 ? s - 2 : s;
+    if (menuRepDown.tick(cur.down, 300, 150)) s = s + 2 < n ? s + 2 : s;
+    if (s != menuSel) { menuSel = s; drawMenuItems(); }
+  } else {
+    if (menuRepUp.tick(cur.up, 300, 90))     { menuSel = (menuSel + n - 1) % n; drawMenuItems(); }
+    if (menuRepDown.tick(cur.down, 300, 90)) { menuSel = (menuSel + 1) % n; drawMenuItems(); }
+    if (PRESSED(b) || PRESSED(back) || PRESSED(left)) { menuBack(); return; }
   }
-  if (menuRepDown.tick(cur.down, 300, 90)) {
-    menuSel = (menuSel + 1) % MENU_ITEMS;
-    drawMenuItems();
-  }
-  if (PRESSED(a) || PRESSED(start)) {
-    if (menuSel == NUM_GAMES + 1) toClock();
-    else if (menuSel == NUM_GAMES) enterSetup();
-    else startGame(menuSel);
-  }
+  if (PRESSED(a) || PRESSED(start)) menuPick(menuSel);
 }
 
 // ============================================================================
@@ -1027,6 +1128,15 @@ void menuLoop() {
 #include "g_puff.h"
 #include "g_racer.h"
 #include "g_skyace.h"
+#include "g_kit.h"          // Hilfen fuer die Touch-Spiele
+#include "g_2048.h"
+#include "g_lights.h"
+#include "g_pipes.h"
+#include "g_memory.h"
+#include "g_four.h"
+#include "g_blackjack.h"
+#include "g_lanes.h"
+void Kit_silence() { Kit::silence(); }
 
 const GameDef GAMES[NUM_GAMES] = {
   {"SNAKE",       "hs_snake",  "Schlange wird mit jedem Apfel laenger",        Snake::start,  Snake::loop,  false},
@@ -1042,6 +1152,23 @@ const GameDef GAMES[NUM_GAMES] = {
   {"PUFF JUMP",   "hs_puff",   "Schweben, Gegner einsaugen und ausspucken",    Puff::start,   Puff::loop,   true},
   {"SUNSET RACE", "hs_race",   "3D-Rennen gegen die Zeit in den Sonnenuntergang", Racer::start, Racer::loop, true},
   {"SKY ACE",     "hs_sky",    "Propellerflugzeug-Shooter ueber dem Ozean",    SkyAce::start, SkyAce::loop, true},
+  {"2048",        "hs_2048",   "Zahlenkacheln schieben und verschmelzen bis 2048", G2048::start, G2048::loop, true},
+  {"LICHTER AUS", "hs_lights", "Ein Tipp schaltet ein Feld und seine Nachbarn um", Lights::start, Lights::loop, true},
+  {"ROHRPOST",    "hs_pipes",  "Rohre drehen, bis alles an der Station haengt",  Pipes::start,  Pipes::loop,  true},
+  {"PAARE FINDEN","hs_memory", "Verdeckte Karten paarweise aufdecken",            Memory::start, Memory::loop, true},
+  {"VIER GEWINNT","hs_four",   "Vier in einer Reihe - gegen die CPU oder zu zweit", Four::start, Four::loop,   true},
+  {"SIEBZEHN UND VIER", "hs_bj", "Kartenspiel: moeglichst nah an 21",           BJ::start,     BJ::loop,     true},
+  {"SPURWECHSEL", "hs_lanes",  "Auf drei Spuren dem Verkehr ausweichen",         Lanes::start,  Lanes::loop,  true},
+};
+
+// Kategorien im Menue (Spielnummern = Position in GAMES)
+const Category CATS[NUM_CATS] = {
+  {"KLASSIKER",      RGB(40, 220, 80),  4, {0, 1, 2, 3}},      // Snake, Blocks, Bricks, Paddle
+  {"SHOOTER",        RGB(255, 80, 80),  4, {4, 5, 6, 12}},     // Astro Rocks, Alien Wave, Star Swarm, Sky Ace
+  {"JUMP & RUN",     RGB(255, 170, 0),  4, {7, 8, 9, 10}},     // Road Hop, Girder, Dig Deep, Puff Jump
+  {"RENNEN",         RGB(0, 200, 255),  2, {11, 19}},          // Sunset Race, Spurwechsel
+  {"DENKSPIELE",     RGB(200, 110, 255), 4, {13, 14, 15, 16}}, // 2048, Lichter aus, Rohrpost, Paare finden
+  {"BRETT & KARTEN", RGB(255, 220, 0),  2, {17, 18}},          // Vier gewinnt, Siebzehn und vier
 };
 // ============================================================================
 //  WLAN
@@ -1653,6 +1780,13 @@ void touchCalibrate() {
 // Je Spiel: was die Mitte bedeutet und was automatisch passiert (TouchCfg: touchpad.h)
 TouchCfg touchCfg(int g) {
   const char* n = (g >= 0 && g < NUM_GAMES) ? GAMES[g].name : "";
+  if (!strcmp(n, "2048"))        return {0, false, false, false, false, "Wischen schiebt die Kacheln (oder Pfeilfelder)", true};
+  if (!strcmp(n, "LICHTER AUS")) return {0, false, false, false, false, "Feld antippen schaltet es und die Nachbarn um", true};
+  if (!strcmp(n, "ROHRPOST"))    return {0, false, false, false, false, "Rohrstueck antippen dreht es", true};
+  if (!strcmp(n, "PAARE FINDEN")) return {0, false, false, false, false, "Karten antippen und Paare finden", true};
+  if (!strcmp(n, "VIER GEWINNT")) return {0, false, false, false, false, "Spalte antippen wirft den Stein ein", true};
+  if (!strcmp(n, "SIEBZEHN UND VIER")) return {0, false, false, false, false, "Knoepfe antippen", true};
+  if (!strcmp(n, "SPURWECHSEL")) return {0, false, false, false, false, "Linke / rechte Haelfte = Spur wechseln", true};
   if (!strcmp(n, "SUNSET RACE")) return {0,   false, true,  false, false, "Links/rechts lenken, unten bremsen, Gas automatisch"};
   if (!strcmp(n, "SKY ACE"))     return {'B', true,  false, false, false, "Zum Finger fliegen, Feuer automatisch, Mitte = Bombe"};
   if (!strcmp(n, "ASTRO ROCKS")) return {'B', true,  false, false, false, "Links/rechts drehen, oben Schub, Mitte = Sprung"};
@@ -1673,9 +1807,10 @@ bool touchActive() { return state == ST_GAME && !holdOpen && connectedPads() == 
 void touchKeys(Keys& k) {
   int x, y;
   const bool t = touchXY(x, y);
-  const bool inPause = t && x > SCR_W - 52 && y < 40;
+  const bool inPause = t && x > SCR_W - tPauseW && y < tPauseH;
   if (inPause) { if (!tPausePrev) holdReq = true; tPausePrev = true; return; }   // Ecke oben rechts: Menue
   tPausePrev = false;
+  if (tcfg.direct) return;                       // Spiel liest die Beruehrung selbst (g_kit.h)
   if (t) {
     const int dx = x - SCR_W / 2, dy = y - SCR_H / 2;
     const int zx = SCR_W * 16 / 100, zy = SCR_H * 20 / 100;
@@ -1707,22 +1842,35 @@ bool touchTapped() {
   return millis() - tTapAt < 600;
 }
 
-// Menue: Spiel antippen = auswaehlen, ausgewaehltes noch einmal antippen = starten; Pfeile rechts = blaettern
+// Menue: Kategorie antippen = oeffnen; Spiel antippen = auswaehlen, noch einmal = starten
 bool menuTouch() {
   if (!touchTapped()) return false;
+  const int n = menuItems();
+  if (menuLevel == 0) {
+    for (int i = 0; i < n; i++) {
+      int x, y, w, h;
+      catTile(i, x, y, w, h);
+      if (tTapX >= x && tTapX < x + w && tTapY >= y && tTapY < y + h) {
+        menuSel = i;
+        drawMenuItems();
+        menuPick(i);
+        return true;
+      }
+    }
+    return false;
+  }
   int top, itemH, visible;
   menuLayout(top, itemH, visible);
   const int w = min(250, SCR_W - 24), x0 = (SCR_W - w) / 2;
   if (tTapX > SCR_W - 20 && tTapY < top + 20) { menuSel = max(0, menuTop - 1); drawMenuItems(); return true; }
-  if (tTapX > SCR_W - 20 && tTapY > top + visible * itemH - 20) { menuSel = min(MENU_ITEMS - 1, menuTop + visible); drawMenuItems(); return true; }
+  if (tTapX > SCR_W - 20 && tTapY > top + visible * itemH - 20) { menuSel = min(n - 1, menuTop + visible); drawMenuItems(); return true; }
+  if (tTapY < top - 6) { menuBack(); return true; }      // Kopfzeile antippen = zurueck zu den Kategorien
   if (tTapX < x0 || tTapX > x0 + w || tTapY < top) return false;
   const int v = (tTapY - top) / itemH;
-  if (v < 0 || v >= visible || menuTop + v >= MENU_ITEMS) return false;
+  if (v < 0 || v >= visible || menuTop + v >= n) return false;
   const int i = menuTop + v;
-  if (i != menuSel) { menuSel = i; drawMenuItems(); return true; }
-  if (i == NUM_GAMES + 1) toClock();
-  else if (i == NUM_GAMES) enterSetup();
-  else startGame(i);
+  if (i != menuSel && menuGame(i) >= 0) { menuSel = i; drawMenuItems(); return true; }
+  menuPick(i);
   return true;
 }
 
@@ -1733,6 +1881,15 @@ void touchIntro(int g) {
   if (!tcalValid()) return;
   tcfg = touchCfg(g);
   tft.fillScreen(C_BG);
+  if (tcfg.direct) {                                // Touch-Spiel: nur kurzer Hinweis
+    drawStripes(8);
+    txt(GAMES[g].name, SCR_W / 2, SCR_H / 2 - 40, 2, C_YELLOW, C_BG);
+    txt(tcfg.hint, SCR_W / 2, SCR_H / 2, 1, C_WHITE, C_BG);
+    tft.fillRect(SCR_W - 20, 8, 4, 13, C_GRAY); tft.fillRect(SCR_W - 13, 8, 4, 13, C_GRAY);
+    txt("Menue", SCR_W - 14, 30, 1, C_GRAY, C_BG);
+    txt("Ecke oben rechts = Menue", SCR_W / 2, SCR_H / 2 + 20, 1, C_GRAY, C_BG);
+    txt("Antippen zum Starten", SCR_W / 2, SCR_H / 2 + 50, 1.5, C_CYAN, C_BG);
+  } else {
   const int zx = SCR_W * 16 / 100, zy = SCR_H * 20 / 100;
   tft.drawRoundRect(SCR_W / 2 - zx, SCR_H / 2 - zy, 2 * zx, 2 * zy, 8, C_YELLOW);
   if (tcfg.center) txt(tcfg.center == 'A' ? "AKTION" : "B", SCR_W / 2, SCR_H / 2, 1.5, C_YELLOW, C_BG);
@@ -1745,6 +1902,7 @@ void touchIntro(int g) {
   txt("TOUCH-STEUERUNG", SCR_W / 2, 16, 1.5, C_YELLOW, C_BG);
   txt(tcfg.hint, SCR_W / 2, SCR_H / 2 + zy + 22, 1, C_WHITE, C_BG);
   txt("Antippen zum Starten", SCR_W / 2, SCR_H / 2 + zy + 38, 1, C_GRAY, C_BG);
+  }
   const uint32_t t0 = millis();
   int a, b;
   while (cyd::touchRaw(a, b) >= 300 && millis() - t0 < 3000) delay(10);   // Finger vom Menue erst loslassen
@@ -1758,8 +1916,10 @@ void touchIntro(int g) {
 }
 
 void startGame(int g) {
+  gameRestart = (state == ST_GAMEOVER && g == curGame);
+  tPauseW = 52; tPauseH = 40;
   if (state != ST_GAME && state != ST_GAMEOVER) touchIntro(g);
-  else tcfg = touchCfg(g);
+  tcfg = touchCfg(g);
   curGame = g;
   paused = false;
   clearEdges();
@@ -1905,6 +2065,7 @@ void loop() {
   }
 
   if (PRESSED(y) && state != ST_SETUP) sdScreenshot();
+  Kit::soundService();        // Motorton aus, wenn nicht mehr angefordert
 
   if (state == ST_GAME && !holdOpen && longPress()) holdReq = true;   // Halte-Menue im Spiel
 

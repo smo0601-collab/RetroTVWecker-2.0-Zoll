@@ -70,12 +70,23 @@ Auf dem CYD werden die Designs geglättet und ihre Schrift in voller Auflösung 
 
 #### Spiele: RetroCYD als zweites Programm (nur CYD)
 
-Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (13 Spiele, Xbox-Controller per Bluetooth oder direkt per Touch,
+Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (20 Spiele in 6 Kategorien, Xbox-Controller per Bluetooth oder direkt per Touch,
 Quellcode in [`firmware/RetroCYD`](firmware/RetroCYD)). Uhr und Spiele sind zwei Programme in den beiden
 Programmbereichen des Flash:
 
 - **Einschalten:** am Bildschirm **Uhr** oder **Spiele** antippen (sonst startet nach 6 s die Uhr).
 - **Lange halten:** in der Uhr Menü mit *Spiele / Standby / Zurück*, in RetroCYD Menü mit *ZUR UHR / SETUP / ZURÜCK*.
+- **Spielemenü nach Kategorien:** Klassiker, Shooter, Jump & Run, Rennen, Denkspiele, Brett & Karten –
+  Kategorie antippen, dann das Spiel.
+- **Für Touch gemacht (ab RetroCYD 3.7):** 2048, Lichter aus, Rohrpost, Paare finden, Vier gewinnt (gegen die CPU
+  oder zu zweit), Siebzehn und vier, Spurwechsel. Bedienung direkt durch Antippen und Wischen.
+
+![Spielemenü](docs/images/retrocyd_menue.png)
+
+![Neue Spiele](docs/images/retrocyd_neue_spiele.png)
+
+*Neu in RetroCYD 3.7: 2048, Lichter aus, Rohrpost, Paare finden, Vier gewinnt, Siebzehn und vier, Spurwechsel (nachts).*
+
 ![Sunset Race](docs/images/sunset_race.png)
 
 *Sunset Race in RetroCYD 3.3: Kurven und Hügel, Palmen, Schilder, Tore – und ein großes eigenes Auto.*
@@ -149,7 +160,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.10`](releases/2026.11.10), mit RetroCYD 3.6), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.10-2`](releases/2026.11.10-2): Uhr 2026.11.10 mit RetroCYD 3.7), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
