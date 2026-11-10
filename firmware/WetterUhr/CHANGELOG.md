@@ -4,6 +4,18 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.10-3 - RGB-LED des CYD steuern
+
+- Browser: Helligkeit > RGB-LED (nur CYD). Modi: aus, feste Farbe, Wetter-Farbe, Temperatur-Farbe, Farbwechsel,
+  Atmen, Sekundenpuls. Farbe, Helligkeit, "wann" (immer / nur nachts als Nachtlicht / nachts aus).
+- Hinweise blinken zusaetzlich (einzeln abschaltbar): Wecker rot (wie bisher), Update blau, kein WLAN orange,
+  Gewitter violett, Frost eisblau.
+- Aenderungen sind sofort 8 Sekunden lang als Vorschau zu sehen (neue Adresse /ledprev).
+- Im Standby bleibt die LED aus (ausser Wecker und Update).
+- RetroCYD 3.8: LED-Effekte in den Spielen (siehe RetroCYD.ino).
+
+Geaenderte Dateien: `led.h` (neu), `WetterUhr.ino`, `settings.h`, `webui.h`, `lang_web.h`, `config.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.10 - Ortssuche fuer den Standort
 
 - Reiter "Wetter": neues Feld "Ort suchen" ueber Breiten- und Laengengrad. Ort oder Postleitzahl eingeben, Enter oder

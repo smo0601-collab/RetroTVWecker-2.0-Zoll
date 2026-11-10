@@ -120,7 +120,9 @@ namespace Racer {
     if (smokeT > 0) smokeT--;
     if (countT > 0) {
       countT--;
-      if (countT == 0) { snprintf(msg, sizeof(msg), "LOS!"); msgT = 30; rumble(150, 0x60); }
+      const int ln = (countT + 29) / 30;                 // LED als Startampel: rot, orange, gelb, gruen
+      Led::set(ln >= 3 ? Led::Rgb{255, 0, 0} : ln == 2 ? Led::Rgb{255, 90, 0} : Led::Rgb{255, 200, 0});
+      if (countT == 0) { snprintf(msg, sizeof(msg), "LOS!"); msgT = 30; rumble(150, 0x60); Led::set({0, 0, 0}); Led::flash({0, 255, 0}, 900); }
       return;
     }
     float sp = spd / MAXSPD;

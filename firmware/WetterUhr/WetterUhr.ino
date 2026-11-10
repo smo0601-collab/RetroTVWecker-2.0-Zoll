@@ -1148,6 +1148,7 @@ static void issTask(void*) {
 // =====================================================================
 // Browser-Einstellungsseite (braucht die Definitionen oben)
 // =====================================================================
+#include "led.h"            // RGB-LED des CYD
 #include "webui.h"
 
 // =====================================================================
@@ -1569,7 +1570,11 @@ static void renderTick(uint32_t now) {
 // Setup / Loop
 // =====================================================================
 void setup() {
+#if PIN_LED_R >= 0
+  led::begin();             // RGB-LED (PWM, led.h)
+#else
   boardLedInit();
+#endif
   boardTouchInit();
 #if DEBUG_SERIAL
   Serial.begin(115200);
@@ -1650,7 +1655,7 @@ void loop() {
   if (!dualUi) touchTick(now);
 #endif
 #if PIN_LED_R >= 0
-  boardLed(gAlarmRinging && (now / 400) % 2, false, false);   // Wecker: RGB-LED blinkt rot
+  led::tick(now);           // RGB-LED: Modus, Hinweise (Wecker blinkt rot)
 #endif
   if (wakePending && (int32_t)(now - wakeAt) >= 0) finishWake();
   m0 = micros();

@@ -173,6 +173,31 @@
                   "Necesita una hora válida. Si el inicio es más tarde que el final, el intervalo cruza la medianoche (p. ej. 22:00 a 07:00). Durante la atenuación este valor sustituye al deslizador. Con el modo noche la carta de ajuste sustituye al diseño elegido (también en rotación); después el reloj vuelve al diseño elegido. Se aplica tras «Guardar».", \
                   "Serve un orario valido. Se l'inizio è dopo la fine, la fascia passa la mezzanotte (es. 22:00–07:00). Durante l'attenuazione questo valore sostituisce il cursore. In modalità notte il monoscopio sostituisce il design scelto (anche in rotazione), poi l'orologio torna al design scelto. Vale dopo «Salva».") \
   /* Laufschrift */ \
+  X(W_H_LED,      "RGB-LED (R&uuml;ckseite)", "RGB LED (back)", "LED RVB (arri&egrave;re)", "LED RGB (trasera)", "LED RGB (retro)") \
+  X(W_LED_MODE,   "Modus", "Mode", "Mode", "Modo", "Modalit&agrave;") \
+  X(W_LM0,        "Aus", "Off", "&Eacute;teinte", "Apagado", "Spento") \
+  X(W_LM1,        "Feste Farbe", "Fixed colour", "Couleur fixe", "Color fijo", "Colore fisso") \
+  X(W_LM2,        "Wetter-Farbe", "Weather colour", "Couleur m&eacute;t&eacute;o", "Color del tiempo", "Colore meteo") \
+  X(W_LM3,        "Temperatur-Farbe", "Temperature colour", "Couleur temp&eacute;rature", "Color de temperatura", "Colore temperatura") \
+  X(W_LM4,        "Farbwechsel", "Colour cycle", "Cycle de couleurs", "Ciclo de colores", "Ciclo di colori") \
+  X(W_LM5,        "Atmen (feste Farbe)", "Breathing (fixed colour)", "Respiration (couleur fixe)", "Respiraci&oacute;n (color fijo)", "Respiro (colore fisso)") \
+  X(W_LM6,        "Sekundenpuls (feste Farbe)", "Seconds pulse (fixed colour)", "Pulsation des secondes (couleur fixe)", "Pulso de segundos (color fijo)", "Impulso dei secondi (colore fisso)") \
+  X(W_LED_COL,    "Farbe", "Colour", "Couleur", "Color", "Colore") \
+  X(W_LED_BRI,    "LED-Helligkeit: ", "LED brightness: ", "Luminosit&eacute; LED : ", "Brillo del LED: ", "Luminosit&agrave; LED: ") \
+  X(W_LED_TIME,   "Wann", "When", "Quand", "Cu&aacute;ndo", "Quando") \
+  X(W_LT0,        "immer", "always", "toujours", "siempre", "sempre") \
+  X(W_LT1,        "nur nachts (Nachtlicht)", "only at night (night light)", "seulement la nuit (veilleuse)", "solo de noche (luz nocturna)", "solo di notte (luce notturna)") \
+  X(W_LT2,        "nachts aus", "off at night", "&eacute;teinte la nuit", "apagado de noche", "spento di notte") \
+  X(W_LED_HINTS,  "Hinweise (blinken zus&auml;tzlich)", "Alerts (flash on top)", "Alertes (clignotent en plus)", "Avisos (parpadean adem&aacute;s)", "Avvisi (lampeggiano in pi&ugrave;)") \
+  X(W_LH0,        "Wecker klingelt (rot)", "Alarm ringing (red)", "R&eacute;veil sonne (rouge)", "Alarma sonando (rojo)", "Sveglia suona (rosso)") \
+  X(W_LH1,        "kein WLAN (orange)", "no Wi-Fi (orange)", "pas de Wi-Fi (orange)", "sin WiFi (naranja)", "nessun Wi-Fi (arancione)") \
+  X(W_LH2,        "Update l&auml;uft (blau)", "update running (blue)", "mise &agrave; jour en cours (bleu)", "actualizaci&oacute;n en curso (azul)", "aggiornamento in corso (blu)") \
+  X(W_LH3,        "Gewitter (violett) und Frost (eisblau)", "thunderstorm (violet) and frost (ice blue)", "orage (violet) et gel (bleu glacier)", "tormenta (violeta) y helada (azul hielo)", "temporale (viola) e gelo (azzurro ghiaccio)") \
+  X(W_LED_NOTE,   "&Auml;nderungen sind sofort f&uuml;r 8 Sekunden zu sehen, gespeichert wird mit &bdquo;Speichern&ldquo;. Wetter-Farbe: gelb Sonne, dunkelblau klare Nacht, grau Wolken, blau Regen, wei&szlig; Schnee, violett Gewitter. Temperatur: blau kalt &rarr; gr&uuml;n &rarr; gelb &rarr; rot hei&szlig;. &bdquo;Nachts&ldquo; ist das Dimm-Zeitfenster oben, ohne Zeitplan nach Sonnenstand. Im Standby bleibt die LED aus (au&szlig;er Wecker und Update).", \
+                  "Changes show immediately for 8 seconds; &ldquo;Save&rdquo; stores them. Weather colour: yellow sun, dark blue clear night, grey clouds, blue rain, white snow, violet thunderstorm. Temperature: blue cold &rarr; green &rarr; yellow &rarr; red hot. &ldquo;Night&rdquo; is the dimming window above, without a schedule it follows the sun. In standby the LED stays off (except alarm and update).", \
+                  "Les changements s'affichent tout de suite pendant 8 secondes ; &laquo; Enregistrer &raquo; les garde. Couleur m&eacute;t&eacute;o : jaune soleil, bleu fonc&eacute; nuit claire, gris nuages, bleu pluie, blanc neige, violet orage. Temp&eacute;rature : bleu froid &rarr; vert &rarr; jaune &rarr; rouge chaud. &laquo; La nuit &raquo; = la plage de gradation ci-dessus, sinon selon le soleil. En veille la LED reste &eacute;teinte (sauf r&eacute;veil et mise &agrave; jour).", \
+                  "Los cambios se ven al momento durante 8 segundos; &laquo;Guardar&raquo; los conserva. Color del tiempo: amarillo sol, azul oscuro noche despejada, gris nubes, azul lluvia, blanco nieve, violeta tormenta. Temperatura: azul fr&iacute;o &rarr; verde &rarr; amarillo &rarr; rojo calor. &laquo;De noche&raquo; es la franja de atenuaci&oacute;n de arriba, sin horario seg&uacute;n el sol. En reposo el LED queda apagado (salvo alarma y actualizaci&oacute;n).", \
+                  "Le modifiche si vedono subito per 8 secondi; &laquo;Salva&raquo; le memorizza. Colore meteo: giallo sole, blu scuro notte serena, grigio nuvole, blu pioggia, bianco neve, viola temporale. Temperatura: blu freddo &rarr; verde &rarr; giallo &rarr; rosso caldo. &laquo;Di notte&raquo; &egrave; la fascia di attenuazione sopra, senza orario secondo il sole. In standby il LED resta spento (tranne sveglia e aggiornamento).") \
   X(W_TK_ON,      "Laufschrift aktiv", "Ticker on", "Texte défilant actif", "Texto en movimiento activo", "Testo scorrevole attivo") \
   X(W_TK_TEXT,    "Text (Umlaute und Sonderzeichen erlaubt, bis 160 Zeichen)", "Text (accents and special characters allowed, up to 160 characters)", "Texte (accents et caractères spéciaux permis, 160 caractères max.)", \
                   "Texto (acentos y caracteres especiales permitidos, hasta 160 caracteres)", "Testo (accenti e caratteri speciali ammessi, fino a 160 caratteri)") \

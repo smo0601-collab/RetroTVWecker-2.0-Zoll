@@ -1,6 +1,6 @@
 /*
   ============================================================================
-   RETRO CYD 3.7  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.8  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
@@ -21,6 +21,10 @@
     VIER GEWINNT gegen CPU/zu zweit g_four.h    SIEBZEHN UND VIER Karten   g_blackjack.h
     SPURWECHSEL  Rennen von oben   g_lanes.h
   Gemeinsame Hilfen der Touch-Spiele: g_kit.h.
+  RGB-LED (ab 3.8, fx_led.h): im Menue die Farbe der Kategorie, Blitz bei jeder
+  Vibration, Regenbogen bei neuem Rekord/geloestem Raetsel, Startampel bei Sunset
+  Race, Spielerfarbe bei Vier gewinnt und Paare finden, Tank-Warnung bei
+  Spurwechsel, Ergebnis bei Siebzehn und vier. Ein/aus + Helligkeit: Web-Oberflaeche.
 
   MENUE (ab 3.7): Kategorien als Kacheln - KLASSIKER, SHOOTER, JUMP & RUN,
   RENNEN, DENKSPIELE, BRETT & KARTEN. Kategorie antippen zeigt ihre Spiele,
@@ -150,7 +154,7 @@ const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.7"
+#define FW_VERSION "3.8"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -287,6 +291,8 @@ struct Settings {
   bool    rumbleOn = true;
   uint8_t rumbleStr = 160;
   uint8_t snakeSpeed = 1;   // 0 gemuetlich, 1 normal, 2 schnell
+  bool    ledOn = true;     // RGB-LED auf der Rueckseite (fx_led.h)
+  uint8_t ledBri = 40;      // 1..100 %
   bool    wifiAlways = false;
   bool    allowNew = true;
   String  ssid, pass;
@@ -309,6 +315,8 @@ void loadSettings() {
   cfg.rumbleOn   = prefs.getBool("rumOn", true);
   cfg.rumbleStr  = prefs.getUChar("rumStr", 160);
   cfg.snakeSpeed = prefs.getUChar("snkSpd", 1);
+  cfg.ledOn      = prefs.getBool("ledOn", true);
+  cfg.ledBri     = constrain(prefs.getUChar("ledBri", 40), 1, 100);
   cfg.wifiAlways = prefs.getBool("wifiAlw", false);
   cfg.allowNew   = prefs.getBool("allowNew", true);
   cfg.ssid       = prefs.getString("ssid", "");
@@ -327,6 +335,8 @@ void saveSettings() {
   prefs.putBool("rumOn", cfg.rumbleOn);
   prefs.putUChar("rumStr", cfg.rumbleStr);
   prefs.putUChar("snkSpd", cfg.snakeSpeed);
+  prefs.putBool("ledOn", cfg.ledOn);
+  prefs.putUChar("ledBri", cfg.ledBri);
   prefs.putBool("wifiAlw", cfg.wifiAlways);
   prefs.putBool("allowNew", cfg.allowNew);
   prefs.putString("ssid", cfg.ssid);
@@ -343,6 +353,8 @@ void applyDisplay() {
 }
 
 bool landscape() { return SCR_W > SCR_H; }
+
+#include "fx_led.h"        // RGB-LED: Menue-Farbe, Blitze, Spiel-Effekte
 
 // ============================================================================
 //  CONTROLLER (Bluepad32)
@@ -453,6 +465,7 @@ void clearEdges() { E = Keys{}; PE[0] = Keys{}; PE[1] = Keys{}; }
 void rumbleFor(int player, uint16_t ms, uint8_t strength);
 
 void rumbleFor(int player, uint16_t ms, uint8_t strength) {
+  Led::hit(ms, strength);                    // LED blitzt bei jeder Vibration mit (auch ohne Controller)
   if (!cfg.rumbleOn) return;
   uint8_t s = (uint8_t)min(255, (int)strength * cfg.rumbleStr / 160);
   int slot = 0;
@@ -823,6 +836,7 @@ void toClock() {
   tft.fillScreen(C_BG);
   txt("UHR STARTET...", SCR_W / 2, SCR_H / 2, 2, C_GREEN, C_BG);
   if (wifiOn) wifiStop();
+  Led::off();
   cyd::bootOther();
   delay(300);
   ESP.restart();
@@ -868,6 +882,8 @@ void gameOverText(const char* title, uint32_t score) {
     saveHighscores();
   }
   rumble(400, 0xC0);
+  Led::set(record ? Led::Rgb{0, 0, 0} : Led::Rgb{120, 0, 0});
+  if (record) Led::party(3000);                // neuer Rekord: Regenbogen
   int cx = SCR_W / 2, y = SCR_H / 2 - 50;
   tft.fillRoundRect(cx - 100, y, 200, 100, 10, C_PANEL);
   tft.drawRoundRect(cx - 100, y, 200, 100, 10, record ? C_YELLOW : C_RED);
@@ -969,6 +985,10 @@ void drawMenuItems() {
   menuLayout(top, itemH, visible);
   const int n = menuItems();
   if (menuSel >= n) menuSel = n - 1;
+  // LED: Farbe der gewaehlten bzw. geoeffneten Kategorie
+  if (menuLevel == 1) Led::set565(CATS[menuCat].col, 110);
+  else if (menuSel < NUM_CATS) Led::set565(CATS[menuSel].col, 110);
+  else Led::set565(menuSel == NUM_CATS ? C_PURPLE : C_DGREEN, 110);
   if (menuLevel == 0) {
     tft.fillRect(0, top - 4, SCR_W, SCR_H - 32 - top + 4, C_BG);
     for (int i = 0; i < n; i++) drawCatTile(i);
@@ -1385,6 +1405,8 @@ void handleState() {
   j += ",\"rumbleOn\":"; j += jb(cfg.rumbleOn);
   j += ",\"rumbleStr\":" + String(cfg.rumbleStr);
   j += ",\"snakeSpeed\":" + String(cfg.snakeSpeed);
+  j += ",\"ledOn\":"; j += jb(cfg.ledOn);
+  j += ",\"ledBri\":" + String(cfg.ledBri);
   j += ",\"allowNew\":"; j += jb(cfg.allowNew);
   j += ",\"pairing\":" + String(pairSecondsLeft());
   j += ",\"hs\":[";
@@ -1421,6 +1443,8 @@ void handleSettings() {
   if (server.hasArg("rumbleOn"))   cfg.rumbleOn = server.arg("rumbleOn").toInt();
   if (server.hasArg("rumbleStr"))  cfg.rumbleStr = constrain(server.arg("rumbleStr").toInt(), 20, 255);
   if (server.hasArg("snakeSpeed")) cfg.snakeSpeed = constrain(server.arg("snakeSpeed").toInt(), 0, 2);
+  if (server.hasArg("ledOn"))      cfg.ledOn = server.arg("ledOn").toInt();
+  if (server.hasArg("ledBri"))     cfg.ledBri = constrain(server.arg("ledBri").toInt(), 1, 100);
   if (server.hasArg("allowNew"))   cfg.allowNew = server.arg("allowNew").toInt();
   saveSettings();
   updateBtScan();
@@ -1665,6 +1689,7 @@ void drawSetup() {
 }
 
 void enterSetup() {
+  Led::set565(C_PURPLE, 90);
   state = ST_SETUP;
   touchPrev = true;          // erst loslassen, dann zaehlt die naechste Beruehrung
   drawSetup();
@@ -1935,6 +1960,7 @@ void startGame(int g) {
     return;
   }
   tft.fillScreen(C_BG);
+  Led::set({0, 0, 0});                         // im Spiel aus, ausser das Spiel setzt eine Farbe
   GAMES[g].start();
 }
 
@@ -1947,6 +1973,7 @@ void startGame(int g) {
 //  keine Spiele; nach 3 Minuten ohne Datei geht es zur Uhr zurueck.
 // ============================================================================
 void relayMode() {
+  Led::set({0, 60, 255}, 300); Led::out({0, 60, 255});   // LED blau: Uhr-Update
   tft.fillScreen(C_BG);
   drawStripes(8);
   txt("UHR-UPDATE", SCR_W / 2, SCR_H / 2 - 40, 2, C_YELLOW, C_BG);
@@ -2010,6 +2037,7 @@ void setup() {
   }
   Serial.printf("RetroCYD %s, Wetteruhr im anderen Bereich: %s\n", FW_VERSION, clockPresent ? "ja" : "nein");
   loadSettings();
+  Led::begin();
   for (int i = 0; i < NUM_GAMES; i++) highscore[i] = prefs.getUInt(GAMES[i].hsKey, 0);
 
   tft.selectPanel(cfg.st7789);
@@ -2057,6 +2085,7 @@ void loop() {
 
   BP32.update();
   readInput();
+  Led::tick();
   updateBtScan();             // Kopplungsfenster abgelaufen? -> Suche aus
 
   if (wifiOn) {

@@ -328,6 +328,8 @@ namespace Lanes {
     dist += speed;
     fuel -= 0.045f + speed * 0.006f;
     if (fuel <= 0) { fuel = 0; ph = PH_EMPTY; endT = 0; return; }
+    if (fuel < 25) Led::set({255, 90, 0}, 300);           // LED: Tank fast leer -> orange blinken
+    else Led::set({0, 0, 0});
     if (sound) Kit::tone(70 + (uint32_t)(speed * 22) + (lane != targetLane ? 25 : 0));
     // Verkehr
     gap = 60 + speed * 14;
@@ -350,8 +352,8 @@ namespace Lanes {
       const float ix = RX + it.lane * LW + LW / 2 - 8;
       if (hitBox(px + 2, PY, CAR_W - 4, CAR_H, ix, it.y, 16, 16)) {
         it.on = false;
-        if (it.kind == 0) { coinsRun++; rumble(40, 0x40); }
-        else { fuel = min(100.0f, fuel + 32); rumble(80, 0x60); }
+        if (it.kind == 0) { coinsRun++; rumble(40, 0x40); Led::flash({255, 200, 0}, 200); }
+        else { fuel = min(100.0f, fuel + 32); rumble(80, 0x60); Led::flash({0, 255, 0}, 350); }
       }
     }
     for (auto& d : deco) {

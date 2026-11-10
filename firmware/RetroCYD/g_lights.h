@@ -120,6 +120,7 @@ namespace Lights {
       Kit::hsSet(totalStars());
       ph = PH_DONE;
       rumble(250, 0x90);
+      Led::party(1500);
     }
   }
 

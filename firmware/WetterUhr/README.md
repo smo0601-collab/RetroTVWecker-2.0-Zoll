@@ -306,7 +306,7 @@ Verstaerker fuer einen Lautsprecher, RGB-LED, USB. **Es muss nichts verdrahtet w
 | Backlight | GPIO21 | **echte Helligkeitsregelung** (PWM), Standby schaltet das Licht ganz aus |
 | Touchscreen XPT2046 | CLK 25, MOSI 32, MISO 39, CS 33, IRQ 36 | die ganze Flaeche wirkt wie der Touch-Taster (siehe unten) |
 | Lautsprecher-Anschluss "SPEAK" | GPIO26 ueber Verstaerker | Wecker, Stundensignal, Klick; Ton per PWM (`BUZZER_TONE_HZ`, Standard 2700 Hz) |
-| RGB-LED (Rueckseite) | GPIO4/16/17 | aus; blinkt rot, solange der Wecker klingelt |
+| RGB-LED (Rueckseite) | GPIO4/16/17 | einstellbar (siehe unten "RGB-LED"); Wecker blinkt rot |
 
 **Bedienung am Touchscreen** (wie beim Touch-Taster): kurz tippen = naechstes Design aus der Wechsel-Liste,
 doppelt tippen = Laufschrift, 1 s halten = Menue (Spiele, Standby, Zurueck), im Standby weckt jede Beruehrung, klingelt der Wecker,
@@ -378,6 +378,23 @@ Klappt die Verbindung nicht: eventuell fehlt der USB-Treiber fuer den CH340-Chip
 
 **Updates per WLAN:** immer die Datei mit `CYD` im Namen nehmen (`..._CYD_update.bin`). Eine Datei fuer das
 andere Board lehnt die Uhr ab ("Falsche Firmware fuer dieses Board").
+
+
+### RGB-LED
+
+Im Browser unter **Helligkeit > RGB-LED** (nur CYD):
+
+| Einstellung | Moeglichkeiten |
+|---|---|
+| Modus | aus, feste Farbe, Wetter-Farbe, Temperatur-Farbe, Farbwechsel (ca. 60 s), Atmen, Sekundenpuls |
+| Farbe, Helligkeit | fuer feste Farbe, Atmen und Sekundenpuls; Helligkeit gilt fuer alle Modi |
+| Wann | immer, nur nachts (Nachtlicht), nachts aus. "Nachts" = Dimm-Zeitfenster, ohne Zeitplan nach Sonnenstand |
+| Hinweise | Wecker (rot blinkend), kein WLAN (orange, alle 3 s), Update (blau), Gewitter (violett) und Frost (eisblau) als Doppelblitz alle 8 s |
+
+Wetter-Farbe: gelb = Sonne, dunkelblau = klare Nacht, grau = Wolken, blau = Regen, weiss = Schnee, violett mit
+Blitzen = Gewitter. Temperatur: blau (-10 Grad) - tuerkis - gruen - gelb - rot (30 Grad).
+Aenderungen sind sofort 8 Sekunden lang zu sehen, gespeichert wird mit "Speichern". Im Standby bleibt die LED aus
+(ausser Wecker und Update). In RetroCYD steuern die Spiele die LED (Menue-Farbe, Blitze, Startampel ...).
 
 ## Verdrahtung (ESP32-C3 SuperMini)
 
@@ -470,6 +487,7 @@ eine Zeile pro Text mit allen Sprachen nebeneinander; eine weitere Sprache bekom
 | `settings.h` | Dauerhafte Einstellungen (Flash) |
 | `webui.h` | Browser-Einstellungsseite |
 | `board.h` | Unterschiede der Boards: Display-Treiber, Touchscreen, RGB-LED |
+| `led.h` | CYD: RGB-LED (Modi, Hinweise, Vorschau) |
 | `cyd_shared.h` | CYD: Touch-Koordinaten und Kalibrierung, Erkennen/Umschalten des zweiten Programms (gleich in RetroCYD) |
 | `dualboot.h` | CYD: Startauswahl Uhr/Spiele, Halte-Menue, Touch-Kalibrierung |
 | `lang.h`, `lang_web.h` | Texte in allen Sprachen (Display bzw. Browser-Seite), Wochentage, Datumsformat |

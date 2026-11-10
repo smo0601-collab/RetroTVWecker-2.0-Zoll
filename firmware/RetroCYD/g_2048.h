@@ -216,7 +216,7 @@ namespace G2048 {
 
   void afterAnim() {
     for (int i = 0; i < N * N; i++)
-      if (g[i] >= 11 && !keepGoing) { keepGoing = true; ph = PH_WON; writeSave(); rumble(300, 0xA0); return; }
+      if (g[i] >= 11 && !keepGoing) { keepGoing = true; ph = PH_WON; writeSave(); rumble(300, 0xA0); Led::party(3000); return; }
     if (!movesLeft()) {
       clearSave();
       lastMode = N;

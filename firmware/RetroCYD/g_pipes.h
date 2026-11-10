@@ -161,6 +161,7 @@ namespace Pipes {
       Kit::hsSet(score);
       ph = PH_DONE;
       rumble(250, 0x90);
+      Led::party(1500);
     }
   }
 

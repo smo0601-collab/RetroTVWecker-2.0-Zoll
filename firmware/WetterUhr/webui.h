@@ -697,7 +697,34 @@ static void handleRoot() {
   p += F("\"><label>"); T(W_DIM_LEVEL); p += F("</label><input name=diml type=number min=5 max=100 value=");
   p += String(gSet.dimLevel);
   p += F("><label><input type=checkbox name=dimtv value=1"); chk(gSet.dimTv);
-  p += F(">"); T(W_DIMTV_CB); p += F("</label><small>"); T(W_DIM_HINT); p += F("</small></section>");
+  p += F(">"); T(W_DIMTV_CB); p += F("</label><small>"); T(W_DIM_HINT); p += F("</small>");
+#if PIN_LED_R >= 0
+  {                                                     // RGB-LED des CYD (led.h)
+    p += F("<h2>"); T(W_H_LED); p += F("</h2><label>"); T(W_LED_MODE); p += F("</label><select name=ledm id=ledm>");
+    for (int i = 0; i < 7; i++) {
+      p += F("<option value="); p += String(i); if (gSet.ledMode == i) p += F(" selected"); p += '>'; T(W_LM0 + i); p += F("</option>");
+    }
+    char hx[8];
+    snprintf(hx, sizeof(hx), "#%06lx", (unsigned long)(gSet.ledCol & 0xFFFFFF));
+    p += F("</select><label>"); T(W_LED_COL); p += F("</label><input type=color name=ledc id=ledc style='height:2.6em' value=\"");
+    p += hx;
+    p += F("\"><label>"); T(W_LED_BRI); p += F("<span id=lbv>"); p += String(gSet.ledBri);
+    p += F("</span> %</label><input type=range name=ledb id=ledb min=1 max=100 value="); p += String(gSet.ledBri);
+    p += F("><label>"); T(W_LED_TIME); p += F("</label><select name=ledt>");
+    for (int i = 0; i < 3; i++) {
+      p += F("<option value="); p += String(i); if (gSet.ledTime == i) p += F(" selected"); p += '>'; T(W_LT0 + i); p += F("</option>");
+    }
+    p += F("</select><label>"); T(W_LED_HINTS); p += F("</label>");
+    for (int i = 0; i < 4; i++) {
+      p += F("<label><input type=checkbox name=lh"); p += String(i); p += F(" value=1"); chk(gSet.ledHint & (1 << i)); p += '>'; T(W_LH0 + i); p += F("</label>");
+    }
+    p += F("<small>"); T(W_LED_NOTE); p += F("</small><script>(function(){const g=i=>document.getElementById(i),m=g('ledm'),c=g('ledc'),b=g('ledb');let t;"
+           "function go(){g('lbv').textContent=b.value;clearTimeout(t);t=setTimeout(()=>fetch('/ledprev',{method:'POST',"
+           "headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'m='+m.value+'&c='+c.value.slice(1)+'&b='+b.value}),120);}"
+           "m.onchange=go;c.oninput=go;b.oninput=go;})();</script>");
+  }
+#endif
+  p += F("</section>");
 
   // ================= Laufschrift =================
   fl();
@@ -997,6 +1024,17 @@ static void handleSave() {
   n.nyeAuto = server.hasArg("nyeauto");
   n.holAuto = server.hasArg("holauto");
   n.fine = (server.hasArg("fsm") ? 1 : 0) | (server.hasArg("ftx") ? 2 : 0);
+#if PIN_LED_R >= 0
+  if (server.hasArg("ledm")) {
+    n.ledMode = (uint8_t)constrain(server.arg("ledm").toInt(), 0, 6);
+    String c = server.arg("ledc"); c.replace("#", "");
+    if (c.length() == 6) n.ledCol = strtoul(c.c_str(), nullptr, 16) & 0xFFFFFF;
+    n.ledBri = (uint8_t)constrain(server.arg("ledb").toInt(), 1, 100);
+    n.ledTime = (uint8_t)constrain(server.arg("ledt").toInt(), 0, 2);
+    n.ledHint = 0;
+    for (int i = 0; i < 4; i++) if (server.hasArg(String("lh") + i)) n.ledHint |= 1 << i;
+  }
+#endif
   if (server.hasArg("panel")) { int v = server.arg("panel").toInt(); n.panel = (v >= 0 && v <= 2) ? (uint8_t)v : 0; }
   n.pflags = 0;
   for (int i = 0; i < 5; i++) if (server.hasArg(String("pf") + i)) n.pflags |= (1 << i);
@@ -1307,6 +1345,14 @@ static void webBegin() {
   });
   server.on("/save", HTTP_POST, handleSave);
   server.on("/brightness", HTTP_POST, handleBrightness);
+#if PIN_LED_R >= 0
+  server.on("/ledprev", HTTP_POST, []() {             // LED-Vorschau (8 s, ohne Speichern)
+    if (!authOk()) return;
+    led::preview((uint8_t)constrain(server.arg("m").toInt(), 0, 6), strtoul(server.arg("c").c_str(), nullptr, 16) & 0xFFFFFF,
+                 (uint8_t)constrain(server.arg("b").toInt(), 1, 100));
+    server.send(204);
+  });
+#endif
   server.on("/scan", HTTP_GET, handleScan);
   server.on("/geo", HTTP_GET, handleGeo);
   server.on("/standby", HTTP_POST, handleStandby);

@@ -59,6 +59,11 @@ struct Settings {
   uint8_t  panel;      // Display-Controller: 0 automatisch, 1 ILI9341, 2 ST7789
   uint8_t  pflags;     // Display-Anpassung (board.h: PF_SWAPXY, PF_MIRX, PF_MIRY, PF_BGR, PF_INV)
   uint8_t  lang;       // Sprache: 0 Deutsch, 1 Englisch, 2 Franzoesisch, 3 Spanisch, 4 Italienisch
+  uint8_t  ledMode;    // RGB-LED (CYD): 0 aus, 1 Farbe, 2 Wetter, 3 Temperatur, 4 Farbwechsel, 5 Atmen, 6 Sekundenpuls
+  uint32_t ledCol;     // feste Farbe 0xRRGGBB
+  uint8_t  ledBri;     // 1..100 %
+  uint8_t  ledTime;    // 0 immer, 1 nur nachts, 2 nachts aus
+  uint8_t  ledHint;    // Bit 0 Wecker, 1 kein WLAN, 2 Update, 3 Gewitter/Frost
 };
 
 static Settings    gSet;
@@ -128,6 +133,15 @@ static void settingsLoad() {
   gSet.panel   = prefs.getUChar("panel", DEFAULT_PANEL);
   if (gSet.panel > 2) gSet.panel = 0;
   gSet.pflags  = prefs.getUChar("pflg", DEFAULT_PANEL_FLAGS) & 0x1F;
+  gSet.ledMode = prefs.getUChar("ledm", 0);
+  gSet.ledCol  = prefs.getUInt("ledc", 0xFF9030);
+  gSet.ledBri  = prefs.getUChar("ledb", 30);
+  gSet.ledTime = prefs.getUChar("ledt", 0);
+  gSet.ledHint = prefs.getUChar("ledh", 0x05);   // Wecker und Update (wie bisher nur der Wecker)
+  if (gSet.ledMode > 6) gSet.ledMode = 0;
+  if (gSet.ledBri < 1 || gSet.ledBri > 100) gSet.ledBri = 30;
+  if (gSet.ledTime > 2) gSet.ledTime = 0;
+  gSet.ledCol &= 0xFFFFFF;
   gSet.lang    = prefs.getUChar("lang", DEFAULT_LANG);
   if (gSet.lang >= LANG_COUNT) gSet.lang = 0;
   gLang = gSet.lang;
@@ -249,6 +263,11 @@ static void settingsSave() {
   prefs.putUChar("fine", gSet.fine);
   prefs.putUChar("panel", gSet.panel);
   prefs.putUChar("pflg", gSet.pflags);
+  prefs.putUChar("ledm", gSet.ledMode);
+  prefs.putUInt("ledc", gSet.ledCol);
+  prefs.putUChar("ledb", gSet.ledBri);
+  prefs.putUChar("ledt", gSet.ledTime);
+  prefs.putUChar("ledh", gSet.ledHint);
   prefs.putUChar("lang", gSet.lang);
   gLang = gSet.lang;
   prefs.end();

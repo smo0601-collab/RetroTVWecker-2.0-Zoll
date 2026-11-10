@@ -71,7 +71,7 @@
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION "2026.11.10"
+#define FW_VERSION "2026.11.10-3"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1
@@ -126,7 +126,7 @@
 #define PIN_TFT_BL           21
 #define BL_ACTIVE_HIGH       1
 
-// RGB-LED auf der Rueckseite (LOW = an): blinkt rot, solange der Wecker klingelt, sonst aus
+// RGB-LED auf der Rueckseite (LOW = an), per PWM gesteuert: Modus und Hinweise im Browser (led.h)
 #define PIN_LED_R            4
 #define PIN_LED_G            16
 #define PIN_LED_B            17

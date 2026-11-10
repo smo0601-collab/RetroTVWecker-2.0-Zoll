@@ -234,6 +234,10 @@ namespace BJ {
     save();
     Kit::hsSet(sv.chips > 0 ? (uint32_t)sv.chips : 0);
     if (net > 0) rumble(200, 0x80);
+    if (outcome[0] == 2 && nHands == 1) Led::party(2000);          // LED: Black Jack bunt,
+    else if (net > 0) Led::flash({0, 255, 0}, 900);                 // gewonnen gruen,
+    else if (net < 0) Led::flash({255, 0, 0}, 700);                 // verloren rot,
+    else Led::flash({200, 200, 200}, 400);                          // gleich weiss
     ph = PH_RESULT;
     sel = 0;
     Kit::dirty = true;

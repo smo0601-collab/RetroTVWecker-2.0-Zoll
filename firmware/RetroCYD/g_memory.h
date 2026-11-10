@@ -249,6 +249,7 @@ namespace Memory {
   int COLS, ROWS, CW, CH, X0, Y0;
   int lastMode = -1;
   const uint8_t FLIP = 6;
+  const uint16_t P_COL[2] = {RGB(235, 60, 60), RGB(60, 130, 255)};   // Spieler rot / blau
   const int32_t TIME = 90 * 30;
 
   int unlocked() { return wins >= 6 ? 3 : (wins >= 3 ? 2 : 1); }
@@ -272,6 +273,7 @@ namespace Memory {
     moves = 0;
     timeLeft = TIME;
     curI = 0;
+    Led::set(mode == 2 ? Led::c565(RGB(235, 60, 60)) : Led::Rgb{0, 0, 0});   // 2 Spieler: Farbe des Spielers
     ph = PH_PLAY;
     Kit::dirty = true;
   }
@@ -317,6 +319,9 @@ namespace Memory {
       prefs.putUShort("mem_win", wins);
     }
     rumble(300, 0x90);
+    if (mode == 2) Led::set565(pairs[0] == pairs[1] ? C_WHITE : P_COL[pairs[1] > pairs[0]], 200, 300);
+    else if (found == 12) { Led::set({0, 0, 0}); Led::party(2000); }
+    else Led::flash({255, 0, 0}, 800);
     Kit::dirty = true;
   }
 
@@ -358,6 +363,7 @@ namespace Memory {
         found++;
         sel1 = sel2 = -1;
         rumble(60, 0x60);
+        Led::flash({0, 255, 60}, 400);                  // Paar gefunden: gruen
         Kit::dirty = true;
         if (found == 12) { finish(); return; }
       } else if (waitT == 0) {
@@ -366,7 +372,7 @@ namespace Memory {
         for (int k : {sel1, sel2}) { st[k] = 0; flipTo[k] = 0; flip[k] = FLIP; }
         sel1 = sel2 = -1;
         waitT = 0;
-        if (mode == 2) player ^= 1;
+        if (mode == 2) { player ^= 1; Led::set565(P_COL[player], 140); }
         Kit::dirty = true;
         return;
       }
@@ -384,7 +390,6 @@ namespace Memory {
   }
 
   // ---------------- Zeichnen ----------------
-  const uint16_t P_COL[2] = {RGB(235, 60, 60), RGB(60, 130, 255)};
 
   void symbol(uint8_t v, int cx, int cy) {
     if (symSet == 0) { Kit::pix(SYM[v], 16, 16, cx - 16, cy - 16, 2); return; }

@@ -23,6 +23,7 @@ namespace Four {
   uint8_t winCells[9][2], nWin;
   uint16_t sWin, sLoss, sDraw, streak, bestStreak, round;
   int lastMode = -1;
+  const uint16_t COLS[3] = {C_BG, RGB(235, 45, 45), RGB(255, 210, 0)};   // leer, rot, gelb
   // Fallender Stein
   uint8_t dropC, dropP, dropR;
   float dropY, dropV;
@@ -236,6 +237,10 @@ namespace Four {
       if (c >= 0) { lastMode = c; startMode(c); }
       return;
     }
+    // LED: Farbe des Spielers, der dran ist; nach dem Sieg blinkt die Farbe des Siegers
+    if (ph == PH_WIN || ph == PH_OVER) {
+      if (winner) Led::set565(COLS[winner], 255, 250); else Led::set({120, 120, 120});
+    } else Led::set565(COLS[turn], 140);
     const Kit::Ev e = Kit::take();
     switch (ph) {
       case PH_TURN:
@@ -276,7 +281,6 @@ namespace Four {
   }
 
   // ---------------- Zeichnen ----------------
-  const uint16_t COLS[3] = {C_BG, RGB(235, 45, 45), RGB(255, 210, 0)};
 
   void disc(int x, int y, int p, bool hi) {
     cC(x, y, RAD, COLS[p]);
