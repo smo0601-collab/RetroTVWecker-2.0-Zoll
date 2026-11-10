@@ -4,6 +4,16 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.11-3 - Korrektur: richtige Update-Datei wurde abgelehnt
+
+- Fehler aus 2026.11.11-2 / RetroCYD 3.9 behoben: Eine korrekte `*_update.bin` wurde mit "Erstinstallations-Datei
+  (mit Bootloader)" abgelehnt. Die Pruefung des Dateianfangs lief nicht nur beim ersten, sondern auch bei den
+  folgenden Uebertragungs-Bloecken (das Update-Modul meldet erst nach 4 KB Fortschritt). Jetzt wird nur der
+  allererste Block geprueft.
+- RetroCYD 3.9.1 mit derselben Korrektur.
+
+Geaenderte Dateien: `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.11-2 - Firmware-Update: nur passende Dateien, richtiges Programm automatisch
 
 - Der Browser prueft die gewaehlte Datei am **Inhalt** (nicht mehr am Namen), bevor etwas uebertragen wird:

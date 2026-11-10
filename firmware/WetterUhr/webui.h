@@ -1342,10 +1342,12 @@ static cyd::App gOtaApp = cyd::APP_NONE;   // welches Programm gerade hochgelade
 static cyd::MarkScan gOtaScan;             // prueft die Kennung in der Datei
 #endif
 
+static bool gOtaFirst = false;              // naechster Block ist der Anfang der Datei
 static void handleUpdateUpload() {
   HTTPUpload& up = server.upload();
   if (up.status == UPLOAD_FILE_START) {
     gOtaErr = "";
+    gOtaFirst = true;
     if (gSet.webPw[0] && !server.authenticate("admin", gSet.webPw)) { gOtaErr = TR(W_E_LOGIN); return; }
     if (!otaPartition()) { gOtaErr = TR(W_E_NOPART); return; }
     gOtaSize = server.hasArg("size") ? (size_t)server.arg("size").toInt() : 0;
@@ -1373,7 +1375,9 @@ static void handleUpdateUpload() {
     if (gOtaErr.length()) return;
     // Erster Block: Chip im Bild-Kopf pruefen (Byte 12/13), damit keine Firmware fuer das andere Board
     // (CYD = ESP32 bzw. ESP32-C3) eingespielt wird - sie wuerde nicht starten.
-    if (Update.progress() == 0 && up.currentSize >= 36) {
+    // Nur der allererste Block: Update.progress() bleibt bis 4 KB bei 0 (Puffer), taugt dafuer also nicht
+    if (gOtaFirst && up.currentSize >= 36) {
+      gOtaFirst = false;
       const uint8_t* q = up.buf;
       const bool appDesc = q[0] == 0xE9 && q[32] == 0x32 && q[33] == 0x54 && q[34] == 0xCD && q[35] == 0xAB;
       const uint16_t chip = q[12] | (q[13] << 8);

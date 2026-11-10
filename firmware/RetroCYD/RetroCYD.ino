@@ -158,7 +158,7 @@ bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 uint32_t toClockAt = 0;      // Browser: zur Uhr wechseln (Zeitpunkt, 0 = nein)
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.9"
+#define FW_VERSION "3.9.1"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -1540,9 +1540,11 @@ cyd::App otaAppArg(const String& filename) {
 
 void handleUploadData() {
   HTTPUpload& up = server.upload();
+  static bool first = false;                       // naechster Block ist der Anfang der Datei
   if (up.status == UPLOAD_FILE_START) {
     otaErr = "";
     otaBegun = false;
+    first = true;
     size_t sz = server.hasArg("size") ? (size_t)server.arg("size").toInt() : 0;
     if (relayToken && strtoul(server.arg("t").c_str(), nullptr, 16) != relayToken) { otaErr = "Ungueltige Anfrage"; return; }
     otaErr = otaCheckTarget(otaAppArg(up.filename));
@@ -1552,7 +1554,8 @@ void handleUploadData() {
     otaBegun = true;
     if (!Update.begin(sz > 0 ? sz : UPDATE_SIZE_UNKNOWN, U_FLASH)) otaErr = Update.errorString();
   } else if (up.status == UPLOAD_FILE_WRITE) {
-    if (otaErr.isEmpty() && Update.progress() == 0 && up.currentSize >= 36) {   // erster Block: echte Programmdatei fuer den ESP32?
+    if (first && up.currentSize >= 36) {           // erster Block: echte Programmdatei fuer den ESP32?
+      first = false;                               // (Update.progress() bleibt bis 4 KB bei 0 - nicht dafuer nutzen)
       const uint8_t* q = up.buf;
       const bool appDesc = q[0] == 0xE9 && q[32] == 0x32 && q[33] == 0x54 && q[34] == 0xCD && q[35] == 0xAB;
       if (!appDesc) otaErr = "Erstinstallations-Datei (mit Bootloader) - nur per USB. Bitte *_update.bin verwenden.";
