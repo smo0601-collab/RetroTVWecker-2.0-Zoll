@@ -14,7 +14,7 @@ neue Firmware kommt per WLAN.
 ## Was die Uhr kann
 
 - **Uhrzeit** per Internet (NTP) mit automatischer Sommer-/Winterzeit oder **von Hand** eingestellt.
-- **Wetter** von [Open-Meteo](https://open-meteo.com) (kostenlos, ohne Konto): Temperatur, Feuchte, Wind, Vorhersage.
+- **Wetter** von [Open-Meteo](https://open-meteo.com) (kostenlos, ohne Konto): Temperatur, Feuchte, Wind, Vorhersage. Standort per **Ortssuche** (Ort oder PLZ eingeben, Treffer antippen).
 - **27 Designs**: 2 klassische Uhren (Flip-Karten, Digital mit Sekundenbalken) und 25 animierte Szenen –
   Arcade-Spiele, Tiere, Technik, Himmel und Weltraum, Feiertage.
 - **Automatischer Design-Wechsel** nach Zeitplan durch eine selbst gewählte Liste. Weihnachten,
@@ -149,7 +149,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.09-6`](releases/2026.11.09-6), mit RetroCYD 3.6), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.10`](releases/2026.11.10), mit RetroCYD 3.6), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
@@ -189,7 +189,7 @@ Was sich in jeder Version geändert hat, steht im [CHANGELOG](firmware/WetterUhr
 | Laufschrift | Text, Position, Größe, Farbe, Tempo, Dauerschleife |
 | Summer & Wecker | Stundensignal, Nachtruhe, Weckzeit mit Wochentagen, Summer-Test |
 | WLAN | Netzwerk suchen und eintragen |
-| Zeit & Wetter | Zeitzone, NTP oder manuelle Uhrzeit, Standort, Wetter-Intervall, Flugradar-Radius |
+| Zeit & Wetter | Zeitzone, NTP oder manuelle Uhrzeit, Standort (mit Ortssuche), Wetter-Intervall, Flugradar-Radius |
 | System | Gerätename, Web-Passwort, Firmware-Update über WLAN, Werkseinstellungen |
 
 Alle Einzelheiten – Designs, Dimmung, Wecker, Touch-Bedienung, Fehlersuche – stehen in der

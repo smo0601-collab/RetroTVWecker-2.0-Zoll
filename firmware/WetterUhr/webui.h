@@ -107,6 +107,8 @@ input,select{width:100%;box-sizing:border-box;padding:.55em;background:#161b22;c
 input[type=checkbox]{width:auto;margin-right:.5em} input[type=range]{padding:0}
 button{margin-top:1em;padding:.7em 1.2em;border:0;border-radius:6px;background:#238636;color:#fff;font-size:1rem}
 button.sec{background:#30363d;margin-left:.5em} button.red{background:#8e1519}
+button.geo{display:block;width:100%;text-align:left;margin:.4em 0 0;padding:.5em .8em;background:#161b22;border:1px solid #30363d;font-size:.95rem}
+button.geo:hover{border-color:var(--acc)} #geor{margin:.3em 0} input.hl{border-color:var(--acc)} small.err{color:#f85149}
 .ok{background:#12351f;border:1px solid #238636;padding:.6em;border-radius:6px;margin:.6em 0}
 .warn{background:#3a2a0a;border:1px solid #9e6a03;padding:.6em;border-radius:6px;margin:.6em 0;font-size:.9rem}
 table{width:100%;font-size:.9rem} td{padding:.15em 0;vertical-align:top} td:first-child{color:#9da7b3;width:40%}
@@ -180,6 +182,29 @@ function look(){
 }
 document.querySelectorAll('input[name=cs],input[name=acc]').forEach(i=>i.onchange=look);
 paint();
+// Ortssuche: erst direkt aus dem Browser (Open-Meteo), sonst ueber die Uhr (/geo)
+async function geoFind(){
+  const q=$('geoq').value.trim(),o=$('geor'); if(q.length<2) return;
+  o.innerHTML='<small>'+L.gw+'</small>';
+  const u='https://geocoding-api.open-meteo.com/v1/search?count=8&format=json&language='+L.glang+'&name='+encodeURIComponent(q);
+  const get=async(x)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),8000);
+    try{const r=await fetch(x,{signal:c.signal});if(!r.ok)throw 0;return await r.json();}finally{clearTimeout(t);}};
+  let d=null;
+  try{d=await get(u);}catch(e){try{d=await get('/geo?q='+encodeURIComponent(q));}catch(e2){}}
+  if(!d||d.error){o.innerHTML='<small class=err>'+L.ge+'</small>';return;}
+  const r=d.results||[];
+  if(!r.length){o.innerHTML='<small>'+L.gn+'</small>';return;}
+  const h=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  window.geoR=r;
+  o.innerHTML=r.map((p,i)=>{const t=[p.name,p.postcodes&&p.postcodes.length?p.postcodes[0]:'',p.admin2&&p.admin2!==p.name?p.admin2:'',p.admin1,p.country].filter(x=>x).map(h).join(', ');
+    return '<button type=button class=geo onclick=geoPick('+i+')><b>'+t+'</b><br><small>'+(+p.latitude).toFixed(4)+', '+(+p.longitude).toFixed(4)+(p.elevation!=null?' &middot; '+Math.round(p.elevation)+' m':'')+'</small></button>';}).join('');
+}
+function geoPick(i){
+  const p=window.geoR[i],f=document.querySelector('input[name=lat]').form;
+  f.lat.value=(+p.latitude).toFixed(4); f.lon.value=(+p.longitude).toFixed(4);
+  $('geor').innerHTML='<small>'+L.gok+String(p.name).replace(/[&<>]/g,'')+(p.country?' ('+String(p.country).replace(/[&<>]/g,'')+')':'')+L.gsv+'</small>';
+  f.lat.classList.add('hl'); f.lon.classList.add('hl');
+}
 function show(t){
   document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.id==='t-'+t));
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.t===t));
@@ -776,7 +801,13 @@ static void handleRoot() {
     p += F("</button> <button type=submit formaction=/settime formmethod=post formnovalidate>"); T(W_SET_TIME);
     p += F("</button></div><small>"); T(W_MAN_HINT); p += F("</small>");
   }
-  p += F("<h2>"); T(W_R_WX); p += F("</h2><label>"); T(W_LAT); p += F("</label><input name=lat inputmode=decimal value=\"");
+  p += F("<h2>"); T(W_R_WX); p += F("</h2><label>"); T(W_GEO);
+  p += F("</label><div style='display:flex;gap:.5em'><input id=geoq style='flex:1' maxlength=60 autocomplete=off placeholder=\"");
+  T(W_GEO_PH);
+  p += F("\" onkeydown=\"if(event.key==='Enter'){event.preventDefault();geoFind()}\"><button type=button class=sec style='margin:0' onclick=geoFind()>");
+  T(W_GEO_BTN);
+  p += F("</button></div><div id=geor></div><small>"); T(W_GEO_HINT); p += F("</small>");
+  p += F("<label>"); T(W_LAT); p += F("</label><input name=lat inputmode=decimal value=\"");
   p += String(gSet.lat, 4);
   p += F("\"><label>"); T(W_LON); p += F("</label><input name=lon inputmode=decimal value=\"");
   p += String(gSet.lon, 4);
@@ -862,10 +893,38 @@ static void handleRoot() {
   p += F("<script>const L={");
   js("scan", W_SCANNING); js("found", W_FOUND); js("scanb", W_SCAN); js("pick", J_PICK); js("wrong", J_WRONG); js("conf", J_CONFIRM);
   js("sent", J_SENT); js("relay", J_RELAY); js("done", J_DONE); js("err", J_ERR); js("lost", J_LOST); js("reset", W_RESET_Q);
+  js("gw", J_GEO_WAIT); js("gn", J_GEO_NONE); js("ge", J_GEO_ERR); js("gok", J_GEO_OK); js("gsv", J_GEO_SAVE);
+  p += F("glang:\""); p += LANG_CODE[LANG_IDX]; p += F("\",");
   p += F("};</script>");
   p += FPSTR(PAGE_JS);
   server.sendContent(p);
   server.sendContent("");               // Ende der Antwort
+}
+
+// Ortssuche ueber die Uhr (nur wenn der Browser Open-Meteo nicht selbst erreicht)
+static void handleGeo() {
+  if (!authOk()) return;
+  String q = server.arg("q"); q.trim();
+  if (q.length() < 2 || q.length() > 60 || WiFi.status() != WL_CONNECTED) { server.send(502, "application/json", "{\"error\":true}"); return; }
+  String u = F("https://geocoding-api.open-meteo.com/v1/search?count=8&format=json&language=");
+  u += LANG_CODE[LANG_IDX]; u += F("&name=");
+  static const char hx[] = "0123456789ABCDEF";
+  for (size_t i = 0; i < q.length(); i++) {
+    const uint8_t c = (uint8_t)q[i];
+    if (isalnum(c) || c == '-' || c == '.' || c == '_') u += (char)c;
+    else { u += '%'; u += hx[c >> 4]; u += hx[c & 15]; }
+  }
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.setConnectTimeout(8000);
+  http.setTimeout(8000);
+  if (!http.begin(client, u)) { server.send(502, "application/json", "{\"error\":true}"); return; }
+  const int code = http.GET();
+  if (code != HTTP_CODE_OK) { http.end(); server.send(502, "application/json", "{\"error\":true}"); return; }
+  const String body = http.getString();
+  http.end();
+  server.send(200, "application/json", body);
 }
 
 static void handleSave() {
@@ -1249,6 +1308,7 @@ static void webBegin() {
   server.on("/save", HTTP_POST, handleSave);
   server.on("/brightness", HTTP_POST, handleBrightness);
   server.on("/scan", HTTP_GET, handleScan);
+  server.on("/geo", HTTP_GET, handleGeo);
   server.on("/standby", HTTP_POST, handleStandby);
   server.on("/look", HTTP_POST, handleLook);
   server.on("/ticker", HTTP_POST, handleTicker);

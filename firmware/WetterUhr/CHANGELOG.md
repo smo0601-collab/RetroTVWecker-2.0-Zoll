@@ -4,6 +4,16 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.10 - Ortssuche fuer den Standort
+
+- Reiter "Wetter": neues Feld "Ort suchen" ueber Breiten- und Laengengrad. Ort oder Postleitzahl eingeben, Enter oder
+  "Suchen", Treffer (Name, PLZ, Kreis, Land, Koordinaten, Hoehe) antippen - die Koordinaten werden eingetragen.
+- Suche ueber die Ortssuche von Open-Meteo (gleicher Dienst wie das Wetter, ohne Schluessel), in der eingestellten
+  Sprache. Der Browser fragt direkt; klappt das nicht, fragt die Uhr selbst (neue Adresse /geo).
+- Koordinaten koennen weiterhin von Hand eingetragen werden.
+
+Geaenderte Dateien: `webui.h`, `lang_web.h`, `config.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.09-6 - Feinere Darstellung, Grossanzeige (fuer das CYD 2,8 Zoll)
 
 - Themen-Designs: Kanten glaetten (Scale2x beim Vergroessern) und Schrift in voller Aufloesung (Texte, Datum, Zahlen

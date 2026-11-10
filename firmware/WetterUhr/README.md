@@ -50,6 +50,9 @@ Aenderungen am WLAN, NTP-Server oder Geraetenamen starten das Geraet neu.
    (Passwort aus `config.h`, Standard `wetteruhr1`, bitte aendern).
 2. Mit dem Handy oder PC verbinden, im Browser `http://192.168.4.1` oeffnen.
 3. WLAN eintragen, Zeitzone und Standort waehlen, speichern. Das Geraet startet neu.
+   Standort: im Reiter "Wetter" unter "Ort suchen" einen Ort oder eine Postleitzahl eingeben und den Treffer antippen,
+   Breiten- und Laengengrad werden eingetragen (danach Speichern). Die Suche braucht Internet - im Einrichtungs-WLAN
+   der Uhr also erst nach der WLAN-Einrichtung, oder die Koordinaten von Hand eintragen.
 4. Faellt das WLAN spaeter laenger als 60 s aus, oeffnet sich der Access-Point erneut und schliesst sich nach
    der Wiederverbindung.
 

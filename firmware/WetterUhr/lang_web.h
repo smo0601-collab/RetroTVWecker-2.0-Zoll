@@ -250,6 +250,14 @@
                   "Usa il fuso scelto sopra; l'ora legale viene riconosciuta da sola. «Imposta l'ora» applica solo data e ora. Con NTP l'ora viene sovrascritta alla sincronizzazione successiva (circa ogni ora). L'orologio non ha batteria tampone: dopo un blackout senza NTP l'ora va reimpostata (un riavvio dal browser di solito la mantiene).") \
   X(W_LAT,        "Breitengrad", "Latitude", "Latitude", "Latitud", "Latitudine") \
   X(W_LON,        "L&auml;ngengrad", "Longitude", "Longitude", "Longitud", "Longitudine") \
+  X(W_GEO,        "Ort suchen", "Find place", "Chercher un lieu", "Buscar lugar", "Cerca luogo") \
+  X(W_GEO_BTN,    "Suchen", "Search", "Chercher", "Buscar", "Cerca") \
+  X(W_GEO_PH,     "z.&thinsp;B. Berlin oder 10115", "e.g. London or SW1A", "p.&thinsp;ex. Paris ou 75001", "p.&thinsp;ej. Madrid o 28001", "es. Roma o 00118") \
+  X(W_GEO_HINT,   "Ort oder Postleitzahl eingeben und Treffer antippen &ndash; Breiten- und L&auml;ngengrad werden eingetragen. Danach Speichern. Ortsdaten: Open-Meteo / GeoNames.", \
+                  "Enter a place or postcode and tap a result &ndash; latitude and longitude are filled in. Then Save. Place data: Open-Meteo / GeoNames.", \
+                  "Saisissez un lieu ou un code postal et touchez un résultat &ndash; latitude et longitude sont remplies. Ensuite Enregistrer. Données : Open-Meteo / GeoNames.", \
+                  "Escribe un lugar o código postal y toca un resultado &ndash; se rellenan latitud y longitud. Después Guardar. Datos: Open-Meteo / GeoNames.", \
+                  "Inserisci un luogo o CAP e tocca un risultato &ndash; latitudine e longitudine vengono compilate. Poi Salva. Dati: Open-Meteo / GeoNames.") \
   X(W_UPD,        "Aktualisierung (Minuten, 5&ndash;120)", "Update interval (minutes, 5–120)", "Mise à jour (minutes, 5–120)", "Actualización (minutos, 5–120)", "Aggiornamento (minuti, 5–120)") \
   X(W_H_RADAR,    "Flugradar", "Flight radar", "Radar aérien", "Radar de vuelos", "Radar voli") \
   X(W_RADIUS,     "Radius in km (5&ndash;100)", "Radius in km (5–100)", "Rayon en km (5–100)", "Radio en km (5–100)", "Raggio in km (5–100)") \
@@ -342,6 +350,15 @@
                   "L'horloge passe brièvement en mode mise à jour (RetroCYD) puis revient avec la nouvelle version. Patientez ...", \
                   "El reloj pasa un momento al modo de actualización (RetroCYD) y vuelve con la nueva versión. Espera ...", \
                   "L'orologio passa un attimo in modalità aggiornamento (RetroCYD) e torna con la nuova versione. Attendere ...") \
+  X(J_GEO_WAIT,   "Suche ...", "Searching ...", "Recherche ...", "Buscando ...", "Ricerca ...") \
+  X(J_GEO_NONE,   "Nichts gefunden. Anders schreiben oder größeren Ort in der Nähe versuchen.", "Nothing found. Try another spelling or a larger place nearby.", \
+                  "Rien trouvé. Essayez une autre orthographe ou un lieu plus grand à proximité.", "No se encontró nada. Prueba otra escritura o un lugar mayor cercano.", \
+                  "Nessun risultato. Prova un'altra grafia o un luogo più grande vicino.") \
+  X(J_GEO_ERR,    "Suche nicht möglich (keine Internetverbindung?). Koordinaten bitte von Hand eintragen.", "Search not possible (no internet?). Please enter the coordinates by hand.", \
+                  "Recherche impossible (pas d'Internet ?). Saisissez les coordonnées à la main.", "Búsqueda imposible (¿sin Internet?). Escribe las coordenadas a mano.", \
+                  "Ricerca impossibile (niente Internet?). Inserisci le coordinate a mano.") \
+  X(J_GEO_OK,     "Übernommen: ", "Applied: ", "Repris : ", "Aplicado: ", "Applicato: ") \
+  X(J_GEO_SAVE,   " &ndash; bitte Speichern.", " &ndash; please Save.", " &ndash; puis Enregistrer.", " &ndash; luego Guardar.", " &ndash; poi Salva.") \
   X(J_DONE,       "Fertig. Die Uhr startet neu, Seite lädt in 20 s neu ...", "Done. The clock is restarting, the page reloads in 20 s ...", "Terminé. L'horloge redémarre, la page se recharge dans 20 s ...", \
                   "Listo. El reloj se reinicia, la página se recarga en 20 s ...", "Fatto. L'orologio si riavvia, la pagina si ricarica tra 20 s ...") \
   X(J_ERR,        "Fehler: ", "Error: ", "Erreur : ", "Error: ", "Errore: ") \
