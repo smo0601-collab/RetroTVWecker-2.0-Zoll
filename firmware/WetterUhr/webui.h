@@ -858,7 +858,9 @@ static void handleRoot() {
   } else {
     snprintf(fb, sizeof(fb), TR(W_FW_FILE), (unsigned long)(otaMaxSize() / 1024));
     p += F("<label>"); p += fb; p += F("</label><input type=file id=fw accept=.bin><button type=button id=fwb onclick=fwUp()>"); T(W_FW_INST);
-    p += F("</button><div id=fwp style='margin-top:.6em'></div><small>"); T(W_FW_HINT1);
+    p += F("</button><div id=fwp style='margin-top:.6em'></div>"
+         "<div style='height:10px;background:#161b22;border:1px solid #30363d;border-radius:5px;overflow:hidden;margin:.4em 0'>"
+         "<div id=fwbar style='height:100%;width:0;background:#238636;transition:width .2s'></div></div><small>"); T(W_FW_HINT1);
     p += esc(gSet.host);
     T(W_FW_HINT2);
     // Ablauf im Browser: /fwprep fragt, ob direkt oder ueber RetroCYD (CYD mit Spielen: die Uhr kann sich nicht
@@ -879,7 +881,7 @@ static void handleRoot() {
            "}).catch(()=>fail(L.lost));}"
            "function fwSend(f,t){const o=$('fwp'),b=$('fwb');const x=new XMLHttpRequest();"
            "x.open('POST','/update?size='+f.size+(t?'&t='+t:''));"
-           "x.upload.onprogress=e=>{if(e.lengthComputable)o.textContent=L.sent+Math.round(e.loaded*100/e.total)+' %';};"
+           "x.upload.onprogress=e=>{if(e.lengthComputable){const q=Math.round(e.loaded*100/e.total);o.textContent=L.sent+q+' %';$('fwbar').style.width=q+'%';}};"
            "x.onload=()=>{let j=null;try{j=JSON.parse(x.responseText);}catch(e){}"
            "if(x.status==200&&(x.responseText=='OK'||(j&&j.ok))){o.textContent=L.done;setTimeout(()=>location.href='/',25000);}"
            "else if(x.status==200&&!j){o.textContent=x.responseText;b.disabled=false;}"

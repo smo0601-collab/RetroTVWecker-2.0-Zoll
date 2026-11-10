@@ -4,6 +4,14 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.10-5 - Fortschrittsbalken beim Update
+
+- Browser: Firmware-Update zeigt jetzt neben der Prozentzahl einen Balken.
+- RetroCYD 3.8.1: Im Update-Modus fuer die Uhr ("UHR-UPDATE") blieb der Balken am Display leer und ohne Prozent,
+  weil die Fortschrittsanzeige in diesem Modus nicht angemeldet war. Behoben.
+
+Geaenderte Dateien: `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.10-4 - Menue ohne Reste des Uhrbilds
 
 - CYD: Beim Oeffnen des Halte-Menues (Spiele / Standby / Zurueck) wurde im selben Durchlauf noch einmal das Uhrbild

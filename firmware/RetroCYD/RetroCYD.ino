@@ -1,6 +1,6 @@
 /*
   ============================================================================
-   RETRO CYD 3.8  -  Retro-Spielekonsole fuer das "Cheap Yellow Display"
+   RETRO CYD 3.8.1-  Retro-Spielekonsole fuer das "Cheap Yellow Display"
                      (ESP32-2432S028R, 2,8" 240x320) mit Xbox-Controller,
                      microSD und Web-Oberflaeche
   ============================================================================
@@ -154,7 +154,7 @@ const char CYD_SELF_MARK[] = "RETROCYD-APP-ID-1";
 bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.8"
+#define FW_VERSION "3.8.1"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -1316,6 +1316,7 @@ void wifiStop() {
 int otaLastPct = -1;
 String otaErr;
 
+void otaProgress(size_t done, size_t total);
 void otaScreen(const char* title) {
   tft.fillScreen(C_BG);
   drawStripes(8);
@@ -1323,11 +1324,13 @@ void otaScreen(const char* title) {
   txt("Nicht ausschalten!", SCR_W / 2, SCR_H / 2 - 16, 1, C_RED, C_BG);
   tft.drawRect(20, SCR_H / 2, SCR_W - 40, 16, C_WHITE);
   otaLastPct = -1;
+  otaProgress(0, 1);                         // 0 % sofort anzeigen
 }
 
 void otaProgress(size_t done, size_t total) {
-  if (total == 0) return;
-  int pct = (int)(done * 100 / total);
+  if (total == 0 || total == UPDATE_SIZE_UNKNOWN) return;
+  int pct = (int)((uint64_t)done * 100 / total);
+  if (pct > 100) pct = 100;
   if (pct == otaLastPct) return;
   otaLastPct = pct;
   int w = (SCR_W - 44) * pct / 100;
@@ -2006,6 +2009,7 @@ void relayMode() {
   });
   server.on("/update", HTTP_POST, handleUploadDone, handleUploadData);
   server.onNotFound([]() { server.send(404, "text/plain", "RetroCYD Update-Modus"); });
+  Update.onProgress(otaProgress);            // Fortschrittsbalken am Display (sonst nur in webSetup gesetzt)
   server.begin();
   wifiOn = true;
   tft.fillRect(0, SCR_H / 2 - 22, SCR_W, 30, C_BG);
