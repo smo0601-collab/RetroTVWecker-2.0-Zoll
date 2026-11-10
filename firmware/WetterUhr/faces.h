@@ -44,10 +44,14 @@
 #include "face_easter.h"
 #include "face_valentine.h"
 #include "face_newyear.h"
+#include "face_party.h"      // Einblendung am Feiertag (Kalender, nicht im Design-Wechsel)
 #include "ticker.h"
 
 #define FACE_FIRST_STYLE 2       // clockStyle 0 = Flip-Karten, 1 = Digital + Balken, ab 2 = Themen-Zifferblaetter
 #define FACE_COUNT       25
+#define FACE_TOTAL       (FACE_COUNT + 1)          // dazu die Feiertags-Einblendung (kein waehlbares Design)
+#define PARTY_FACE       FACE_COUNT                // Index der Einblendung in FACES[]
+#define POP_STYLE        62                        // interne Design-Nummer fuer die Einblendung (nie gespeichert)
 #define TESTCARD_STYLE   (FACE_FIRST_STYLE + 13)   // Testbild: Index 13 in FACES[] (Nachtmodus)
 #define RADAR_STYLE      (FACE_FIRST_STYLE + 15)   // Flugradar: Index 15 in FACES[]
 #define ISS_STYLE        (FACE_FIRST_STYLE + 18)   // ISS-Tracker: Index 18 in FACES[]
@@ -70,7 +74,7 @@ struct Face {
   uint16_t frameMs;    // Zeit zwischen zwei Bildern
 };
 
-static const Face FACES[FACE_COUNT] = {
+static const Face FACES[FACE_TOTAL] = {
   {"Abenteuer",        f_adv::enter,   f_adv::draw,   f_adv::cover,   false, 50},
   {"Fallende Bloecke", f_blk::enter,   f_blk::draw,   f_blk::cover,   false, 50},
   {"Huepfwelt",        f_hop::enter,   f_hop::draw,   f_hop::cover,   false, 50},
@@ -96,6 +100,7 @@ static const Face FACES[FACE_COUNT] = {
   {"Ostern",           f_egg::enter,   f_egg::draw,   f_egg::cover,   false, 50},
   {"Valentinstag",     f_val::enter,   f_val::draw,   f_val::cover,   false, 50},
   {"Silvester",        f_nye::enter,   f_nye::draw,   f_nye::cover,   false, 40},
+  {"Feiertag",         f_party::enter, f_party::draw, f_party::cover, false, 50},   // PARTY_FACE
 };
 
 static const uint32_t T_OUT = 650;     // Dauer des Verlassens
@@ -124,7 +129,7 @@ static bool isThemed(int style) { return style >= FACE_FIRST_STYLE && style < FA
 
 // Zifferblatt aktivieren. false = Speicher reicht nicht (dann ein normales Design verwenden).
 static bool begin(int idx, uint32_t now, bool intro, uint8_t pct) {
-  if (idx < 0 || idx >= FACE_COUNT) return false;
+  if (idx < 0 || idx >= FACE_TOTAL) return false;
   if (!fb) {
     fb = new (std::nothrow) GFXcanvas8(FB_W, FB_H);
     if (fb && !fb->getBuffer()) { delete fb; fb = nullptr; }

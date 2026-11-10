@@ -65,13 +65,14 @@
 #define DEFAULT_AUTO_MASK    0         // Bitmaske der Designs im Wechsel (Bit n = Design n)
 #define DEFAULT_AUTO_SEC     300       // Wechselintervall in Sekunden (10..86400)
 #define DEFAULT_TICK_TEXT    "Willkommen! Sch\xC3\xB6ne Gr\xC3\xBC\xC3\x9F" "e von deiner Wetteruhr"   // Laufschrift (UTF-8)
-#define CLOCK_STYLE_COUNT    28        // Anzahl der Uhr-Designs: 2 klassische + 25 Themen + Grossanzeige (nicht aendern)
+#define CLOCK_STYLE_COUNT    29        // Anzahl der Uhr-Designs: 2 klassische + 25 Themen + Grossanzeige + Kalender (nicht aendern)
 #define BIG_STYLE            27        // klassisches Design "Grossanzeige" (Uhrzeit ueber die ganze Breite)
+#define CAL_STYLE            28        // klassisches Design "Kalender" (Monatsblatt mit Feiertagen und Ferien)
 
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION "2026.11.10-5"
+#define FW_VERSION "2026.11.11"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1

@@ -4,6 +4,26 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.11 - Kalender mit Feiertagen, besonderen Tagen und Schulferien
+
+- Neuer Reiter **Kalender** im Browser: Bundesland waehlen, gesetzliche Feiertage, besondere Tage und Schulferien
+  einzeln ein-/ausschalten, Jahresuebersicht (12 Monatsblaetter und Liste), Einblendungen zum Ansehen.
+- Gesetzliche Feiertage je Bundesland (auch Fronleichnam, Reformationstag, Buss- und Bettag, Frauentag,
+  Weltkindertag, Mariae Himmelfahrt, Oster-/Pfingstsonntag in Brandenburg) werden in der Uhr berechnet.
+- Besondere Tage: Valentinstag, Weiberfastnacht, Rosenmontag, Faschingsdienstag, Muttertag, Vatertag, Erntedank,
+  Halloween, Sankt Martin, Nikolaus, 1.-4. Advent, Heiligabend, Silvester; dazu Ferienbeginn und letzter Schultag.
+- Schulferien kommen von openholidaysapi.org (frei, ohne Schluessel), werden gespeichert und woechentlich erneuert.
+- Neues klassisches Design 28 **Kalender**: Monatsblatt (Feiertage rot, besondere Tage mit Punkt, Ferien blau),
+  daneben heute / demnaechst / Schulferien mit Countdown und das Wetter.
+- Am Feier- oder besonderen Tag erscheint regelmaessig (Standard alle 15 Minuten, 7-22 Uhr, nicht im Dimm-Fenster)
+  fuer 20 Sekunden ein eigenes lustiges, animiertes Bild mit Uhrzeit (37 Szenen) und ein passender Spruch als
+  Laufschrift.
+- Laufschrift mit Countdown ("Morgen ist ...", "Noch 12 Tage bis zu den Herbstferien", "Herbstferien: noch 4 Tage
+  frei!"), Standard alle 30 Minuten.
+
+Geaenderte Dateien: `cal.h`, `cal_text.h`, `face_party.h` (neu), `faces.h`, `WetterUhr.ino`, `settings.h`, `webui.h`,
+`lang_web.h`, `config.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.10-5 - Fortschrittsbalken beim Update
 
 - Browser: Firmware-Update zeigt jetzt neben der Prozentzahl einen Balken.

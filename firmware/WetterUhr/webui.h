@@ -229,7 +229,8 @@ static const uint8_t STYLE_CAT[CLOCK_STYLE_COUNT] = {
   4, 3, 1, 3, 2,                                // 12 Herz, 13 Sinuskurve, 14 Badminton, 15 Testbild, 16 Dackel
   5, 4, 2, 5, 5,                                // 17 Flugradar, 18 Traumsand, 19 Aquarium, 20 ISS, 21 Sonne und Mond
   6, 6, 6, 6, 6,                                // 22-26 Feiertage
-  0                                             // 27 Grossanzeige (klassisch)
+  0,                                            // 27 Grossanzeige (klassisch)
+  0                                             // 28 Kalender (klassisch)
 };
 
 #define SVG_OPEN "<svg viewBox='0 0 120 70' width='100%'><rect width='120' height='70' rx='6' fill='#000'/>"
@@ -458,9 +459,26 @@ static const char SVG_BIG[] PROGMEM = SVG_OPEN
   "<text x='112' y='68' text-anchor='end' font-family='sans-serif' font-size='9' fill='#aaa'>Mo 09.11.</text></svg>";
 
 
+static const char SVG_CAL[] PROGMEM = SVG_OPEN
+  "<text x='6' y='18' font-family='sans-serif' font-weight='bold' font-size='15' style='fill:var(--acc)'>12:34</text>"
+  "<text x='114' y='16' text-anchor='end' font-family='sans-serif' font-size='8' fill='#ccc'>Di 10. Nov</text>"
+  "<rect x='4' y='22' width='112' height='0.8' fill='#444'/>"
+  "<g font-family='sans-serif' font-size='6' text-anchor='middle'>"
+  "<rect x='7' y='45' width='60' height='7' fill='#1f3a6e'/><rect x='44' y='35' width='8' height='8' rx='2' style='fill:var(--acc)'/>"
+  "<text x='12' y='33' fill='#ddd'>1</text><text x='21' y='33' fill='#ddd'>2</text><text x='30' y='33' fill='#ddd'>3</text><text x='39' y='33' fill='#ddd'>4</text><text x='48' y='33' fill='#ddd'>5</text><text x='57' y='33' fill='#888'>6</text><text x='66' y='33' fill='#e07070'>7</text>"
+  "<text x='12' y='41' fill='#ddd'>8</text><text x='21' y='41' fill='#ff6060'>9</text><text x='30' y='41' fill='#ddd'>10</text><text x='39' y='41' fill='#ddd'>11</text><text x='48' y='41' fill='#000'>12</text><text x='57' y='41' fill='#888'>13</text><text x='66' y='41' fill='#e07070'>14</text>"
+  "<text x='12' y='50' fill='#ddd'>15</text><text x='21' y='50' fill='#ddd'>16</text><text x='30' y='50' fill='#ddd'>17</text><text x='39' y='50' fill='#ddd'>18</text><text x='48' y='50' fill='#ddd'>19</text><text x='57' y='50' fill='#888'>20</text><text x='66' y='50' fill='#e07070'>21</text>"
+  "<text x='12' y='59' fill='#ddd'>22</text><text x='21' y='59' fill='#ddd'>23</text><text x='30' y='59' fill='#ddd'>24</text><text x='39' y='59' fill='#ddd'>25</text><text x='48' y='59' fill='#ddd'>26</text><text x='57' y='59' fill='#888'>27</text><text x='66' y='59' fill='#e07070'>28</text>"
+  "<circle cx='30' cy='61' r='1' fill='#f0a030'/></g>"
+  "<rect x='74' y='26' width='0.8' height='40' fill='#444'/>"
+  "<text x='78' y='34' font-family='sans-serif' font-size='5' fill='#999'>FEIERTAG</text>"
+  "<text x='78' y='42' font-family='sans-serif' font-weight='bold' font-size='7' style='fill:var(--acc)'>Advent</text>"
+  "<text x='78' y='53' font-family='sans-serif' font-size='5' fill='#999'>FERIEN</text>"
+  "<text x='78' y='61' font-family='sans-serif' font-weight='bold' font-size='7' fill='#79c0ff'>Weihn.</text></svg>";
+
 static const char* const STYLE_SVG[CLOCK_STYLE_COUNT] = {SVG_7, SVG_8,
   SVG_10, SVG_11, SVG_13, SVG_14, SVG_15, SVG_16, SVG_18, SVG_19, SVG_20, SVG_21, SVG_22, SVG_23, SVG_24, SVG_25, SVG_26,
-  SVG_30, SVG_31, SVG_33, SVG_38, SVG_39, SVG_40, SVG_42, SVG_43, SVG_44, SVG_45, SVG_BIG};
+  SVG_30, SVG_31, SVG_33, SVG_38, SVG_39, SVG_40, SVG_42, SVG_43, SVG_44, SVG_45, SVG_BIG, SVG_CAL};
 
 static String autoInfo() {                     // Ergebnis ist HTML (Design-Namen mit Entities)
   const uint32_t now = millis();
@@ -501,6 +519,7 @@ static void handleRoot() {
   p += F("</a><a data-t=sound>");     T(W_SOUND);
   p += F("</a><a data-t=net>");       T(W_WIFI);
   p += F("</a><a data-t=time>");      T(W_TIMEWX);
+  p += F("</a><a data-t=cal>");       T(W_TAB_CAL);
   p += F("</a><a data-t=sys>");       T(W_SYSTEM);
   p += F("</a></nav><main><h1>");     T(W_TITLE); p += F("</h1>");
   if (server.hasArg("saved")) { p += F("<div class=ok>"); T(W_SAVED); p += F("</div>"); }
@@ -844,6 +863,62 @@ static void handleRoot() {
   p += String(gSet.radarKm);
   p += F("><small>"); T(W_RADAR_HINT); p += F("</small></section>");
 
+  // ================= Kalender =================
+  fl();
+  p += F("<section class=tab id=t-cal><h2>"); T(W_TAB_CAL); p += F("</h2><label>"); T(W_CAL_BL); p += F("</label><select name=calbl>");
+  for (int i = 0; i <= 16; i++) {
+    p += F("<option value="); p += String(i); sel(gSet.calBl == i); p += '>';
+    if (i == 0) T(W_CAL_NONE); else p += cal::BL_NAME[i];
+    p += F("</option>");
+  }
+  p += F("</select><label>"); T(W_CAL_SHOW); p += F("</label>");
+  {
+    static const uint16_t CFT[5] = {W_CAL_PUB, W_CAL_SPEC, W_CAL_SCHOOL, W_CAL_POP, W_CAL_TICK};
+    for (int i = 0; i < 5; i++) {
+      p += F("<label><input type=checkbox name=cf"); p += String(i); p += F(" value=1"); chk(gSet.calFlags & (1 << i)); p += '>'; T(CFT[i]); p += F("</label>");
+    }
+  }
+  p += F("<label>"); T(W_CAL_POPMIN); p += F("</label><select name=calpop>");
+  { static const uint8_t V[6] = {5, 10, 15, 20, 30, 60};
+    for (uint8_t v : V) { p += F("<option value="); p += String(v); sel(gSet.calPop == v); p += '>'; p += String(v); p += ' '; T(W_CAL_MIN); p += F("</option>"); } }
+  p += F("</select><label>"); T(W_CAL_TICKMIN); p += F("</label><select name=caltick>");
+  { static const uint8_t V[6] = {10, 15, 30, 60, 120, 240};
+    for (uint8_t v : V) { p += F("<option value="); p += String(v); sel(gSet.calTick == v); p += '>'; p += String(v); p += ' '; T(W_CAL_MIN); p += F("</option>"); } }
+  p += F("</select><small id=calst></small><label>"); T(W_CAL_TEST); p += F("</label><div style='display:flex;gap:.5em'><select id=calid style='flex:1'>");
+  for (int i = 0; i < cal::CD_COUNT; i++) { p += F("<option value="); p += String(i); p += '>'; p += cal::name(i); p += F("</option>"); }
+  p += F("</select><button type=button class=sec style='margin:0' onclick=calPop()>"); T(W_CAL_TESTBTN);
+  p += F("</button></div><small>"); T(W_CAL_HINT); p += F("</small><h2>"); T(W_H_CALYEAR);
+  p += F("</h2><style>.calv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8em;margin:.6em 0}"
+         ".calm b{display:block;margin-bottom:.2em;text-transform:capitalize}.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;font-size:.72rem;text-align:center}"
+         ".calg i{font-style:normal;padding:2px 0;border-radius:3px}.calg .h{color:#8b949e}.calg .su{color:#e07070}.calg .f{background:#1f3a6e}"
+         ".calg .s{box-shadow:inset 0 -2px #f0a030}.calg .p{background:#a8323a;color:#fff}.calg .t{outline:2px solid var(--acc)}"
+         "table.calt{width:100%;font-size:.85rem;border-collapse:collapse}.calt td{padding:3px 4px;border-bottom:1px solid #30363d}"
+         ".calt tr.p td+td{color:#ff7b72}.calt tr.s td+td{color:#f0a030}.calt tr.f td+td{color:#79c0ff}.calk span{margin-right:1em;white-space:nowrap}</style>"
+         "<div style='display:flex;align-items:center;gap:.8em'><button type=button class=sec style='margin:0' onclick=calY(-1)>&lt;</button>"
+         "<b id=caly></b><button type=button class=sec style='margin:0' onclick=calY(1)>&gt;</button></div>"
+         "<div class=calk id=calk></div><div class=calv id=calv></div><table class=calt id=call></table>"
+         "<script>let cy=0,cdat=null;function calY(d){cy+=d;calLoad();}"
+         "function calLoad(){fetch('/cal.json?y='+(new Date().getFullYear()+cy),{cache:'no-store'}).then(r=>r.json()).then(j=>{cdat=j;calDraw();}).catch(()=>{});}"
+         "function calPop(){fetch('/calpop',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'id='+document.getElementById('calid').value});}"
+         "function calDraw(){const j=cdat,y=j.y,g=i=>document.getElementById(i),lg=L.glang;g('caly').textContent=y;"
+         "const M={};j.days.forEach(d=>{const k=d[0]*100+d[1];(M[k]=M[k]||[]).push(d);});"
+         "const F=j.fer.map(f=>[new Date(f[0]+'T12:00'),new Date(f[1]+'T12:00'),f[2]]),isF=dt=>F.find(f=>dt>=f[0]&&dt<=f[1]);"
+         "const now=new Date().toDateString();let h='';const wd=[];for(let i=0;i<7;i++)wd.push(new Date(2024,0,1+i).toLocaleString(lg,{weekday:'narrow'}));"
+         "for(let m=0;m<12;m++){const f1=new Date(y,m,1,12),n=new Date(y,m+1,0).getDate(),off=(f1.getDay()+6)%7;"
+         "h+='<div class=calm><b>'+f1.toLocaleString(lg,{month:'long'})+'</b><div class=calg>';wd.forEach(w=>h+='<i class=h>'+w+'</i>');"
+         "for(let i=0;i<off;i++)h+='<i></i>';"
+         "for(let d=1;d<=n;d++){const dt=new Date(y,m,d,12),e=M[(m+1)*100+d],fe=isF(dt);let c='';"
+         "if(fe)c+=' f';if(e&&e.some(x=>x[2]==1))c+=' p';else if(e)c+=' s';if(dt.getDay()==0)c+=' su';if(dt.toDateString()==now)c+=' t';"
+         "const tip=[...(e?e.map(x=>x[3]):[]),...(fe?[fe[2]]:[])].join(', ');h+='<i class=\"'+c+'\" title=\"'+tip+'\">'+d+'</i>';}"
+         "h+='</div></div>';}g('calv').innerHTML=h;"
+         "const R=[];const fd=(s,o)=>new Date(s+'T12:00').toLocaleDateString(lg,o||{weekday:'short',day:'numeric',month:'short'});"
+         "j.days.forEach(d=>{const s=y+'-'+String(d[0]).padStart(2,'0')+'-'+String(d[1]).padStart(2,'0');R.push([s,d[2]==1?'p':'s',fd(s),d[3]]);});"
+         "j.fer.forEach(f=>R.push([f[0],'f',fd(f[0],{day:'numeric',month:'short'})+' &ndash; '+fd(f[1],{day:'numeric',month:'short'}),f[2]]));"
+         "R.sort((a,b)=>a[0]<b[0]?-1:1);g('call').innerHTML=R.map(r=>'<tr class='+r[1]+'><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>').join('');"
+         "g('calk').innerHTML='<span style=\"color:#ff7b72\">&#9632; '+L.cpub+'</span><span style=\"color:#f0a030\">&#9632; '+L.cspec+'</span><span style=\"color:#79c0ff\">&#9632; '+L.cfer+'</span>';"
+         "let st='';if(j.bl){st=j.ferN?L.cfok+j.ferN+' ('+new Date(j.fetched*1000).toLocaleDateString(lg)+')':L.cfno;if(j.err)st+=' '+L.cferr+j.err;}g('calst').textContent=st;}"
+         "window.addEventListener('load',calLoad);</script></section>");
+
   // ================= System =================
   fl();
   p += F("<section class=tab id=t-sys><h2>"); T(W_H_DEVICE); p += F("</h2><label>"); T(W_HOST_LBL); p += F("</label><input name=host maxlength=23 value=\"");
@@ -922,6 +997,7 @@ static void handleRoot() {
   p += F("<script>const L={");
   js("scan", W_SCANNING); js("found", W_FOUND); js("scanb", W_SCAN); js("pick", J_PICK); js("wrong", J_WRONG); js("conf", J_CONFIRM);
   js("sent", J_SENT); js("relay", J_RELAY); js("done", J_DONE); js("err", J_ERR); js("lost", J_LOST); js("reset", W_RESET_Q);
+  js("cpub", J_CAL_PUB); js("cspec", J_CAL_SPEC); js("cfer", J_CAL_FER); js("cfok", J_CAL_FEROK); js("cfno", J_CAL_FERNO); js("cferr", J_CAL_FERERR);
   js("gw", J_GEO_WAIT); js("gn", J_GEO_NONE); js("ge", J_GEO_ERR); js("gok", J_GEO_OK); js("gsv", J_GEO_SAVE);
   p += F("glang:\""); p += LANG_CODE[LANG_IDX]; p += F("\",");
   p += F("};</script>");
@@ -1026,6 +1102,14 @@ static void handleSave() {
   n.nyeAuto = server.hasArg("nyeauto");
   n.holAuto = server.hasArg("holauto");
   n.fine = (server.hasArg("fsm") ? 1 : 0) | (server.hasArg("ftx") ? 2 : 0);
+  if (server.hasArg("calbl")) {                        // Kalender
+    n.calBl = (uint8_t)constrain(server.arg("calbl").toInt(), 0, 16);
+    n.calFlags = 0;
+    for (int i = 0; i < 5; i++) if (server.hasArg(String("cf") + i)) n.calFlags |= 1 << i;
+    n.calPop = (uint8_t)constrain(server.arg("calpop").toInt(), 5, 60);
+    n.calTick = (uint8_t)constrain(server.arg("caltick").toInt(), 5, 240);
+    if (n.calBl != gSet.calBl) cal::ferTriedMs = 0;     // neues Bundesland: Ferien gleich abrufen
+  }
 #if PIN_LED_R >= 0
   if (server.hasArg("ledm")) {
     n.ledMode = (uint8_t)constrain(server.arg("ledm").toInt(), 0, 6);
@@ -1347,6 +1431,20 @@ static void webBegin() {
   });
   server.on("/save", HTTP_POST, handleSave);
   server.on("/brightness", HTTP_POST, handleBrightness);
+  server.on("/cal.json", HTTP_GET, []() {              // Kalender: Jahresuebersicht
+    if (!authOk()) return;
+    int y = server.arg("y").toInt();
+    if (y < 2000 || y > 2100) { time_t n = time(nullptr); struct tm t; localtime_r(&n, &t); y = t.tm_year + 1900; }
+    String j;
+    cal::json(j, y);
+    server.sendHeader("Cache-Control", "no-store");
+    server.send(200, "application/json", j);
+  });
+  server.on("/calpop", HTTP_POST, []() {               // Einblendung testen (20 s)
+    if (!authOk()) return;
+    cal::popTest((uint8_t)constrain(server.arg("id").toInt(), 0, cal::CD_COUNT - 1));
+    server.send(204);
+  });
 #if PIN_LED_R >= 0
   server.on("/ledprev", HTTP_POST, []() {             // LED-Vorschau (8 s, ohne Speichern)
     if (!authOk()) return;

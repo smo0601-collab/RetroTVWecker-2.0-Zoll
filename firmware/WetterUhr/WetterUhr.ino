@@ -42,6 +42,7 @@
 #include "icons.h"
 #include "settings.h"
 #include "types.h"
+#include "cal.h"          // Kalender: Feiertage, besondere Tage, Schulferien
 #include "faces.h"        // Themen-Zifferblaetter (Design 2..31)
 #include "buzzer.h"       // aktiver Piezo-Summer, Wecker
 
@@ -245,10 +246,30 @@ static bool nyeWindow() {
 }
 static bool nyeNow() { return nyeWindow() && !gNyeBlocked; }
 
-// Design, das gerade Vorrang hat (Silvester vor Nachtmodus), -1 = keines
+// Kalender: Einblendung am Feier- oder besonderen Tag (cal.h, face_party.h)
+static uint8_t  gPopId = 0;
+static bool     gPopOn = false;          // laeuft gerade
+static uint32_t gPopBlockedAt = 0;       // Einblendung liess sich nicht starten (Speicher): 10 min Pause
+static bool     gPopSayReq = false;      // Laufschrift mit dem Spruch des Tages starten
+static bool popNow() {
+  static uint32_t at = 0;
+  static bool v = false;
+  const uint32_t now = millis();
+  if (at && now - at < 250) return v;
+  at = now ? now : 1;
+  uint8_t id = 0;
+  const bool blocked = gPopBlockedAt && now - gPopBlockedAt < 600000UL;
+  v = !standby && !blocked && timeValid() && cal::popWant(id, gDimActive);
+  if (v && !gPopOn) { gPopId = id; gPopSayReq = true; }
+  gPopOn = v;
+  return v;
+}
+
+// Design, das gerade Vorrang hat (Silvester vor Nachtmodus vor Feiertags-Einblendung), -1 = keines
 static int overrideStyle() {
   if (nyeNow()) return NEWYEAR_STYLE;
   if (nightTv()) return TESTCARD_STYLE;
+  if (popNow()) return POP_STYLE;
   return -1;
 }
 
@@ -500,6 +521,31 @@ static void tickerTick(uint32_t now) {
   if (tk::active) {
     if (!gSet.tickOn && !tk::manual) { tk::stop(); if (fc::cur < 0) needFull = true; }
     return;
+  }
+  {                                             // Kalender: Spruch zur Einblendung, sonst regelmaessig Countdown
+    static uint32_t calNext = 0;
+    static int calK = 0;
+    const bool calOn = (gSet.calFlags & cal::CF_TICK) && timeValid() && !gDimActive;
+    if (gPopSayReq || (calOn && (int32_t)(now - calNext) >= 0 && !gTickNow)) {
+      char txt[200];
+      bool have = false;
+      if (gPopSayReq) {
+        gPopSayReq = false;
+        snprintf(txt, sizeof(txt), "%s: %s", cal::name(gPopId), cal::say(gPopId, calK++));
+        have = true;
+      } else {
+        calNext = now + (uint32_t)(gSet.calTick ? gSet.calTick : 30) * 60000UL;
+        have = cal::tickerText(txt, sizeof(txt), calK++);
+      }
+      if (have) {
+        tk::Cfg c;
+        c.pos = gSet.tickPos; c.big = gSet.tickBig; c.speed = gSet.tickSpeed;
+        c.bg = gSet.tickBg || fc::cur < 0;
+        tickRgb(gSet.tickColor, c.r, c.g, c.b);
+        if (tk::start(txt, c, now, true) && fc::cur >= 0) fc::setBrightness(HW_DIM ? 100 : effectiveBright());
+        return;
+      }
+    }
   }
   if (!gSet.tick[0]) { gTickNow = false; return; }
   bool go = false, byButton = false;
@@ -870,6 +916,11 @@ static void weatherTask(void*) {
         } else {
           lastOk = false;   // alte Daten bleiben erhalten und werden als veraltet markiert
         }
+      }
+      if (timeValid()) {                        // Kalender: Schulferien abrufen, wenn noetig (cal.h)
+        xSemaphoreTake(gNetMutex, portMAX_DELAY);
+        cal::netTick(true);
+        xSemaphoreGive(gNetMutex);
       }
     }
     vTaskDelay(pdMS_TO_TICKS(1000));
@@ -1396,6 +1447,192 @@ static void drawWeatherBlock(const Weather& w, bool hv, bool stale) {
   }
 }
 
+// ---------------------------------------------------------------------
+// Kalender-Design (CAL_STYLE): Uhrzeit und Datum oben, links das Monatsblatt mit Feiertagen (rot),
+// besonderen Tagen (oranger Punkt) und Schulferien (blau hinterlegt), rechts heute / naechster Feiertag /
+// Schulferien, rechts unten das Wetter. Neu gezeichnet wird nur, was sich geaendert hat.
+// ---------------------------------------------------------------------
+static void calLabel(const char* s, int x, int y, uint16_t col) {   // kleine Pixelschrift, y = oben
+  tft.setTextWrap(false);
+  tft.setFont(nullptr); tft.setTextSize(1); tft.setTextColor(col); tft.setCursor(x, y); tft.print(s);
+}
+// Text mit FreeSans9 in Zeilen umbrechen (hoechstens maxL Zeilen), Rueckgabe: naechste Grundlinie
+static int calWrap(const char* utf, int x, int base, int w, uint16_t col, const GFXfont* f, int maxL) {
+  char s[64];
+  cal::ascii(s, utf, sizeof(s));
+  tft.setTextWrap(false);
+  // einzelnes Wort zu breit: kleinere Schrift, sonst kuerzen
+  for (char* q = s; *q;) {
+    char* e = strchr(q, ' ');
+    char wd[40];
+    strlcpy(wd, q, min(sizeof(wd), (size_t)(e ? e - q : strlen(q)) + 1));
+    if (textW(f, wd) > w) { f = &FreeSans9pt7b; if (textW(f, wd) > w) {
+      size_t L = strlen(wd);
+      while (L > 2 && textW(f, wd) > w) { wd[--L] = 0; wd[L - 1] = '.'; }
+      const size_t off = q - s;
+      const size_t rest = e ? strlen(e) : 0;
+      memmove(s + off + L, e ? e : s + off + strlen(q), rest + 1);
+      memcpy(s + off, wd, L);
+      e = rest ? s + off + L : nullptr;
+    } }
+    q = e ? e + 1 : q + strlen(q);
+  }
+  tft.setFont(f); tft.setTextSize(1); tft.setTextColor(col);
+  char line[64] = "";
+  int lines = 0;
+  char* p = s;
+  while (*p && lines < maxL) {
+    char* sp = strchr(p, ' ');
+    char word[40];
+    const size_t wl = sp ? (size_t)(sp - p) : strlen(p);
+    strlcpy(word, p, min(sizeof(word), wl + 1));
+    char test[64];
+    snprintf(test, sizeof(test), "%s%s%s", line, line[0] ? " " : "", word);
+    if (line[0] && textW(f, test) > w) {
+      tft.setCursor(x, base); tft.print(line);
+      base += 17; lines++;
+      strlcpy(line, word, sizeof(line));
+    } else strlcpy(line, test, sizeof(line));
+    p = sp ? sp + 1 : p + wl;
+  }
+  if (line[0] && lines < maxL) { tft.setCursor(x, base); tft.print(line); base += 17; }
+  tft.setFont(nullptr);
+  return base;
+}
+
+static void calGrid(int y, int m, int dToday, uint8_t pct) {
+  const int X0 = 4, CW = 27, CH = 24, YT = 46, YH = 66, YG = 78;
+  tft.fillRect(0, YT, 194, 240 - YT, C_BG);
+  char b[32];
+  snprintf(b, sizeof(b), "%s %d", CAL_MON[LANG_IDX][m - 1], y);
+  drawText(&FreeSansBold9pt7b, 1, b, X0 + 2, YT + 15, C_WHITE, AL_LEFT, X0, YT, 190, 18);
+  for (int c = 0; c < 7; c++) {
+    const int wd = (c + 1) % 7;
+    calLabel(WDK2_L[LANG_IDX][wd], X0 + c * CW + 8, YH, wd == 0 ? scaleColor(B_RED, pct) : C_GREY);
+  }
+  // Feiertage dieses Monats
+  cal::Day days[48];
+  const int n = cal::build(y, days, 48, gSet.calFlags);
+  const int32_t first = cal::dnum(y, m, 1);
+  const int dim = cal::dnum(m == 12 ? y + 1 : y, m == 12 ? 1 : m + 1, 1) - first;
+  const int off = (cal::wday(first) + 6) % 7;                      // Montag = 0
+  const uint16_t cFer = scaleColor(RGB565C(25, 60, 140), pct), cRed = scaleColor(RGB565C(255, 80, 80), pct);
+  const uint16_t cOr = scaleColor(RGB565C(255, 160, 40), pct), cSun = scaleColor(RGB565C(200, 90, 90), pct);
+  for (int d = 1; d <= dim; d++) {
+    const int k = off + d - 1, cx = X0 + (k % 7) * CW, cy = YG + (k / 7) * CH;
+    const int32_t dn = first + d - 1;
+    bool pub = false, spec = false;
+    for (int i = 0; i < n; i++) if (days[i].dn == dn) { if (cal::isPublic(days[i].id)) pub = true; else spec = true; }
+    const bool fer = cal::ferAt(dn) >= 0;
+    const int wd = cal::wday(dn);
+    if (fer) tft.fillRect(cx + 1, cy + 1, CW - 2, CH - 2, cFer);
+    uint16_t tc = C_WHITE;
+    if (wd == 6) tc = C_GREY;
+    if (wd == 0) tc = cSun;
+    if (pub) tc = cRed;
+    if (d == dToday) { tft.fillRoundRect(cx + 1, cy + 1, CW - 2, CH - 2, 5, C_ACCENT); tc = C_BG; }
+    snprintf(b, sizeof(b), "%d", d);
+    tft.setFont(&FreeSansBold9pt7b); tft.setTextColor(tc);
+    tft.setCursor(cx + (CW - textW(&FreeSansBold9pt7b, b)) / 2, cy + 17);
+    tft.print(b);
+    if (spec) tft.fillCircle(cx + CW / 2, cy + CH - 3, 2, d == dToday ? C_BG : cOr);
+    if (pub && d != dToday) tft.drawFastHLine(cx + 5, cy + CH - 2, CW - 10, cRed);
+  }
+  tft.setFont(nullptr);
+}
+
+static void calPanel(int32_t dn, uint8_t pct) {
+  const int X = 200, W = 116;
+  tft.fillRect(196, 46, 124, 146, C_BG);
+  tft.drawFastVLine(196, 50, 186, C_LINE);
+  const int L = LANG_IDX;
+  char b[48];
+  int y = 50;
+  const cal::Today& td = cal::today(dn);
+  int shown = 0;
+  for (int i = 0; i < td.n && shown < 2; i++) {
+    if (!shown) { calLabel(CAL_L_TODAY[L], X, y, C_GREY); y += 22; }
+    y = calWrap(cal::name(td.ids[i]), X, y, W, C_ACCENT, &FreeSansBold9pt7b, 2) - 2;
+    shown++;
+  }
+  if (!shown) {
+    cal::Day nx;
+    calLabel(CAL_L_NEXT[L], X, y, C_GREY); y += 22;
+    if (cal::next(dn, nx, false)) {
+      y = calWrap(cal::name(nx.id), X, y, W, cal::isPublic(nx.id) ? scaleColor(RGB565C(255, 90, 90), pct) : C_WHITE, &FreeSansBold9pt7b, 2);
+      int yy, mm, d;
+      cal::civil(nx.dn, yy, mm, d);
+      const int left = nx.dn - dn;
+      if (left == 1) strlcpy(b, CAL_L_TOM[L], sizeof(b)); else snprintf(b, sizeof(b), CAL_L_IN[L], left);
+      calLabel(b, X, y - 12, C_GREY);
+      snprintf(b, sizeof(b), "%s %d.%d.", WDK2_L[L][cal::wday(nx.dn)], d, mm);
+      calLabel(b, X, y - 2, C_GREY);
+      y += 10;
+    }
+  }
+  // Schulferien
+  y = max(y + 4, 124);
+  calLabel(CAL_L_FER[L], X, y, C_GREY);
+  y += 22;
+  const uint16_t cFerT = scaleColor(RGB565C(110, 170, 255), pct);
+  if (!(gSet.calFlags & cal::CF_SCHOOL)) {
+  } else if (!cal::calBl()) {
+    calWrap(CAL_L_NOBL[L], X, y, W, C_GREY, &FreeSans9pt7b, 3);
+  } else if (!cal::ferOk()) {
+    calWrap(CAL_L_NOFER[L], X, y, W, C_GREY, &FreeSans9pt7b, 1);
+  } else {
+    const int now = cal::ferAt(dn);
+    const int f = now >= 0 ? now : cal::ferNext(dn);
+    if (f >= 0) {
+      const uint8_t ft = cal::fer[f].type;
+      y = calWrap(ft ? FER_SHORT[ft][L] : cal::fer[f].name, X, y, W, cFerT, &FreeSansBold9pt7b, 1);
+      if (now >= 0) {
+        const int left = cal::fer[f].b - dn;
+        if (left == 0) strlcpy(b, CAL_L_LAST[L], sizeof(b)); else snprintf(b, sizeof(b), CAL_L_LEFT[L], left);
+      } else {
+        const int left = cal::fer[f].a - dn;
+        if (left == 1) strlcpy(b, CAL_L_TOM[L], sizeof(b)); else snprintf(b, sizeof(b), CAL_L_IN[L], left);
+      }
+      calLabel(b, X, y - 12, C_GREY);
+    }
+  }
+}
+
+static void updateCal(bool ok, const struct tm& t, const Weather& w, bool hv, bool stale) {
+  const uint8_t pct = HW_DIM ? 100 : effectiveBright();
+  char b[64];
+  if (ok) snprintf(b, sizeof(b), "%02d:%02d", t.tm_hour, t.tm_min); else strlcpy(b, "--:--", sizeof(b));
+  if (upd(K_H1, b)) drawText(&FreeSansBold24pt7b, 1, b, 6, 38, C_ACCENT, AL_LEFT, 0, 0, 150, 44);
+  if (ok) snprintf(b, sizeof(b), "%s|%d%s %s %d", WEEKDAY[t.tm_wday], t.tm_mday, LANG_IDX == 0 ? "." : "", CAL_MON[LANG_IDX][t.tm_mon], t.tm_year + 1900);
+  else strlcpy(b, "|", sizeof(b));
+  if (upd(K_DATE, b)) {
+    char* bar = strchr(b, '|');
+    *bar = 0;
+    tft.fillRect(150, 0, 170, 44, C_BG);
+    drawText(&FreeSans9pt7b, 1, b, 314, 17, C_GREY, AL_RIGHT, 150, 2, 170, 18);
+    drawText(&FreeSansBold9pt7b, 1, bar + 1, 314, 38, C_WHITE, AL_RIGHT, 150, 22, 170, 20);
+    tft.drawFastHLine(4, 44, 312, C_LINE);
+  }
+  const int32_t dn = ok ? cal::dnum(t.tm_year + 1900, t.tm_mon + 1, t.tm_mday) : -1;
+  snprintf(b, sizeof(b), "%ld|%u|%u|%u|%u|%u", (long)dn, cal::ferVer, gSet.calFlags, gSet.calBl, gLang, cal::ferN);
+  if (upd(K_STAT, b)) {
+    if (ok) { calGrid(t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, pct); calPanel(dn, pct); }
+    else { tft.fillRect(0, 46, 320, 194, C_BG); }
+    cacheS[K_WX][0] = 1;                                   // Wetter danach neu zeichnen (Bereich wurde geloescht)
+  }
+  const bool wf = (WiFi.status() == WL_CONNECTED);
+  if (hv) snprintf(b, sizeof(b), "c%d|%d|%d|%d|%d", (int)lroundf(w.temp), w.code, w.isDay, stale, wf);
+  else    snprintf(b, sizeof(b), "cnone|%d", wf);
+  if (upd(K_WX, b)) {
+    tft.fillRect(198, 194, 122, 46, C_BG);
+    if (hv) {
+      drawIcon(tft, 216, 217, 14, iconForCode(w.code, w.isDay));
+      drawTemp(238, 228, (int)lroundf(w.temp), &FreeSansBold18pt7b, 1, stale ? C_ORANGE : C_WHITE, AL_LEFT, 234, 196, 84, 40);
+    }
+    if (!wf) tft.fillCircle(315, 236, 3, C_RED);
+  }
+}
+
 static void updateWeatherBlock(const Weather& w, bool hv, bool stale) {
   char b[48];
   snprintf(b, sizeof(b), "%lu|%d|%d", (unsigned long)w.version, hv, stale);
@@ -1414,8 +1651,10 @@ static bool themedTick(uint32_t now) {
   static uint32_t ipAt = 0;
   static char ipBuf[24] = "";
   const int  want  = gStyle;
-  const bool wantT = fc::isThemed(want);
-  const int  wIdx  = want - FACE_FIRST_STYLE;
+  const bool pop   = want == POP_STYLE;                // Feiertags-Einblendung
+  const bool wantT = pop || fc::isThemed(want);
+  const int  wIdx  = pop ? PARTY_FACE : want - FACE_FIRST_STYLE;
+  if (pop) f_party::id = gPopId;
   const uint8_t pct = HW_DIM ? 100 : effectiveBright();
 
   if (fc::cur >= 0) {
@@ -1435,6 +1674,7 @@ static bool themedTick(uint32_t now) {
     if (!wantT) return false;
     if (!fc::begin(wIdx, now, true, pct)) {     // Speicher reicht nicht: normales Design verwenden
       LOGF("Zifferblatt: kein Speicher\n");
+      if (pop) { gPopBlockedAt = now ? now : 1; gStyle = gSet.clockStyle; needFull = true; return false; }
       if (nyeNow()) gNyeBlocked = true;                 // Vorrang-Design: gewaehltes Design behalten
       else if (nightTv()) gNightTvBlocked = true;
       else gSet.clockStyle = 0;
@@ -1536,7 +1776,7 @@ static void renderTick(uint32_t now) {
     tft.fillScreen(C_BG);
     resetCaches();
     needFull = false;
-    if (gStyle != BIG_STYLE) drawStatic();
+    if (gStyle != BIG_STYLE && gStyle != CAL_STYLE) drawStatic();
   }
 
   const bool ok = timeValid();
@@ -1544,6 +1784,15 @@ static void renderTick(uint32_t now) {
   const bool hv = getWeather(w);
   const bool stale = hv && (millis() - w.fetchedMs > staleMs());
 
+  if (gStyle == CAL_STYLE) {                     // Kalender: Monatsblatt mit Feiertagen und Ferien
+    time_t n = time(nullptr);
+    struct tm t;
+    localtime_r(&n, &t);
+    updateCal(ok, t, w, hv, stale);
+    tickerClassic(now);
+    if (showAfterDraw) { boardTftDisplay(true); blApply(); showAfterDraw = false; }
+    return;
+  }
   if (gStyle == BIG_STYLE) {                     // Grossanzeige: eigenes Layout ueber den ganzen Bildschirm
     time_t n = time(nullptr);
     struct tm t;
@@ -1584,6 +1833,7 @@ void setup() {
 #endif
   bz::init();                    // Summer-Pin sofort auf "aus"
   settingsLoad();
+  cal::load();                   // gespeicherte Schulferien
   gStyle = listStyle(gSet.clockStyle);   // aktiver Wechsel: gleich mit einem Design aus der Liste starten
   gStyleSince = millis();
   applyTimezone();

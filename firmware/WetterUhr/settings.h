@@ -64,6 +64,10 @@ struct Settings {
   uint8_t  ledBri;     // 1..100 %
   uint8_t  ledTime;    // 0 immer, 1 nur nachts, 2 nachts aus
   uint8_t  ledHint;    // Bit 0 Wecker, 1 kein WLAN, 2 Update, 3 Gewitter/Frost
+  uint8_t  calBl;      // Kalender: Bundesland 0 = keins, 1..16 (cal.h BL_CODE)
+  uint8_t  calFlags;   // Kalender: Bit 0 Feiertage, 1 besondere Tage, 2 Schulferien, 3 Einblendung, 4 Laufschrift
+  uint8_t  calPop;     // Minuten zwischen den Einblendungen am Feiertag (5..60)
+  uint8_t  calTick;    // Minuten zwischen den Kalender-Laufschriften (5..240)
 };
 
 static Settings    gSet;
@@ -142,6 +146,13 @@ static void settingsLoad() {
   if (gSet.ledBri < 1 || gSet.ledBri > 100) gSet.ledBri = 30;
   if (gSet.ledTime > 2) gSet.ledTime = 0;
   gSet.ledCol &= 0xFFFFFF;
+  gSet.calBl    = prefs.getUChar("calbl", 0);
+  gSet.calFlags = prefs.getUChar("calf", 0x1F);
+  gSet.calPop   = prefs.getUChar("calp", 15);
+  gSet.calTick  = prefs.getUChar("calt", 30);
+  if (gSet.calBl > 16) gSet.calBl = 0;
+  if (gSet.calPop < 5 || gSet.calPop > 60) gSet.calPop = 15;
+  if (gSet.calTick < 5) gSet.calTick = 30;
   gSet.lang    = prefs.getUChar("lang", DEFAULT_LANG);
   if (gSet.lang >= LANG_COUNT) gSet.lang = 0;
   gLang = gSet.lang;
@@ -268,6 +279,10 @@ static void settingsSave() {
   prefs.putUChar("ledb", gSet.ledBri);
   prefs.putUChar("ledt", gSet.ledTime);
   prefs.putUChar("ledh", gSet.ledHint);
+  prefs.putUChar("calbl", gSet.calBl);
+  prefs.putUChar("calf", gSet.calFlags);
+  prefs.putUChar("calp", gSet.calPop);
+  prefs.putUChar("calt", gSet.calTick);
   prefs.putUChar("lang", gSet.lang);
   gLang = gSet.lang;
   prefs.end();

@@ -459,4 +459,32 @@
   X(W_ST29,       "Ostern", "Easter", "Pâques", "Pascua", "Pasqua") \
   X(W_ST30,       "Valentinstag", "Valentine's Day", "Saint-Valentin", "San Valentín", "San Valentino") \
   X(W_ST31,       "Silvester", "New Year's Eve", "Saint-Sylvestre", "Nochevieja", "San Silvestro") \
-  X(W_ST27,       "Gro&szlig;anzeige", "Big display", "Grand affichage", "Pantalla grande", "Display grande")
+  X(W_ST27,       "Gro&szlig;anzeige", "Big display", "Grand affichage", "Pantalla grande", "Display grande") \
+  X(W_ST_CAL,     "Kalender", "Calendar", "Calendrier", "Calendario", "Calendario") \
+  X(W_TAB_CAL,    "Kalender", "Calendar", "Calendrier", "Calendario", "Calendario") \
+  X(W_CAL_BL,     "Bundesland", "German state", "Land (Allemagne)", "Estado federado", "Land (Germania)") \
+  X(W_CAL_NONE,   "keins (nur bundesweite Feiertage)", "none (nationwide holidays only)", "aucun (jours f&eacute;ri&eacute;s nationaux)", "ninguno (solo festivos nacionales)", "nessuno (solo festivit&agrave; nazionali)") \
+  X(W_CAL_SHOW,   "Anzeigen", "Show", "Afficher", "Mostrar", "Mostra") \
+  X(W_CAL_PUB,    "Gesetzliche Feiertage", "Public holidays", "Jours f&eacute;ri&eacute;s", "Festivos", "Festivit&agrave;") \
+  X(W_CAL_SPEC,   "Besondere Tage (Valentinstag, Rosenmontag, Muttertag, Halloween, Nikolaus, Advent &hellip;)", "Special days (Valentine's, carnival, Mother's Day, Halloween, St. Nicholas, Advent &hellip;)", "Jours sp&eacute;ciaux (Saint-Valentin, carnaval, f&ecirc;te des m&egrave;res, Halloween, Saint-Nicolas, Avent &hellip;)", "D&iacute;as especiales (San Valent&iacute;n, carnaval, D&iacute;a de la Madre, Halloween, San Nicol&aacute;s, Adviento &hellip;)", "Giorni speciali (San Valentino, carnevale, festa della mamma, Halloween, San Nicola, Avvento &hellip;)") \
+  X(W_CAL_SCHOOL, "Schulferien (aus dem Internet, OpenHolidays)", "School holidays (from the internet, OpenHolidays)", "Vacances scolaires (Internet, OpenHolidays)", "Vacaciones escolares (Internet, OpenHolidays)", "Vacanze scolastiche (Internet, OpenHolidays)") \
+  X(W_CAL_POP,    "Am Feiertag regelm&auml;&szlig;ig ein lustiges Bild einblenden (20 Sekunden, 7&ndash;22 Uhr)", "Show a fun picture regularly on holidays (20 seconds, 7am&ndash;10pm)", "Afficher r&eacute;guli&egrave;rement une image amusante les jours de f&ecirc;te (20 s, 7h&ndash;22h)", "Mostrar una imagen divertida en festivos (20 s, 7&ndash;22 h)", "Mostrare un&rsquo;immagine divertente nei giorni di festa (20 s, 7&ndash;22)") \
+  X(W_CAL_TICK,   "Countdown und Spr&uuml;che als Laufschrift", "Countdown and sayings as scrolling text", "Compte &agrave; rebours et dictons en texte d&eacute;filant", "Cuenta atr&aacute;s y frases en texto deslizante", "Conto alla rovescia e frasi come testo scorrevole") \
+  X(W_CAL_POPMIN, "Einblenden alle", "Show every", "Afficher toutes les", "Mostrar cada", "Mostra ogni") \
+  X(W_CAL_TICKMIN,"Laufschrift alle", "Scrolling text every", "Texte d&eacute;filant toutes les", "Texto cada", "Testo ogni") \
+  X(W_CAL_MIN,    "Minuten", "minutes", "minutes", "minutos", "minuti") \
+  X(W_CAL_TEST,   "Einblendung ansehen", "Preview picture", "Aper&ccedil;u de l'image", "Ver imagen", "Anteprima immagine") \
+  X(W_CAL_TESTBTN,"Jetzt 20 Sekunden zeigen", "Show for 20 seconds now", "Afficher 20 secondes", "Mostrar 20 segundos", "Mostra per 20 secondi") \
+  X(W_CAL_HINT,   "Das Design &bdquo;Kalender&ldquo; (Anzeige) zeigt das Monatsblatt. Feiertage werden in der Uhr berechnet, Schulferien kommen von openholidaysapi.org und werden gespeichert (Abruf einmal pro Woche). Ma&szlig;geblich sind die Angaben des Kultusministeriums.", \
+                  "The &ldquo;Calendar&rdquo; design (Display) shows the month sheet. Holidays are calculated in the clock, school holidays come from openholidaysapi.org and are stored (weekly update). The education ministry's dates are authoritative.", \
+                  "Le design &laquo; Calendrier &raquo; (Affichage) montre le mois. Les jours f&eacute;ri&eacute;s sont calcul&eacute;s dans l'horloge, les vacances viennent de openholidaysapi.org (mise &agrave; jour hebdomadaire).", \
+                  "El dise&ntilde;o &laquo;Calendario&raquo; (Pantalla) muestra el mes. Los festivos se calculan en el reloj, las vacaciones vienen de openholidaysapi.org (cada semana).", \
+                  "Il design &laquo;Calendario&raquo; (Display) mostra il mese. Le festivit&agrave; sono calcolate nell'orologio, le vacanze arrivano da openholidaysapi.org (ogni settimana).") \
+  X(W_H_CALYEAR,  "Jahres&uuml;bersicht", "Year overview", "Aper&ccedil;u de l'ann&eacute;e", "Resumen del a&ntilde;o", "Panoramica dell'anno") \
+  X(J_CAL_PUB,    "Feiertag", "Public holiday", "Jour férié", "Festivo", "Festività") \
+  X(J_CAL_SPEC,   "Besonderer Tag", "Special day", "Jour spécial", "Día especial", "Giorno speciale") \
+  X(J_CAL_FER,    "Schulferien", "School holidays", "Vacances scolaires", "Vacaciones escolares", "Vacanze scolastiche") \
+  X(J_CAL_TODAY,  "Heute", "Today", "Aujourd'hui", "Hoy", "Oggi") \
+  X(J_CAL_FEROK,  "Schulferien geladen: ", "School holidays loaded: ", "Vacances chargées : ", "Vacaciones cargadas: ", "Vacanze caricate: ") \
+  X(J_CAL_FERNO,  "Noch keine Schulferien geladen - kommt kurz nach dem Speichern (Internet nötig).", "No school holidays loaded yet - arrives shortly after saving (internet needed).", "Pas encore de vacances - arrivent après l'enregistrement (Internet nécessaire).", "Aún no hay vacaciones - llegan tras guardar (se necesita Internet).", "Nessuna vacanza ancora - arriva dopo il salvataggio (serve Internet).") \
+  X(J_CAL_FERERR, "Letzter Abruf fehlgeschlagen: ", "Last download failed: ", "Dernier téléchargement échoué : ", "Última descarga fallida: ", "Ultimo download fallito: ")

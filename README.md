@@ -15,6 +15,10 @@ neue Firmware kommt per WLAN.
 
 - **Uhrzeit** per Internet (NTP) mit automatischer Sommer-/Winterzeit oder **von Hand** eingestellt.
 - **Wetter** von [Open-Meteo](https://open-meteo.com) (kostenlos, ohne Konto): Temperatur, Feuchte, Wind, Vorhersage. Standort per **Ortssuche** (Ort oder PLZ eingeben, Treffer antippen).
+- **Kalender:** Feiertage und Schulferien je Bundesland, besondere Tage (Rosenmontag, Muttertag, Nikolaus, Advent …),
+  Monatsblatt-Design, Countdown in der Laufschrift und am Feiertag regelmäßig ein lustiges animiertes Bild.
+
+![Feiertags-Einblendungen](docs/images/kalender_einblendungen.png)
 - **27 Designs**: 2 klassische Uhren (Flip-Karten, Digital mit Sekundenbalken) und 25 animierte Szenen –
   Arcade-Spiele, Tiere, Technik, Himmel und Weltraum, Feiertage.
 - **Automatischer Design-Wechsel** nach Zeitplan durch eine selbst gewählte Liste. Weihnachten,
@@ -160,7 +164,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.10-5`](releases/2026.11.10-5): Uhr 2026.11.10-5 mit RetroCYD 3.8.1), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.11`](releases/2026.11.11): Uhr 2026.11.11 mit RetroCYD 3.8.1), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|

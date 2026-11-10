@@ -71,6 +71,7 @@ Im Browser unter "Uhr-Design" gibt es Vorschaukarten. Ein Klick wirkt sofort auf
 | 0 | Flip-Karten | zwei Karten fuer Stunden und Minuten |
 | 1 | Digital + Balken | grosse Zeit mit Sekundenbalken |
 | 27 | Grossanzeige | Uhrzeit ueber die ganze Breite (7-Segment, 134 Pixel hoch), darunter Temperatur, Datum und Wochentag - aus der Ferne lesbar |
+| 28 | Kalender | Monatsblatt mit Feiertagen (rot), besonderen Tagen (Punkt) und Schulferien (blau), daneben heute / demnaechst / Ferien-Countdown und Wetter |
 
 Die uebrigen klassischen Designs (Digital klassisch/farbig/Duo, drei Analoguhren, Modern, Binaer) wurden entfernt.
 Die Grossanzeige hat die Nummer 27, weil neue Designs immer hinten angehaengt werden (gespeicherte Nummern bleiben gueltig).
@@ -379,6 +380,31 @@ Klappt die Verbindung nicht: eventuell fehlt der USB-Treiber fuer den CH340-Chip
 **Updates per WLAN:** immer die Datei mit `CYD` im Namen nehmen (`..._CYD_update.bin`). Eine Datei fuer das
 andere Board lehnt die Uhr ab ("Falsche Firmware fuer dieses Board").
 
+
+## Kalender: Feiertage, besondere Tage, Schulferien
+
+Im Browser im Reiter **Kalender**:
+
+| Einstellung | Bedeutung |
+|---|---|
+| Bundesland | bestimmt die gesetzlichen Feiertage und die Schulferien ("keins" = nur bundesweite Feiertage) |
+| Anzeigen | gesetzliche Feiertage, besondere Tage, Schulferien, Einblendung am Feiertag, Laufschrift (einzeln abschaltbar) |
+| Einblenden alle | Abstand der Einblendungen am Feiertag (5-60 Minuten; 7-22 Uhr, nicht im Dimm-Zeitfenster) |
+| Laufschrift alle | Abstand der Kalender-Laufschrift (10-240 Minuten) |
+| Einblendung ansehen | jede der 37 Szenen 20 Sekunden lang zeigen |
+
+- **Feiertage** werden in der Uhr berechnet (Ostern, Advent, Buss- und Bettag ...), auch ohne Internet.
+- **Besondere Tage:** Valentinstag, Weiberfastnacht, Rosenmontag, Faschingsdienstag, Muttertag, Vatertag,
+  Erntedank, Halloween, Sankt Martin, Nikolaus, 1.-4. Advent, Heiligabend, Silvester, Ferienbeginn, letzter Schultag.
+- **Schulferien** kommen von [OpenHolidays](https://www.openholidaysapi.org) (frei, ohne Schluessel) und werden in der
+  Uhr gespeichert (Abruf nach dem Speichern und dann einmal pro Woche). Massgeblich sind die Angaben des
+  Kultusministeriums.
+- **Einblendung:** am Feier- oder besonderen Tag erscheint regelmaessig fuer 20 Sekunden ein eigenes animiertes Bild
+  (z. B. Luther mit Hammer am Reformationstag, Bollerwagen am Vatertag, Schere und Krawatte an Weiberfastnacht,
+  Adventskranz mit der richtigen Zahl Kerzen) mit Uhrzeit und Namen, dazu ein Spruch als Laufschrift.
+- **Laufschrift:** "Morgen ist Sankt Martin", "Noch 12 Tage bis zu den Herbstferien", "Herbstferien: noch 4 Tage frei!".
+- **Design 28 "Kalender"** zeigt das Monatsblatt dauerhaft (Anzeige > Design).
+- Fernsteuerung: `/cal.json?y=2026` (Jahresuebersicht), `POST /calpop` mit `id` (Einblendung testen).
 
 ### RGB-LED
 
