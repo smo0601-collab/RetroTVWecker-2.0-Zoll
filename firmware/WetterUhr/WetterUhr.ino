@@ -442,7 +442,10 @@ static uint8_t listStyle(int from) {
   if (!autoActive()) return gSet.clockStyle;
   return (uint8_t)(inList(from) ? from : nextStyle(from));
 }
+static uint8_t gPrePop = 255;
+static uint32_t gPopSince = 0;          // Design vor der Feiertags-Einblendung (255 = keine Einblendung)
 static void styleManual() {            // Auswahl im Browser: sofort uebernehmen, Timer neu starten
+  if (gPrePop != 255) gPrePop = gSet.clockStyle;   // waehrend einer Einblendung: danach das gewaehlte Design
   gAutoHold = millis() + 120000UL;       // gewaehltes Design mindestens 2 Minuten halten
   touchBlockUntil = millis() + 2000;     // Neuaufbau des Bildes erzeugt Stoerimpulse: Touch kurz sperren
   gStyle = gSet.clockStyle;
@@ -453,6 +456,16 @@ static void styleTick(uint32_t now) {
   static bool wasNight = false;
   if (!nyeWindow()) gNyeBlocked = false;
   const int ov = overrideStyle();
+  if (ov == POP_STYLE && !wasNight) {    // Feiertags-Einblendung (20 s): Design und Wechsel-Timer nur anhalten
+    if (gPrePop == 255) { gPrePop = gStyle; gPopSince = now; }
+    if (gStyle != ov) { gStyle = (uint8_t)ov; needFull = true; gDbgSrc = 'P'; }
+    return;
+  }
+  if (gPrePop != 255) {                  // Einblendung vorbei: zurueck zum vorherigen Design, Timer laeuft weiter
+    gStyle = gPrePop; gPrePop = 255; needFull = true;
+    gStyleSince += now - gPopSince;      // Dauer der Einblendung zaehlt nicht zur Anzeigezeit
+    if (ov < 0 && !(gSet.autoOn && autoCount() >= 2)) gStyle = gSet.clockStyle;
+  }
   if (ov >= 0) {                         // Silvester bzw. Nachtmodus haben Vorrang vor Auswahl und Automatik
     if (gStyle != ov) { gStyle = (uint8_t)ov; needFull = true; gDbgSrc = 'N'; }
     gStyleSince = now;
@@ -681,7 +694,10 @@ static void touchTick(uint32_t now) {
     if (!standby && !wakePending) {
       gDbgSrc = 'T';
       touchBlockUntil = now + TOUCH_LOCK_MS;            // Neuaufbau des Bildes erzeugt Stoerimpulse: Touch kurz sperren
-      if (overrideStyle() >= 0) {                       // Nachtmodus/Silvester: Bild bleibt, Auswahl gilt fuer danach
+      if (gPrePop != 255) {                             // Feiertags-Einblendung: Tippen beendet sie
+        gPopBlockedAt = now ? now : 1;
+        cal::popForceUntil = 0;
+      } else if (overrideStyle() >= 0) {                // Nachtmodus/Silvester: Bild bleibt, Auswahl gilt fuer danach
         gSet.clockStyle = (uint8_t)nextStyle(gSet.clockStyle);
         setDirty = true; setDirtyAt = now;
       } else if (gSet.autoOn && autoCount() >= 2) {     // Wechsel aktiv: in der Liste weiterblaettern,

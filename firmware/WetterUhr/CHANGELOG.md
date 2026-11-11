@@ -4,6 +4,16 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.11-4 - Korrektur: automatischer Design-Wechsel blieb stehen
+
+- An Feier- und besonderen Tagen (z. B. 11.11.) setzte jede Feiertags-Einblendung (alle 15 min) das Design auf das
+  gespeicherte zurueck und startete den Wechsel-Timer neu - der automatische Wechsel kam so nie weiter.
+  Jetzt haelt die Einblendung Design und Timer nur an; danach geht es mit dem vorherigen Design weiter.
+- Tippen auf das Display waehrend der Einblendung beendet sie (statt das gespeicherte Design zu aendern).
+- Auswahl im Browser waehrend der Einblendung gilt danach.
+
+Geaenderte Dateien: `WetterUhr.ino`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.11-3 - Korrektur: richtige Update-Datei wurde abgelehnt
 
 - Fehler aus 2026.11.11-2 / RetroCYD 3.9 behoben: Eine korrekte `*_update.bin` wurde mit "Erstinstallations-Datei
