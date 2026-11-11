@@ -76,7 +76,11 @@ static void st7789Init() {
 static void boardPanelApply(uint8_t rotation, uint8_t flags) {
   tft.setRotation(rotation);                          // setzt die Bildgroesse 320x240 in der Grafik-Bibliothek
   // Standard-MADCTL im Querformat: ILI9341 = MV|BGR, ST7789 = MX|MV (RGB); 180 Grad = MX und MY umschalten
+#if BOARD_CYD
   uint8_t m = (gPanelUsed == PANEL_ST7789) ? 0x60 : 0x28;
+#else
+  uint8_t m = 0xA0;                                   // ESP32-C3 (2,0 Zoll): wie Adafruit_ST7789 Rotation 1 = MY|MV
+#endif                                                // (bis 2026.11.07 so; 0x60 hatte Normal und 180 Grad vertauscht)
   if (rotation == 3) m ^= 0xC0;
   if (flags & PF_SWAPXY) m ^= 0x20;
   if (flags & PF_MIRX)   m ^= 0x40;

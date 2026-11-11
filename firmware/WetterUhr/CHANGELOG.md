@@ -4,6 +4,14 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.11-5 - Korrektur: Drehung um 180 Grad beim ESP32-C3
+
+- Seit 2026.11.08 (Display-Anpassung) waren beim ESP32-C3 mit 2,0-Zoll-Display "Normal" und "180 Grad gedreht"
+  vertauscht: das Bild stand bei "Normal" auf dem Kopf, die Einstellung schien nicht zu wirken. Jetzt wieder
+  wie bis 2026.11.07. Wer zum Ausgleich "180 Grad" gewaehlt hatte, stellt wieder auf "Normal". CYD unveraendert.
+
+Geaenderte Dateien: `board.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.11-4 - Korrektur: automatischer Design-Wechsel blieb stehen
 
 - An Feier- und besonderen Tagen (z. B. 11.11.) setzte jede Feiertags-Einblendung (alle 15 min) das Design auf das
