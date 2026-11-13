@@ -778,6 +778,52 @@ static void handleRoot() {
 
   // ================= Summer & Wecker =================
   fl();
+#if SND_RICH
+  // Lautsprecher (CYD): Lautstaerke, Stundengong, Effekte, Weckton - jeweils mit Anhoeren-Knopf
+  auto play = [&](const char* k, const char* n) {        // Knopf "anhoeren"; n = Zahl oder JS-Ausdruck
+    p += F("<button type=button class=sec style='width:auto;padding:.35em .8em;margin:.2em 0 .2em .4em' onclick=\"snd('");
+    p += k; p += F("',"); p += n; p += F(")\">&#9654;</button>");
+  };
+  auto opts = [&](const char* name, uint16_t first, int count, int cur) {
+    p += F("<div style='display:flex;align-items:center'><select name="); p += name; p += F(" id="); p += name; p += F(" style='flex:1'>");
+    for (int i = 0; i < count; i++) { p += F("<option value="); p += String(i); sel(cur == i); p += '>'; T(first + i); p += F("</option>"); }
+    p += F("</select>");
+  };
+  p += F("<section class=tab id=t-sound><h2>"); T(W_R_SPK); p += F("</h2><label>"); T(W_SND_VOL); p += F(" <span id=svv>");
+  p += String(gSet.sndVol);
+  p += F("</span> %</label><input id=svol name=svol type=range min=5 max=100 value="); p += String(gSet.sndVol);
+  p += F(" oninput=\"svv.textContent=this.value\"><small>"); T(W_SND_HINT); p += F("</small>");
+  p += F("<label><input type=checkbox name=bzhr value=1"); chk(gSet.bzHour);
+  p += F(">"); T(W_HR_ON); p += F("</label>");
+  opts("hrtone", W_HRT0, SND_HR_COUNT, gSet.hrTone); play("h", "hrtone.value"); p += F("</div>");
+  p += F("<label><input type=checkbox name=bzq value=1"); chk(gSet.bzQuiet);
+  p += F(">"); T(W_SND_QUIET); p += F("</label>");
+#if HAS_TOUCH
+  p += F("<div style='display:flex;align-items:center'><label style='flex:1'><input type=checkbox name=bztc value=1"); chk(gSet.bzTouch);
+  p += F(">"); T(W_BZ_TOUCH); p += F("</label>"); play("c", "0"); p += F("</div>");
+#endif
+  p += F("<h2>"); T(W_H_FX); p += F("</h2>");
+  auto fxRow = [&](uint8_t bit, uint16_t txt, const char* n) {
+    p += F("<div style='display:flex;align-items:center'><label style='flex:1'><input type=checkbox name=sfx"); p += String(bit);
+    p += F(" value=1"); chk(gSet.sndFx & (1 << bit)); p += '>'; T(txt); p += F("</label>");
+    if (n) play("f", n);
+    p += F("</div>");
+  };
+  fxRow(0, W_FX_POP, nullptr);
+  opts("fxpop", W_FXN0, FX_POP_COUNT, 0); play("f", "fxpop.value"); p += F("</div>");
+  { char b[8]; snprintf(b, sizeof(b), "%d", (int)FX_NEWYEAR); fxRow(1, W_FX_NYE, b); }
+  { char b[8]; snprintf(b, sizeof(b), "%d", (int)FX_UFO); fxRow(2, W_FX_UFO, b); }
+  { char b[8]; snprintf(b, sizeof(b), "%d", (int)FX_STYLE); fxRow(3, W_FX_STYLE, b); }
+  fxRow(4, W_FX_WX, nullptr);
+  p += F("<div style='display:flex;align-items:center'><select id=fxwx style='flex:1'><option value="); p += String((int)FX_RAIN); p += '>'; T(W_WX_RAIN);
+  p += F("</option><option value="); p += String((int)FX_SNOW); p += '>'; T(W_WX_SNOW);
+  p += F("</option><option value="); p += String((int)FX_STORM); p += '>'; T(W_WX_STORM); p += F("</option></select>");
+  play("f", "fxwx.value"); p += F("</div><small>"); T(W_FX_NOTE);
+  p += F("</small><button type=button class=sec onclick=\"snd('s',0)\">"); T(W_SND_STOP);
+  p += F("</button><script>function snd(k,n){fetch('/sndtest',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},"
+         "body:'k='+k+'&n='+n+'&v='+document.getElementById('svol').value});}</script>");
+  p += F("<h2>"); T(W_R_ALARM);
+#else
   p += F("<section class=tab id=t-sound><h2>"); T(W_R_BUZZ); p += F("</h2>");
   if (!bz::present()) { p += F("<small>"); T(W_BZ_NOCFG); p += F("</small>"); }
   p += F("<label><input type=checkbox name=bzhr value=1"); chk(gSet.bzHour);
@@ -788,7 +834,9 @@ static void handleRoot() {
   p += F(">"); T(W_BZ_TOUCH); p += F("</label>");
 #endif
   p += F("<button type=submit class=sec formaction=/beep formmethod=post formnovalidate>"); T(W_BZ_TEST);
-  p += F("</button><h2>"); T(W_R_ALARM); p += F("</h2><label><input type=checkbox name=alon value=1"); chk(gSet.alOn);
+  p += F("</button><h2>"); T(W_R_ALARM);
+#endif
+  p += F("</h2><label><input type=checkbox name=alon value=1"); chk(gSet.alOn);
   p += F(">"); T(W_AL_ON); p += F("</label><label>"); T(W_AL_TIME); p += F("</label><input type=time name=alt value=\"");
   p += hhmm(gSet.alTime);
   p += F("\"><label>"); T(W_AL_DAYS); p += F("</label><div class=chips style='flex-wrap:wrap'>");
@@ -801,6 +849,10 @@ static void handleRoot() {
     p += F("</label>");
   }
   p += F("</div>");
+#if SND_RICH
+  p += F("<label>"); T(W_AL_TONE); p += F("</label>");
+  opts("altone", W_ALT0, SND_AL_COUNT, gSet.alTone); play("a", "altone.value"); p += F("</div>");
+#endif
   if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }
   p += F("<small>"); T(W_AL_HINT); p += F("</small></section>");
 
@@ -1118,6 +1170,15 @@ static void handleSave() {
   n.bzTouch = server.hasArg("bztc");
 #endif
   n.alOn    = server.hasArg("alon");
+#if SND_RICH
+  if (server.hasArg("svol")) {                         // Lautsprecher (nur CYD, nur wenn die Felder auf der Seite sind)
+    n.sndVol = (uint8_t)constrain(server.arg("svol").toInt(), 5, 100);
+    n.alTone = (uint8_t)constrain(server.arg("altone").toInt(), 0, SND_AL_COUNT - 1);
+    n.hrTone = (uint8_t)constrain(server.arg("hrtone").toInt(), 0, SND_HR_COUNT - 1);
+    n.sndFx = 0;
+    for (int i = 0; i < 5; i++) if (server.hasArg(String("sfx") + i)) n.sndFx |= (uint8_t)(1 << i);
+  }
+#endif
   n.nyeAuto = server.hasArg("nyeauto");
   n.holAuto = server.hasArg("holauto");
   n.fine = (server.hasArg("fsm") ? 1 : 0) | (server.hasArg("ftx") ? 2 : 0);
@@ -1171,6 +1232,7 @@ static void handleSave() {
   const bool csChanged = (n.clockStyle != gSet.clockStyle);
   gSet = n;
   settingsSave();
+  bz::setVolume(gSet.sndVol);
   gHolAt = 0;                                         // Feiertags-Fenster neu berechnen
   if (ntpChanged) {                     // NTP ein/aus ohne Neustart
     if (!gSet.ntpOn) ntpStop();
@@ -1300,7 +1362,7 @@ static void handleSetTime() {
 
 static void handleBeep() {
   if (!authOk()) return;
-  if (!gAlarmRinging) bz::play(BZ_PAT(bz::P_TEST));
+  if (!gAlarmRinging) bz::test();
   server.sendHeader("Location", "/?saved=1");
   server.send(303);
 }
@@ -1487,6 +1549,22 @@ static void webBegin() {
   server.on("/reset", HTTP_POST, handleReset);
   server.on("/settime", HTTP_POST, handleSetTime);
   server.on("/beep", HTTP_POST, handleBeep);
+#if SND_RICH
+  server.on("/sndtest", HTTP_POST, []() {             // Klang anhoeren (ohne Speichern), v = Lautstaerke vom Regler
+    if (!authOk()) return;
+    if (!gAlarmRinging) {
+      const String k = server.arg("k");
+      const int i = server.arg("n").toInt();
+      if (server.hasArg("v")) { bz::setVolume((uint8_t)constrain(server.arg("v").toInt(), 5, 100)); gSndTestVol = true; }
+      if (k == "s") bz::stop();
+      else if (k == "a") bz::alarmTest((uint8_t)constrain(i, 0, SND_AL_COUNT - 1));
+      else if (k == "h") bz::chime((uint8_t)constrain(i, 0, SND_HR_COUNT - 1), 3, bz::PR_TEST);   // zaehlende Gongs: 3 Uhr
+      else if (k == "c") bz::click();
+      else if (k == "f") bz::fx((uint8_t)constrain(i, 0, FX_COUNT - 1), bz::PR_TEST);
+    }
+    server.send(204);
+  });
+#endif
   server.on("/alarmoff", HTTP_POST, handleAlarmOff);
   server.on("/ufo", HTTP_POST, handleUfo);
   server.on("/feed", HTTP_POST, handleFeed);

@@ -73,6 +73,7 @@ namespace Hopper {
     if (deadT > 0) return;
     deadT = 40;
     lives--;
+    Snd::fx(Snd::DIE);
     rumble(400, 0xB0);
   }
 
@@ -83,10 +84,11 @@ namespace Hopper {
         if (homes[k]) break;
         homes[k] = true;
         score += 50 + timer / 3;
+        Snd::fx(Snd::COIN);
         rumble(150, 0x70);
         bool all = true;
         for (auto h : homes) all &= h;
-        if (all) { score += 1000; winT = 60; }
+        if (all) { score += 1000; winT = 60; Snd::fx(Snd::WIN); }
         resetChick();
         return;
       }
@@ -118,6 +120,7 @@ namespace Hopper {
     else if (rRight.tick(cur.right, 200, 160)) dc = 1;
     if (dr || dc) {
       hopT = 4;
+      Snd::fx(Snd::FLAP, Snd::P_AUTO);
       lastDir = dc;
       if (dr) {
         hr = constrain(hr + dr, 0, NR - 1);
@@ -139,7 +142,7 @@ namespace Hopper {
         float x = objX(hr, i);
         if (c >= x + 2 && c <= x + LANES[hr].len * T - 2 && !submerged(hr, i)) { safe = true; break; }
       }
-      if (!safe && hopT == 0) { die(); return; }
+      if (!safe && hopT == 0) { Snd::fx(Snd::SPLASH, Snd::P_BIG); die(); return; }
       if (safe) hx += speedOf(hr);
       if (hx < -T / 2 || hx > SCR_W - T / 2) { die(); return; }
     }
@@ -147,7 +150,7 @@ namespace Hopper {
     if (k == CAR || k == TRUCK) {
       for (int i = 0; i < LANES[hr].count; i++) {
         float x = objX(hr, i);
-        if (hitBox(hx + 3, 0, T - 6, 1, x + 1, 0, LANES[hr].len * T - 2, 1)) { die(); return; }
+        if (hitBox(hx + 3, 0, T - 6, 1, x + 1, 0, LANES[hr].len * T - 2, 1)) { Snd::fx(Snd::HONK, Snd::P_BIG); die(); return; }
       }
     }
   }

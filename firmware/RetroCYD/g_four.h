@@ -214,6 +214,7 @@ namespace Four {
   void landed() {
     at(dropC, hgt[dropC]++) = dropP;
     moveCount++;
+    Snd::fx(Snd::DROP);
     rumble(30, 0x40);
     if (winAt(dropC, dropR, dropP)) {
       winner = dropP;
@@ -223,6 +224,7 @@ namespace Four {
         else { sLoss++; streak = 0; }
       } else (winner == 1 ? sWin : sLoss)++;
       ph = PH_WIN; overT = 0;
+      Snd::fx(!twoP && winner != 1 ? Snd::LOSE : Snd::WIN, Snd::P_BIG);
       rumble(300, 0xA0);
       return;
     }

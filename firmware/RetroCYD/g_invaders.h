@@ -95,6 +95,7 @@ namespace Invaders {
   void playerHit() {
     lives--;
     addBoom((int)px - 11, playerY() - 4);
+    Snd::fx(Snd::DIE);
     rumble(500, 0xC0);
     deadTimer = 60;
     for (auto& b : bombs) b.on = false;
@@ -116,6 +117,9 @@ namespace Invaders {
       fx += dir * step;
     }
     frame ^= 1;
+    static const uint16_t MARCH[4] = {196, 175, 165, 147};   // der bekannte Marschschritt
+    static uint8_t ms = 0;
+    Snd::pitch(MARCH[ms++ & 3], 0, 70, sfx::DC, Snd::P_AUTO);
     // Aliens fressen sich durch die Bunker
     for (int c = 0; c < COLS; c++)
       for (int r = 0; r < ROWS; r++)
@@ -136,7 +140,7 @@ namespace Invaders {
       if (cur.right) px += sp;
       if (abs(cur.ax) > 300 && !cur.left && !cur.right) px += cur.ax / 512.0f * sp;
       px = constrain(px, 14.0f, (float)SCR_W - 14);
-      if ((E.a || cur.a) && !pbOn) { pbOn = true; pbx = px; pby = playerY() - 6; }
+      if ((E.a || cur.a) && !pbOn) { pbOn = true; pbx = px; pby = playerY() - 6; Snd::fx(Snd::LASER); }
     }
 
     // Formation bewegen: je weniger Aliens, desto schneller
@@ -154,6 +158,7 @@ namespace Invaders {
         int pts = 50 * irand(1, 6);
         score += pts;
         addBoom((int)ufoX + 5, 20);
+        Snd::fx(Snd::COIN);
         rumble(200, 0x80);
       } else {
         for (int r = 0; r < ROWS && pbOn; r++)
@@ -163,6 +168,7 @@ namespace Invaders {
               aliveCount--;
               score += ROWPTS[r];
               addBoom(alienX(c), alienY(r));
+              Snd::fx(Snd::THUD);
               rumble(40, 0x40);
               pbOn = false;
               break;
@@ -196,7 +202,7 @@ namespace Invaders {
 
     // UFO
     if (!ufoOn && aliveCount > 8 && --ufoTimer <= 0) {
-      ufoOn = true; ufoDir = irand(0, 1) ? 1 : -1; ufoX = ufoDir > 0 ? -32 : SCR_W;
+      ufoOn = true; Snd::fx(Snd::LOOP, Snd::P_AUTO); ufoDir = irand(0, 1) ? 1 : -1; ufoX = ufoDir > 0 ? -32 : SCR_W;
     }
     if (ufoOn) {
       ufoX += ufoDir * 2.0f;
@@ -204,7 +210,7 @@ namespace Invaders {
     }
     for (auto& b : booms) if (b.t > 0) b.t--;
 
-    if (aliveCount == 0 && waveWait == 0) { waveWait = 45; score += 500; }
+    if (aliveCount == 0 && waveWait == 0) { waveWait = 45; score += 500; Snd::fx(Snd::WIN); }
   }
 
   void render() {

@@ -318,6 +318,7 @@ namespace Memory {
       wins++;
       prefs.putUShort("mem_win", wins);
     }
+    Snd::fx(found == 12 || mode == 2 ? (record ? Snd::RECORD : Snd::WIN) : Snd::LOSE, Snd::P_BIG);
     rumble(300, 0x90);
     if (mode == 2) Led::set565(pairs[0] == pairs[1] ? C_WHITE : P_COL[pairs[1] > pairs[0]], 200, 300);
     else if (found == 12) { Led::set({0, 0, 0}); Led::party(2000); }
@@ -328,6 +329,7 @@ namespace Memory {
   void open(int i) {
     if (st[i] != 0 || flip[i] || sel2 >= 0) return;
     st[i] = 1; flipTo[i] = 1; flip[i] = FLIP;
+    Snd::fx(Snd::FLIP, Snd::P_AUTO);
     if (sel1 < 0) sel1 = i;
     else { sel2 = i; moves++; }
     Kit::dirty = true;
@@ -362,12 +364,14 @@ namespace Memory {
         pairs[player]++;
         found++;
         sel1 = sel2 = -1;
+        Snd::fx(Snd::MATCH);
         rumble(60, 0x60);
         Led::flash({0, 255, 60}, 400);                  // Paar gefunden: gruen
         Kit::dirty = true;
         if (found == 12) { finish(); return; }
       } else if (waitT == 0) {
         waitT = 30;
+        Snd::fx(Snd::MISS);
       } else if (--waitT == 0 || e.t == Kit::EV_TAP || E.a) {
         for (int k : {sel1, sel2}) { st[k] = 0; flipTo[k] = 0; flip[k] = FLIP; }
         sel1 = sel2 = -1;

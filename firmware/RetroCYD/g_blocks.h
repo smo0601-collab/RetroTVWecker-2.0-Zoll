@@ -157,8 +157,9 @@ namespace Blocks {
       score += pts[cleared] * (level + 1);
       lines += cleared;
       level = lines / 10;
+      Snd::fx(cleared >= 4 ? Snd::LINE4 : Snd::LINE);
       rumble(80 + cleared * 60, 0x50 + cleared * 0x20);
-    }
+    } else Snd::fx(Snd::DROP, Snd::P_AUTO);
     drawStats();
     if (!spawn()) { render(); gameOver(score); return; }
     lastFall = millis();
@@ -186,8 +187,8 @@ namespace Blocks {
 
     if (rl.tick(cur.left, 170, 55)  && fits(pt, pr, px - 1, py)) px--;
     if (rr.tick(cur.right, 170, 55) && fits(pt, pr, px + 1, py)) px++;
-    if (PRESSED(a)) tryRotate(1);
-    if (PRESSED(b)) tryRotate(-1);
+    if (PRESSED(a)) { tryRotate(1); Snd::fx(Snd::ROTATE, Snd::P_AUTO); }
+    if (PRESSED(b)) { tryRotate(-1); Snd::fx(Snd::ROTATE, Snd::P_AUTO); }
 
     if (PRESSED(up)) {
       int d = 0;

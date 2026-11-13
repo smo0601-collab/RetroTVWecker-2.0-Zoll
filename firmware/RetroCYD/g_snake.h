@@ -100,6 +100,7 @@ namespace Snake {
     if (eat) {
       score += 10;
       if (interval > MIN_IV[cfg.snakeSpeed]) interval -= 3;
+      Snd::fx(Snd::EAT);
       rumble(60, 0x60);
       drawHud();
       if (len >= GW * GH) { gameOver(score + 1000); return; }

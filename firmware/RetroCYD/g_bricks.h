@@ -110,6 +110,7 @@ namespace Bricks {
         drawBrick(r, c);
         score += (ROWS - r) * 10;
         drawHud();
+        Snd::fx(Snd::BRICK);
         rumble(40, 0x40);
         return true;
       }
@@ -119,6 +120,7 @@ namespace Bricks {
 
   void loseLife() {
     lives--;
+    Snd::fx(Snd::DIE);
     rumble(300, 0xA0);
     drawHud();
     if (lives <= 0) { gameOver(score); return; }
@@ -148,11 +150,11 @@ namespace Bricks {
       for (int s = 0; s < steps && !stuck; s++) {
         float sx = vx / steps, sy = vy / steps;
         bx += sx;
-        if (bx < 0) { bx = 0; vx = fabsf(vx); }
-        if (bx > SCR_W - BS) { bx = SCR_W - BS; vx = -fabsf(vx); }
+        if (bx < 0) { bx = 0; vx = fabsf(vx); Snd::fx(Snd::WALL, Snd::P_AUTO); }
+        if (bx > SCR_W - BS) { bx = SCR_W - BS; vx = -fabsf(vx); Snd::fx(Snd::WALL, Snd::P_AUTO); }
         if (hitBrick()) { bx -= sx; vx = -vx; }
         by += sy;
-        if (by < TOP) { by = TOP; vy = fabsf(vy); }
+        if (by < TOP) { by = TOP; vy = fabsf(vy); Snd::fx(Snd::WALL, Snd::P_AUTO); }
         if (hitBrick()) { by -= sy; vy = -vy; }
 
         if (vy > 0 && by + BS >= PY && by + BS <= PY + PH + 3 &&
@@ -163,6 +165,7 @@ namespace Bricks {
           vx = speed * sinf(ang);
           vy = -speed * cosf(ang);
           by = PY - BS;
+          Snd::fx(Snd::BOUNCE);
         }
         if (by > SCR_H) {
           tft.fillRect(oBx, oBy, BS, BS, C_BG);
@@ -174,6 +177,7 @@ namespace Bricks {
       if (remaining == 0) {
         level++;
         score += 500;
+        Snd::fx(Snd::WIN);
         rumble(250, 0x80);
         setupLevel();
         return;

@@ -176,6 +176,7 @@ static void draw(const FaceCtx& c) {
   else {
     if (kick || (!ufoOn && (int32_t)(now - ufoAt) >= 0)) {
       kick = false; ufoOn = true; ufoT0 = now;
+      sndEvent(FX_UFO);                                      // Klang (CYD-Lautsprecher, wenn eingeschaltet)
       const float a = rf() * 6.2832f;
       ufoX = sinf(a) * RAD; ufoY = -cosf(a) * RAD;            // kommt vom Rand
       ufoTarget(now);

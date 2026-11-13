@@ -148,7 +148,9 @@ namespace Pipes {
     else for (int k = 0; k < 3; k++) pipe[i] = rotCW(pipe[i]);
     moves++;
     flashI = i; flashT = 4;
+    const int before = nOn;
     flood();
+    Snd::fx(nOn > before ? Snd::FLIP : Snd::ROTATE, Snd::P_AUTO);   // Wasser fliesst weiter: hellerer Ton
     Kit::dirty = true;
     if (nOn == W * H) {
       tSolved = millis();
@@ -160,6 +162,7 @@ namespace Pipes {
       prefs.putUShort(lvKey(mode), level);
       Kit::hsSet(score);
       ph = PH_DONE;
+      Snd::fx(Snd::WIN, Snd::P_BIG);
       rumble(250, 0x90);
       Led::party(1500);
     }

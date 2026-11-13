@@ -59,6 +59,7 @@ namespace Girder {
   void die() {
     if (deadT) return;
     deadT = 60; lives--;
+    Snd::fx(Snd::DIE);
     rumble(500, 0xC0);
   }
 
@@ -116,7 +117,7 @@ namespace Girder {
       if (deadT == 0 && fabsf(b.x - px) < 9 && fabsf(by - (py - 7)) < 10) { die(); return; }
       // Drueberspringen
       if (pst == JUMP && !b.scored && fabsf(b.x - px) < 7 && by > py && by - py < 30) {
-        b.scored = true; score += 100; bonusT = 30;
+        b.scored = true; score += 100; bonusT = 30; Snd::fx(Snd::COIN);
       }
     }
   }
@@ -157,7 +158,7 @@ namespace Girder {
         int li = ladderAt(px, plv - 1);
         if (li >= 0) { pst = CLIMB; ladIdx = li; px = ladX(li); plv--; py = platY(plv + 1) + 1; }
       }
-      if (E.a && pst == WALK) { pst = JUMP; vy = -4.4f; vx = dx; rumble(20, 0x20); }
+      if (E.a && pst == WALK) { pst = JUMP; vy = -4.4f; vx = dx; Snd::fx(Snd::JUMP); rumble(20, 0x20); }
     } else if (pst == CLIMB) {
       int lo = LADDERS[ladIdx].lo;
       if (cur.up) { py -= 1.4f; walkAnim++; }
@@ -175,6 +176,7 @@ namespace Girder {
     if (plv == NL - 1 && pst == WALK && px > goalX() - 10) {
       score += bonus;
       winT = 70;
+      Snd::fx(Snd::WIN);
       rumble(300, 0x80);
       return;
     }

@@ -76,9 +76,11 @@ namespace Paddle {
     if (who == 1) {
       s1++;
       if (!twoP) total += 100;
+      Snd::fx(Snd::COIN);
       rumbleFor(1, 200, 0x80);
     } else {
       s2++;
+      Snd::fx(twoP ? Snd::COIN : Snd::MISS);
       rumbleFor(0, 200, 0x80);
     }
     if (s1 >= WIN) {
@@ -114,18 +116,20 @@ namespace Paddle {
 
     bx += vx;
     by += vy;
-    if (by < LYmin)       { by = LYmin;      vy = fabsf(vy); }
-    if (by + BS > LYmax)  { by = LYmax - BS; vy = -fabsf(vy); }
+    if (by < LYmin)       { by = LYmin;      vy = fabsf(vy); Snd::fx(Snd::WALL, Snd::P_AUTO); }
+    if (by + BS > LYmax)  { by = LYmax - BS; vy = -fabsf(vy); Snd::fx(Snd::WALL, Snd::P_AUTO); }
 
     float x1 = 8, x2 = LXM - 8 - PT;
     if (vx < 0 && bx <= x1 + PT && bx + BS >= x1 && by + BS >= p1 - PL / 2 && by <= p1 + PL / 2) {
       bx = x1 + PT;
       bounce(p1, 1);
+      Snd::fx(Snd::BOUNCE);
       rumbleFor(0, 40, 0x50);
     }
     if (vx > 0 && bx + BS >= x2 && bx <= x2 + PT && by + BS >= p2 - PL / 2 && by <= p2 + PL / 2) {
       bx = x2 - BS;
       bounce(p2, -1);
+      Snd::fx(Snd::BOUNCE);
       if (twoP) rumbleFor(1, 40, 0x50);
     }
     if (bx < -12) pointFor(2);

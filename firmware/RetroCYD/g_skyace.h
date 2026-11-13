@@ -98,19 +98,21 @@ namespace SkyAce {
     if (invT > 0 || loopT > 0 || deadT > 0) return;
     boom(px, py, 2);
     lives--; deadT = 60; power = max(1, power - 1);
+    Snd::big(Snd::BOOM);
     rumble(500, 0xC0);
   }
 
   void hitFoe(Foe& f, int dmg) {
     f.hp -= dmg;
-    if (f.hp > 0) { rumble(20, 0x30); return; }
+    if (f.hp > 0) { Snd::fx(Snd::TICK); rumble(20, 0x30); return; }
     f.on = false;
     boom(f.x, f.y, f.type == BOMBER ? 3 : 1);
-    if (f.type == BOMBER) { score += 1500; rumble(300, 0xA0); }
+    if (f.type == BOMBER) { score += 1500; Snd::fx(Snd::CRASH); rumble(300, 0xA0); }
     else if (f.type == RED) {
       score += 100; redKilled++; redLeft = max(0, redLeft - 1);
       if (redKilled == 5) { powOn = true; powX = f.x; powY = f.y; score += 500; }
     } else score += 50;
+    Snd::fx(Snd::THUD);
     rumble(40, 0x50);
   }
 
@@ -136,10 +138,11 @@ namespace SkyAce {
       py = constrain(py + my * sp, 40.0f, (float)SCR_H - 16);
       if (invT > 0) invT--;
       if (loopT > 0) loopT--;
-      if (E.b && loops > 0 && loopT == 0) { loopT = 45; loops--; rumble(100, 0x50); }
+      if (E.b && loops > 0 && loopT == 0) { loopT = 45; loops--; Snd::fx(Snd::LOOP); rumble(100, 0x50); }
       if (fireCd > 0) fireCd--;
       if ((E.a || cur.a) && fireCd == 0 && loopT == 0) {
         fireCd = 5;
+        Snd::fx(Snd::SHOOT, Snd::P_AUTO);
         addShot(px - 5, 0); addShot(px + 5, 0);
         if (power >= 2) { addShot(px - 8, -1.2f); addShot(px + 8, 1.2f); }
         if (power >= 3) { addShot(px - 10, -2.4f); addShot(px + 10, 2.4f); }
@@ -197,7 +200,7 @@ namespace SkyAce {
       powY += 0.8f;
       if (powY > SCR_H + 10) powOn = false;
       else if (deadT == 0 && fabsf(powX - px) < 14 && fabsf(powY - py) < 14) {
-        powOn = false; power = min(3, power + 1); score += 300; rumble(200, 0x70);
+        powOn = false; power = min(3, power + 1); score += 300; Snd::fx(Snd::POWER); rumble(200, 0x70);
       }
     }
   }

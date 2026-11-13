@@ -4,6 +4,21 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.13 - Klaenge fuer den CYD-Lautsprecher, mit Test im Browser
+
+- CYD mit Lautsprecher an "SPEAK": neue Ton-Engine (`sfx_core.h`) mit Melodien, Gleittoenen, Rauschen und
+  Ausklingen; spielt in einer eigenen kleinen Task, damit Melodien auch beim Zeichnen sauber bleiben.
+- **Lautstaerke** einstellbar, **Weckton** waehlbar (9 Klaenge), **Stundengong** waehlbar (6, Kuckuck und
+  Glockenschlag zaehlen die Stunde).
+- **Klang-Effekte**: Feiertags-Einblendung mit passender Melodie, Silvester-Countdown und Feuerwerk, UFO im
+  Flugradar, Designwechsel, Wetterwechsel (Regen, Schnee, Gewitter). Einzeln abschaltbar.
+- Browser > "Summer & Wecker": jeder Klang mit Knopf zum Anhoeren (Reglerstellung, ohne Speichern) und "Klang stoppen".
+- ESP32-C3 mit aktivem Summer: unveraendert.
+- RetroCYD 4.0: Spiel-Sounds in allen 20 Spielen (siehe RetroCYD).
+
+Geaenderte Dateien: `buzzer.h`, `sfx_core.h` (neu), `settings.h`, `webui.h`, `lang_web.h`, `WetterUhr.ino`,
+`dualboot.h`, `face_radar.h`, `config.h`, `README.md`, `CHANGELOG.md`
+
 ## 2026.11.11-5 - Korrektur: Drehung um 180 Grad beim ESP32-C3
 
 - Seit 2026.11.08 (Display-Anpassung) waren beim ESP32-C3 mit 2,0-Zoll-Display "Normal" und "180 Grad gedreht"

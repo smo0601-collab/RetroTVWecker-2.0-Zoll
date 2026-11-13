@@ -66,6 +66,7 @@ namespace BJ {
   bool natural(const uint8_t* h, int n) { return n == 2 && total(h, n) == 21; }
 
   void give(int who) {                            // 0 = Bank, 1 = aktive Hand
+    Snd::fx(Snd::CARD, Snd::P_AUTO);
     if (who == 0) dl[nd++] = draw();
     else hd[act][nh[act]++] = draw();
     animWho = who == 0 ? 0 : act + 1;
@@ -233,6 +234,7 @@ namespace BJ {
     }
     save();
     Kit::hsSet(sv.chips > 0 ? (uint32_t)sv.chips : 0);
+    Snd::fx(outcome[0] == 2 && nHands == 1 ? Snd::RECORD : net > 0 ? Snd::WIN : net < 0 ? Snd::LOSE : Snd::SELECT, Snd::P_BIG);
     if (net > 0) rumble(200, 0x80);
     if (outcome[0] == 2 && nHands == 1) Led::party(2000);          // LED: Black Jack bunt,
     else if (net > 0) Led::flash({0, 255, 0}, 900);                 // gewonnen gruen,

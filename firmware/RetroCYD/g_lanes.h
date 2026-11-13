@@ -318,8 +318,10 @@ namespace Lanes {
     }
     t++;
     // Eingabe
+    const int oldTarget = targetLane;
     if (E.left || (e.t == Kit::EV_TAP && e.x < SCR_W / 2) || (e.t == Kit::EV_SWIPE && e.dir == 3)) targetLane = max(0, targetLane - 1);
     if (E.right || (e.t == Kit::EV_TAP && e.x >= SCR_W / 2) || (e.t == Kit::EV_SWIPE && e.dir == 1)) targetLane = min(2, targetLane + 1);
+    if (targetLane != oldTarget) Snd::fx(Snd::SLIDE, Snd::P_AUTO);
     const float tx = laneX(targetLane), lv = CARS[model].laneV;
     if (fabsf(tx - px) <= lv) { px = tx; lane = targetLane; } else px += tx > px ? lv : -lv;
     // Tempo, Tank
@@ -342,7 +344,7 @@ namespace Lanes {
       if (c.y > SCR_H + 4) { c.on = false; continue; }
       const float cx = RX + c.lane * LW + (LW - CAR_W) / 2;
       if (hitBox(px + 4, PY + 3, CAR_W - 8, CAR_H - 6, cx + 4, c.y + 3, CAR_W - 8, CAR_H - 6)) {
-        ph = PH_CRASH; endT = 0; rumble(500, 0xFF); Kit::silence(); return;
+        ph = PH_CRASH; endT = 0; Kit::silence(); Snd::big(Snd::CRASH); rumble(500, 0xFF); return;
       }
     }
     for (auto& it : items) {
@@ -352,8 +354,8 @@ namespace Lanes {
       const float ix = RX + it.lane * LW + LW / 2 - 8;
       if (hitBox(px + 2, PY, CAR_W - 4, CAR_H, ix, it.y, 16, 16)) {
         it.on = false;
-        if (it.kind == 0) { coinsRun++; rumble(40, 0x40); Led::flash({255, 200, 0}, 200); }
-        else { fuel = min(100.0f, fuel + 32); rumble(80, 0x60); Led::flash({0, 255, 0}, 350); }
+        if (it.kind == 0) { coinsRun++; Snd::fx(Snd::COIN); rumble(40, 0x40); Led::flash({255, 200, 0}, 200); }
+        else { fuel = min(100.0f, fuel + 32); Snd::fx(Snd::POWER); rumble(80, 0x60); Led::flash({0, 255, 0}, 350); }
       }
     }
     for (auto& d : deco) {

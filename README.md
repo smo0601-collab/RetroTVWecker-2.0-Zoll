@@ -32,6 +32,9 @@ neue Firmware kommt per WLAN.
 - **Laufschrift** mit eigenem Text (Umlaute und Sonderzeichen).
 - **Helligkeit und Nachtmodus**: Dimmen nach Zeitplan, nachts optional das TV-Testbild.
 - **Wecker und Stundensignal** mit einem aktiven Piezo-Summer (optional).
+- **Klänge auf dem CYD** (kleiner Lautsprecher an „SPEAK“): Lautstärke, 9 Wecktöne, 6 Stundengongs (Kuckuck und
+  Glockenschlag zählen die Stunde), Melodie zur Feiertags-Einblendung, Silvester-Countdown mit Feuerwerk, UFO,
+  Wetterwechsel – jeder Klang im Browser zum Anhören.
 - **Touch-Taster** (optional): durch die Designs blättern, Laufschrift starten, Standby.
 - **Firmware-Update über WLAN** direkt im Browser.
 - **Fünf Sprachen** für Display und Browser-Seite: Deutsch, English, Français, Español, Italiano.
@@ -64,7 +67,7 @@ Zwei Varianten, gleicher Quellcode, gleiche Funktionen. Das Board wird beim Komp
 | Teil | Hinweis |
 |---|---|
 | CYD 2,8 Zoll (ESP32-2432S028R) | ESP32, Display ILI9341 320 × 240, resistiver Touchscreen, USB – alles auf einer Platine |
-| kleiner Lautsprecher 8 Ω, 0,5–2 W, Stecker JST 1,25 mm | optional, an „SPEAK“, für Wecker und Stundensignal |
+| kleiner Lautsprecher 8 Ω, 0,5–2 W, Stecker JST 1,25 mm | optional, an „SPEAK“, für Wecker, Stundengong, Klang-Effekte und Spiel-Sounds |
 
 Nichts zu verdrahten. Der **Touchscreen** ersetzt den Touch-Taster (tippen = nächstes Design, doppelt = Laufschrift,
 1 s halten = Menü mit Spiele/Standby), die **Helligkeit** wird echt über das Backlight geregelt, und die **RGB-LED** ist im Browser
@@ -74,7 +77,7 @@ Auf dem CYD werden die Designs geglättet und ihre Schrift in voller Auflösung 
 
 #### Spiele: RetroCYD als zweites Programm (nur CYD)
 
-Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (20 Spiele in 6 Kategorien, LED-Effekte, Xbox-Controller per Bluetooth oder direkt per Touch,
+Auf dem CYD kann neben der Uhr die Spielekonsole **RetroCYD** liegen (20 Spiele in 6 Kategorien, Spiel-Sounds, LED-Effekte, Xbox-Controller per Bluetooth oder direkt per Touch,
 Quellcode in [`firmware/RetroCYD`](firmware/RetroCYD)). Uhr und Spiele sind zwei Programme in den beiden
 Programmbereichen des Flash:
 
@@ -164,7 +167,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.11-5`](releases/2026.11.11-5): Uhr 2026.11.11-5 mit RetroCYD 3.9.1), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.13`](releases/2026.11.13): Uhr 2026.11.13 mit RetroCYD 4.0), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|

@@ -207,10 +207,10 @@ namespace Kit {
     // -1 = noch nichts, sonst gewaehlter Punkt. B / View = zurueck zum Spielemenue.
     int update() {
       const Ev e = take();
-      if (e.t == EV_TAP) for (int i = 0; i < n; i++) if (hit(box(i), e.x, e.y)) { sel = i; dirty = true; return i; }
-      if (E.up)   { sel = (sel + n - 1) % n; dirty = true; }
-      if (E.down) { sel = (sel + 1) % n; dirty = true; }
-      if (E.a || E.start) return sel;
+      if (e.t == EV_TAP) for (int i = 0; i < n; i++) if (hit(box(i), e.x, e.y)) { sel = i; dirty = true; Snd::fx(Snd::SELECT); return i; }
+      if (E.up)   { sel = (sel + n - 1) % n; dirty = true; Snd::fx(Snd::MOVE, Snd::P_AUTO); }
+      if (E.down) { sel = (sel + 1) % n; dirty = true; Snd::fx(Snd::MOVE, Snd::P_AUTO); }
+      if (E.a || E.start) { Snd::fx(Snd::SELECT); return sel; }
       if (E.b) { toMenu(); return -1; }
       return -1;
     }
@@ -228,16 +228,16 @@ namespace Kit {
   };
 
   // ---------------- Ton (Lautsprecher-Anschluss, GPIO 26) ----------------
-  const int SND_PIN = 26, SND_CH = 5;
-  bool sndOn = false, sndInit = false;
-  uint32_t sndAt = 0, sndF = 0;
+  // Dauerton (z. B. Motor) ueber die Ton-Engine (fx_snd.h); Effekte haben Vorrang
+  bool sndOn = false;
+  uint32_t sndAt = 0;
   void tone(uint32_t f) {
-    if (!sndInit) { ledcSetup(SND_CH, 200, 10); ledcAttachPin(SND_PIN, SND_CH); sndInit = true; }
-    if (f != sndF || !sndOn) { ledcChangeFrequency(SND_CH, f, 10); ledcWrite(SND_CH, 60); sndF = f; }
+    if (!Snd::on) return;
+    sfx::motor((uint16_t)f);
     sndOn = true;
     sndAt = millis();
   }
-  void silence() { if (sndOn) { ledcWrite(SND_CH, 0); sndOn = false; } }
+  void silence() { if (sndOn) { sfx::motor(0); sndOn = false; } }
   // aus loop(): Ton aus, wenn ihn niemand mehr anfordert (Pause, Menue, Spielende)
   void soundService() { if (sndOn && (millis() - sndAt > 120 || state != ST_GAME || paused)) silence(); }
 }

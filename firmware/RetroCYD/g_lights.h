@@ -109,6 +109,7 @@ namespace Lights {
   void tapCell(int r, int c) {
     press(cell, r, c);
     moves++;
+    Snd::fx(Snd::TOGGLE, Snd::P_AUTO);
     flashI = r * N + c;
     flashT = 5;
     Kit::dirty = true;
@@ -119,6 +120,7 @@ namespace Lights {
       saveProg();
       Kit::hsSet(totalStars());
       ph = PH_DONE;
+      Snd::fx(Snd::WIN, Snd::P_BIG);
       rumble(250, 0x90);
       Led::party(1500);
     }

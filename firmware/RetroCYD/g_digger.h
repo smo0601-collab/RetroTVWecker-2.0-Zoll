@@ -106,12 +106,14 @@ namespace Digger {
   void die() {
     if (deadT) return;
     deadT = 60; lives--;
+    Snd::fx(Snd::DIE);
     rumble(500, 0xC0);
   }
 
   void popFoe(Foe& f) {
     f.st = POPPED; f.popT = 20;
     score += 200 + layerOf(tr(f.e.y)) * 100;
+    Snd::fx(Snd::SPLASH);
     rumble(120, 0x80);
   }
 
@@ -203,6 +205,7 @@ namespace Digger {
         Foe& f = foes[pumpFoe];
         if (E.a) {
           f.infl++; f.deflT = 30; pumpHold = 25;
+          Snd::pitch(300 + f.infl * 150, 500 + f.infl * 150, 70);
           rumble(40, 0x40 + f.infl * 0x20);
           if (f.infl >= 4) { popFoe(f); pumping = false; pumpFoe = -1; pumpLen = 0; }
         }
@@ -228,6 +231,7 @@ namespace Digger {
       }
     } else if (E.a) {
       pumping = true; pumpLen = 0; pumpFoe = -1;
+      Snd::fx(Snd::SHOOT, Snd::P_AUTO);
     }
 
     // Spieler bewegen (nur ohne Pumpe)
@@ -246,7 +250,7 @@ namespace Digger {
           walk++;
           if (pl.dir == 1) face = 1; else if (pl.dir == 3) face = 3; else face = pl.dir;
           int cc = tc(pl.x), rr = tr(pl.y);
-          if (inside(cc, rr) && rr > 0 && !dug[rr][cc]) { dug[rr][cc] = true; if (walk % 4 == 0) score += 1; }
+          if (inside(cc, rr) && rr > 0 && !dug[rr][cc]) { dug[rr][cc] = true; if (walk % 4 == 0) score += 1; Snd::fx(Snd::DIG, Snd::P_AUTO); }
         }
       }
     }
@@ -272,7 +276,7 @@ namespace Digger {
       if (deadT == 0 && abs(f.e.x - pl.x) < T - 4 && abs(f.e.y - pl.y) < T - 4) die();
     }
     updateRocks();
-    if (alive == 0 && winT == 0) { winT = 60; score += 1000; }
+    if (alive == 0 && winT == 0) { winT = 60; score += 1000; Snd::fx(Snd::WIN); }
   }
 
   void render() {

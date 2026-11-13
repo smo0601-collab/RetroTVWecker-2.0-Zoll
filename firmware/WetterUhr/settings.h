@@ -48,6 +48,10 @@ struct Settings {
   bool     bzHour;     // Summer: Stundensignal
   bool     bzQuiet;    // Summer: kein Stundensignal im Dimm-Zeitfenster
   bool     bzTouch;    // Summer: Klick bei Touch
+  uint8_t  sndVol;     // Lautsprecher (CYD): Lautstaerke 5..100 %
+  uint8_t  alTone;     // Lautsprecher (CYD): Weckton (buzzer.h, ALARMS)
+  uint8_t  hrTone;     // Lautsprecher (CYD): Stundengong (buzzer.h, HOURS)
+  uint8_t  sndFx;      // Lautsprecher (CYD): Effekte (FXB_* in buzzer.h)
   bool     alOn;       // Wecker aktiv
   uint16_t alTime;     // Weckzeit, Minuten seit Mitternacht
   uint8_t  alDays;     // Bit 0 = Mo ... Bit 6 = So
@@ -126,6 +130,11 @@ static void settingsLoad() {
   gSet.bzHour  = prefs.getBool("bzhr", DEFAULT_HOUR_BEEP != 0);
   gSet.bzQuiet = prefs.getBool("bzq", DEFAULT_BEEP_QUIET != 0);
   gSet.bzTouch = prefs.getBool("bztc", DEFAULT_TOUCH_BEEP != 0);
+  gSet.sndVol  = prefs.getUChar("svol", 50);
+  if (gSet.sndVol < 5 || gSet.sndVol > 100) gSet.sndVol = 50;
+  gSet.alTone  = prefs.getUChar("altn", 0);
+  gSet.hrTone  = prefs.getUChar("hrtn", 0);
+  gSet.sndFx   = prefs.getUChar("sfx", 0x17);      // Feiertag, Silvester, UFO, Wetter (nicht Designwechsel)
   gSet.alOn    = prefs.getBool("alon", DEFAULT_ALARM_ON != 0);
   gSet.alTime  = prefs.getUShort("alt", DEFAULT_ALARM_TIME);
   gSet.alDays  = prefs.getUChar("ald", DEFAULT_ALARM_DAYS);
@@ -264,6 +273,10 @@ static void settingsSave() {
   prefs.putBool("bzhr", gSet.bzHour);
   prefs.putBool("bzq", gSet.bzQuiet);
   prefs.putBool("bztc", gSet.bzTouch);
+  prefs.putUChar("svol", gSet.sndVol);
+  prefs.putUChar("altn", gSet.alTone);
+  prefs.putUChar("hrtn", gSet.hrTone);
+  prefs.putUChar("sfx", gSet.sndFx);
   prefs.putBool("alon", gSet.alOn);
   prefs.putUShort("alt", gSet.alTime);
   prefs.putUChar("ald", gSet.alDays);

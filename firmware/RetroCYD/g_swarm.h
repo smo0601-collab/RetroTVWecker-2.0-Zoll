@@ -85,19 +85,21 @@ namespace Swarm {
   void killPlayer() {
     lives--;
     boom(px, playerY());
+    Snd::fx(Snd::DIE);
     rumble(500, 0xC0);
     deadTimer = 75;
     for (auto& s : theirs) s.on = false;
   }
 
   void hitFoe(Foe& f) {
-    if (--f.hp > 0) { rumble(30, 0x30); return; }
+    if (--f.hp > 0) { Snd::fx(Snd::TICK); rumble(30, 0x30); return; }
     bool diving = f.st == DIVE || f.st == BACK;
     const int base[3] = {150, 80, 50};
     score += base[f.type] * (diving ? 2 : 1);
-    if (score >= nextLife) { lives++; nextLife += 20000; }
+    if (score >= nextLife) { lives++; nextLife += 20000; Snd::fx(Snd::LIFE, Snd::P_BIG); }
     f.st = DEAD;
     boom(f.x, f.y);
+    Snd::fx(Snd::THUD);
     rumble(50, 0x50);
   }
 
@@ -116,7 +118,7 @@ namespace Swarm {
       if (abs(cur.ax) > 300 && !cur.left && !cur.right) px += cur.ax / 512.0f * 4.2f;
       px = constrain(px, 12.0f, (float)SCR_W - 12);
       if (E.a || (cur.a && tick % 6 == 0)) {
-        for (auto& s : mine) if (!s.on) { s = {px, (float)playerY() - 10, 0, -9, true}; break; }
+        for (auto& s : mine) if (!s.on) { s = {px, (float)playerY() - 10, 0, -9, true}; Snd::fx(Snd::LASER, Snd::P_AUTO); break; }
       }
     }
     for (auto& s : mine) if (s.on) { s.y += s.vy; if (s.y < 14) s.on = false; }
@@ -189,7 +191,7 @@ namespace Swarm {
       if (s.y > SCR_H) s.on = false;
       else if (deadTimer == 0 && fabsf(s.x - px) < 9 && fabsf(s.y - playerY()) < 9) { s.on = false; killPlayer(); }
     }
-    if (alive == 0) { waveWait = 50; score += 1000; }
+    if (alive == 0) { waveWait = 50; score += 1000; Snd::fx(Snd::WIN); }
   }
 
   void render() {

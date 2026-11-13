@@ -88,6 +88,7 @@ namespace G2048 {
     uint8_t np[25] = {0};
     uint32_t gain = 0;
     bool moved = false;
+    uint8_t top = 0;                       // groesste neue Zahl (fuer die Tonhoehe)
     nmv = 0;
     for (int line = 0; line < N; line++) {
       int out = 0;
@@ -104,6 +105,7 @@ namespace G2048 {
           ng[idx(tr, tc)] = v + 1;
           np[idx(tr, tc)] = 1;
           gain += 1u << (v + 1);
+          if (v + 1 > top) top = v + 1;
           lastMerged = true;
           moved = true;
         } else {
@@ -128,6 +130,8 @@ namespace G2048 {
     anim = ANIM;
     popT = 0;
     saveDirty = true;
+    if (top) Snd::pitch(300 + top * 90, 450 + top * 120, 90, sfx::DC);   // verschmolzen: je groesser, desto hoeher
+    else Snd::fx(Snd::SLIDE, Snd::P_AUTO);
     if (gain >= 64) rumble(40, 0x50);
     return true;
   }
@@ -216,7 +220,7 @@ namespace G2048 {
 
   void afterAnim() {
     for (int i = 0; i < N * N; i++)
-      if (g[i] >= 11 && !keepGoing) { keepGoing = true; ph = PH_WON; writeSave(); rumble(300, 0xA0); Led::party(3000); return; }
+      if (g[i] >= 11 && !keepGoing) { keepGoing = true; ph = PH_WON; writeSave(); Snd::big(Snd::RECORD); rumble(300, 0xA0); Led::party(3000); return; }
     if (!movesLeft()) {
       clearSave();
       lastMode = N;

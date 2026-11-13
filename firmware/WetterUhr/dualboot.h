@@ -79,7 +79,7 @@ static bool waitTap(int& a, int& b, uint32_t timeoutMs) {
         while (millis() - t1 < 150) { if (cyd::touchRaw(ra, rb) >= XPT_Z_MIN) { sa += ra; sb += rb; n++; } delay(5); }
         if (n >= 3) {
           a = sa / n; b = sb / n;
-          if (gSet.bzTouch) bz::play(BZ_PAT(bz::P_CLICK));
+          if (gSet.bzTouch) bz::click();
           while (cyd::touchRaw(ra, rb) >= XPT_Z_MIN && millis() - t0 < timeoutMs) delay(10);
           return true;
         }
@@ -184,7 +184,7 @@ static void menuTick(uint32_t now) {
   }
   if (mDown >= 0) {                                  // losgelassen ueber einem Knopf
     const int sel = mDown; mDown = -1;
-    if (gSet.bzTouch && !bz::busy()) bz::play(BZ_PAT(bz::P_CLICK));
+    if (gSet.bzTouch && !bz::busy()) bz::click();
     if (sel == 0) { startGames(); menuClose(); }
     else if (sel == 1) { ui = UI_NONE; enterStandby(); }
     else menuClose();

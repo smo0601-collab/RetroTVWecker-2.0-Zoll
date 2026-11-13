@@ -158,7 +158,7 @@ bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 uint32_t toClockAt = 0;      // Browser: zur Uhr wechseln (Zeitpunkt, 0 = nein)
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "3.9.1"
+#define FW_VERSION "4.0"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 
@@ -297,6 +297,8 @@ struct Settings {
   uint8_t snakeSpeed = 1;   // 0 gemuetlich, 1 normal, 2 schnell
   bool    ledOn = true;     // RGB-LED auf der Rueckseite (fx_led.h)
   uint8_t ledBri = 40;      // 1..100 %
+  bool    sndOn = true;     // Spiel-Sounds ueber den Lautsprecher (fx_snd.h)
+  uint8_t sndVol = 50;      // 5..100 %
   bool    wifiAlways = false;
   bool    allowNew = true;
   String  ssid, pass;
@@ -321,6 +323,8 @@ void loadSettings() {
   cfg.snakeSpeed = prefs.getUChar("snkSpd", 1);
   cfg.ledOn      = prefs.getBool("ledOn", true);
   cfg.ledBri     = constrain(prefs.getUChar("ledBri", 40), 1, 100);
+  cfg.sndOn      = prefs.getBool("sndOn", true);
+  cfg.sndVol     = constrain(prefs.getUChar("sndVol", 50), 5, 100);
   cfg.wifiAlways = prefs.getBool("wifiAlw", false);
   cfg.allowNew   = prefs.getBool("allowNew", true);
   cfg.ssid       = prefs.getString("ssid", "");
@@ -341,6 +345,8 @@ void saveSettings() {
   prefs.putUChar("snkSpd", cfg.snakeSpeed);
   prefs.putBool("ledOn", cfg.ledOn);
   prefs.putUChar("ledBri", cfg.ledBri);
+  prefs.putBool("sndOn", cfg.sndOn);
+  prefs.putUChar("sndVol", cfg.sndVol);
   prefs.putBool("wifiAlw", cfg.wifiAlways);
   prefs.putBool("allowNew", cfg.allowNew);
   prefs.putString("ssid", cfg.ssid);
@@ -359,6 +365,7 @@ void applyDisplay() {
 bool landscape() { return SCR_W > SCR_H; }
 
 #include "fx_led.h"        // RGB-LED: Menue-Farbe, Blitze, Spiel-Effekte
+#include "fx_snd.h"        // Lautsprecher: Spiel-Sounds
 
 // ============================================================================
 //  CONTROLLER (Bluepad32)
@@ -470,6 +477,7 @@ void rumbleFor(int player, uint16_t ms, uint8_t strength);
 
 void rumbleFor(int player, uint16_t ms, uint8_t strength) {
   Led::hit(ms, strength);                    // LED blitzt bei jeder Vibration mit (auch ohne Controller)
+  Snd::hit(ms, strength);                    // ... und es klingt (sofern das Spiel nicht gerade einen eigenen Klang spielt)
   if (!cfg.rumbleOn) return;
   uint8_t s = (uint8_t)min(255, (int)strength * cfg.rumbleStr / 160);
   int slot = 0;
@@ -841,6 +849,7 @@ void toClock() {
   txt("UHR STARTET...", SCR_W / 2, SCR_H / 2, 2, C_GREEN, C_BG);
   if (wifiOn) wifiStop();
   Led::off();
+  sfx::stop(); sfx::motor(0);
   cyd::bootOther();
   delay(300);
   ESP.restart();
@@ -865,6 +874,7 @@ bool handlePause(void (*redrawAll)()) {
   if (PRESSED(back)) { paused = false; toMenu(); return true; }
   if (PRESSED(start)) {
     paused = !paused;
+    Snd::fx(Snd::PAUSE);
     if (paused) {
       int x = SCR_W / 2 - 70, y = SCR_H / 2 - 25;
       tft.fillRoundRect(x, y, 140, 50, 8, C_PANEL);
@@ -885,6 +895,7 @@ void gameOverText(const char* title, uint32_t score) {
     highscore[curGame] = score;
     saveHighscores();
   }
+  Snd::big(record ? Snd::RECORD : strstr(title, "SIEGT") ? Snd::WIN : Snd::OVER);
   rumble(400, 0xC0);
   Led::set(record ? Led::Rgb{0, 0, 0} : Led::Rgb{120, 0, 0});
   if (record) Led::party(3000);                // neuer Rekord: Regenbogen
@@ -1073,11 +1084,12 @@ void drawMenu() {
 
 // Kategorie oeffnen bzw. zurueck zu den Kategorien
 void menuOpenCat(int c) { menuLevel = 1; menuCat = c; menuSel = 0; menuTop = 0; drawMenu(); }
-void menuBack() { menuLevel = 0; menuSel = menuCat; menuTop = 0; drawMenu(); }
+void menuBack() { Snd::fx(Snd::BACK); menuLevel = 0; menuSel = menuCat; menuTop = 0; drawMenu(); }
 
 // Punkt i der aktuellen Ebene ausfuehren
 void menuPick(int i) {
   if (menuLevel == 0) {
+    Snd::fx(Snd::SELECT);
     if (i < NUM_CATS) menuOpenCat(i);
     else if (i == NUM_CATS) enterSetup();
     else toClock();
@@ -1127,10 +1139,10 @@ void menuLoop() {
     if (PRESSED(right)) s = (s + 1) % n;
     if (menuRepUp.tick(cur.up, 300, 150))     s = s >= 2 ? s - 2 : s;
     if (menuRepDown.tick(cur.down, 300, 150)) s = s + 2 < n ? s + 2 : s;
-    if (s != menuSel) { menuSel = s; drawMenuItems(); }
+    if (s != menuSel) { menuSel = s; Snd::fx(Snd::MOVE, Snd::P_AUTO); drawMenuItems(); }
   } else {
-    if (menuRepUp.tick(cur.up, 300, 90))     { menuSel = (menuSel + n - 1) % n; drawMenuItems(); }
-    if (menuRepDown.tick(cur.down, 300, 90)) { menuSel = (menuSel + 1) % n; drawMenuItems(); }
+    if (menuRepUp.tick(cur.up, 300, 90))     { menuSel = (menuSel + n - 1) % n; Snd::fx(Snd::MOVE, Snd::P_AUTO); drawMenuItems(); }
+    if (menuRepDown.tick(cur.down, 300, 90)) { menuSel = (menuSel + 1) % n; Snd::fx(Snd::MOVE, Snd::P_AUTO); drawMenuItems(); }
     if (PRESSED(b) || PRESSED(back) || PRESSED(left)) { menuBack(); return; }
   }
   if (PRESSED(a) || PRESSED(start)) menuPick(menuSel);
@@ -1415,6 +1427,8 @@ void handleState() {
   j += ",\"snakeSpeed\":" + String(cfg.snakeSpeed);
   j += ",\"ledOn\":"; j += jb(cfg.ledOn);
   j += ",\"ledBri\":" + String(cfg.ledBri);
+  j += ",\"sndOn\":"; j += jb(cfg.sndOn);
+  j += ",\"sndVol\":" + String(cfg.sndVol);
   j += ",\"allowNew\":"; j += jb(cfg.allowNew);
   j += ",\"pairing\":" + String(pairSecondsLeft());
   j += ",\"hs\":[";
@@ -1453,6 +1467,9 @@ void handleSettings() {
   if (server.hasArg("snakeSpeed")) cfg.snakeSpeed = constrain(server.arg("snakeSpeed").toInt(), 0, 2);
   if (server.hasArg("ledOn"))      cfg.ledOn = server.arg("ledOn").toInt();
   if (server.hasArg("ledBri"))     cfg.ledBri = constrain(server.arg("ledBri").toInt(), 1, 100);
+  if (server.hasArg("sndOn"))      cfg.sndOn = server.arg("sndOn").toInt();
+  if (server.hasArg("sndVol"))     cfg.sndVol = constrain(server.arg("sndVol").toInt(), 5, 100);
+  Snd::config(cfg.sndOn, cfg.sndVol);
   if (server.hasArg("allowNew"))   cfg.allowNew = server.arg("allowNew").toInt();
   saveSettings();
   updateBtScan();
@@ -1641,6 +1658,15 @@ void webSetup() {
   server.on("/api/wifi", HTTP_POST, handleWifi);
   server.on("/api/bt", HTTP_POST, handleBt);
   server.on("/api/hsreset", HTTP_POST, handleHsReset);
+  server.on("/api/sndtest", HTTP_POST, []() {       // Klang anhoeren: id (-1 = stopp), v = Lautstaerke vom Regler
+    Snd::test(server.arg("id").toInt(), server.hasArg("v") ? server.arg("v").toInt() : -1);
+    sendJson("{\"ok\":true}");
+  });
+  server.on("/api/sndlist", HTTP_GET, []() {        // Namen der Klaenge (fuer die Auswahl zum Anhoeren)
+    String j = "[";
+    for (int i = 0; i < Snd::NUM; i++) { if (i) j += ','; j += '"'; j += Snd::NAMES[i]; j += '"'; }
+    sendJson(j + "]");
+  });
   server.on("/api/reboot", HTTP_POST, handleReboot);
   server.on("/api/sdupdate", HTTP_POST, handleSdUpdate);
   server.on("/api/toclock", HTTP_POST, []() {      // zur Uhr wechseln (z. B. damit sie ein RetroCYD-Update einspielt)
@@ -1928,7 +1954,7 @@ bool menuTouch() {
   const int v = (tTapY - top) / itemH;
   if (v < 0 || v >= visible || menuTop + v >= n) return false;
   const int i = menuTop + v;
-  if (i != menuSel && menuGame(i) >= 0) { menuSel = i; drawMenuItems(); return true; }
+  if (i != menuSel && menuGame(i) >= 0) { menuSel = i; Snd::fx(Snd::MOVE, Snd::P_AUTO); drawMenuItems(); return true; }
   menuPick(i);
   return true;
 }
@@ -1995,6 +2021,7 @@ void startGame(int g) {
   }
   tft.fillScreen(C_BG);
   Led::set({0, 0, 0});                         // im Spiel aus, ausser das Spiel setzt eine Farbe
+  Snd::fx(Snd::START);
   GAMES[g].start();
 }
 
@@ -2073,6 +2100,7 @@ void setup() {
   Serial.printf("RetroCYD %s, Wetteruhr im anderen Bereich: %s\n", FW_VERSION, clockPresent ? "ja" : "nein");
   loadSettings();
   Led::begin();
+  Snd::begin(cfg.sndOn, cfg.sndVol);
   for (int i = 0; i < NUM_GAMES; i++) highscore[i] = prefs.getUInt(GAMES[i].hsKey, 0);
 
   tft.selectPanel(cfg.st7789);
@@ -2131,6 +2159,7 @@ void loop() {
 
   if (PRESSED(y) && state != ST_SETUP) sdScreenshot();
   Kit::soundService();        // Motorton aus, wenn nicht mehr angefordert
+  Snd::service(state == ST_GAME && !paused);   // Test-Lautstaerke zuruecksetzen, Motorton aus
 
   if (state == ST_GAME && !holdOpen && longPress()) holdReq = true;   // Halte-Menue im Spiel
 

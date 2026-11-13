@@ -234,6 +234,57 @@
   X(W_BZ_QUIET,   "Kein Stundensignal w&auml;hrend der Zeitplan-Dimmung (Nachtruhe)", "No hourly chime during scheduled dimming (quiet hours)", "Pas de signal horaire pendant l'atténuation programmée (nuit)", \
                   "Sin señal horaria durante la atenuación programada (descanso)", "Nessun segnale orario durante l'attenuazione programmata (riposo)") \
   X(W_BZ_TOUCH,   "Klick bei Ber&uuml;hrung des Touch-Tasters", "Click when the touch button is touched", "Clic au toucher du bouton tactile", "Clic al tocar el botón táctil", "Clic al tocco del tasto touch") \
+  X(W_R_SPK,      "Lautsprecher", "Speaker", "Haut-parleur", "Altavoz", "Altoparlante") \
+  X(W_SND_VOL,    "Lautst&auml;rke:", "Volume:", "Volume :", "Volumen:", "Volume:") \
+  X(W_SND_HINT,   "&#9654; spielt einen Klang mit der Lautst&auml;rke des Reglers ab &ndash; auch ohne Speichern.", "&#9654; plays a sound at the slider volume &ndash; no need to save first.", \
+                  "&#9654; joue le son au volume du curseur &ndash; sans enregistrer.", "&#9654; reproduce el sonido con el volumen del control, sin guardar.", "&#9654; riproduce il suono al volume del cursore, senza salvare.") \
+  X(W_HR_ON,      "Stundengong zur vollen Stunde", "Hourly chime on the hour", "Carillon à chaque heure pile", "Campanada a la hora en punto", "Rintocco allo scoccare dell'ora") \
+  X(W_SND_QUIET,  "Ruhe w&auml;hrend der Zeitplan-Dimmung (kein Gong, keine Effekte)", "Quiet during scheduled dimming (no chime, no effects)", \
+                  "Silence pendant l'atténuation programmée (ni carillon ni effets)", "Silencio durante la atenuación programada (sin campanada ni efectos)", "Silenzio durante l'attenuazione programmata (niente rintocchi né effetti)") \
+  X(W_HRT0,       "Piep-Piep", "Beep-beep", "Bip-bip", "Bip-bip", "Bip-bip") \
+  X(W_HRT1,       "Westminster", "Westminster", "Westminster", "Westminster", "Westminster") \
+  X(W_HRT2,       "Kuckuck (z&auml;hlt die Stunde)", "Cuckoo (counts the hour)", "Coucou (compte l'heure)", "Cucú (cuenta la hora)", "Cucù (conta l'ora)") \
+  X(W_HRT3,       "Glockenschlag (z&auml;hlt die Stunde)", "Bell strikes (counts the hour)", "Cloche (compte l'heure)", "Campanadas (cuentan la hora)", "Rintocchi (contano l'ora)") \
+  X(W_HRT4,       "Arcade-M&uuml;nze", "Arcade coin", "Pièce d'arcade", "Moneda arcade", "Moneta arcade") \
+  X(W_HRT5,       "Glockenspiel", "Glockenspiel", "Carillon", "Carillón", "Glockenspiel") \
+  X(W_H_FX,       "Klang-Effekte", "Sound effects", "Effets sonores", "Efectos de sonido", "Effetti sonori") \
+  X(W_FX_POP,     "Feiertags-Einblendung: Melodie passend zum Tag", "Holiday pop-up: a tune to match the day", "Animation de fête : mélodie adaptée au jour", \
+                  "Animación de festivo: melodía según el día", "Animazione festiva: melodia adatta al giorno") \
+  X(W_FXN0,       "Weihnachten", "Christmas", "Noël", "Navidad", "Natale") \
+  X(W_FXN1,       "Silvester / Neujahr", "New Year", "Nouvel An", "Año Nuevo", "Capodanno") \
+  X(W_FXN2,       "Karneval (Tusch)", "Carnival (fanfare)", "Carnaval (fanfare)", "Carnaval (fanfarria)", "Carnevale (fanfara)") \
+  X(W_FXN3,       "Halloween", "Halloween", "Halloween", "Halloween", "Halloween") \
+  X(W_FXN4,       "Valentinstag / Muttertag", "Valentine's / Mother's Day", "Saint-Valentin / Fête des mères", "San Valentín / Día de la Madre", "San Valentino / Festa della mamma") \
+  X(W_FXN5,       "Ostern", "Easter", "Pâques", "Pascua", "Pasqua") \
+  X(W_FXN6,       "Ferien", "School holidays", "Vacances scolaires", "Vacaciones escolares", "Vacanze scolastiche") \
+  X(W_FXN7,       "Feiertag (Tr&ouml;te)", "Holiday (party horn)", "Jour férié (trompette)", "Festivo (matasuegras)", "Festività (trombetta)") \
+  X(W_FX_NYE,     "Silvester: letzte 10 Sekunden ticken, um 0 Uhr Feuerwerk", "New Year's Eve: ticking for the last 10 seconds, fireworks at midnight", \
+                  "Saint-Sylvestre : tic-tac les 10 dernières secondes, feu d'artifice à minuit", "Nochevieja: tictac los últimos 10 segundos, fuegos artificiales a medianoche", \
+                  "San Silvestro: ticchettio negli ultimi 10 secondi, fuochi d'artificio a mezzanotte") \
+  X(W_FX_UFO,     "UFO im Flugradar", "UFO on the flight radar", "OVNI sur le radar", "OVNI en el radar", "UFO sul radar") \
+  X(W_FX_STYLE,   "Automatischer Designwechsel (kurzer Ton)", "Automatic design change (short tone)", "Changement automatique de design (bip court)", \
+                  "Cambio automático de diseño (tono corto)", "Cambio automatico di design (tono breve)") \
+  X(W_FX_WX,      "Wetterwechsel: Regen, Schnee oder Gewitter beginnt", "Weather change: rain, snow or a thunderstorm starts", "Changement de météo : pluie, neige ou orage", \
+                  "Cambio de tiempo: empieza lluvia, nieve o tormenta", "Cambio meteo: inizia pioggia, neve o temporale") \
+  X(W_WX_RAIN,    "Regen", "Rain", "Pluie", "Lluvia", "Pioggia") \
+  X(W_WX_SNOW,    "Schnee", "Snow", "Neige", "Nieve", "Neve") \
+  X(W_WX_STORM,   "Gewitter", "Thunderstorm", "Orage", "Tormenta", "Temporale") \
+  X(W_FX_NOTE,    "Effekte schweigen im Standby, w&auml;hrend der Wecker klingelt und (wenn oben gew&auml;hlt) in der Nachtruhe. Silvester spielt immer, wenn eingeschaltet.", \
+                  "Effects stay silent in standby, while the alarm rings and (if selected above) during quiet hours. New Year's Eve always plays when enabled.", \
+                  "Les effets se taisent en veille, pendant le réveil et (si choisi plus haut) la nuit. La Saint-Sylvestre joue toujours si activée.", \
+                  "Los efectos callan en reposo, mientras suena la alarma y (si se elige arriba) en horas de silencio. Nochevieja suena siempre si está activada.", \
+                  "Gli effetti tacciono in standby, mentre suona la sveglia e (se scelto sopra) nelle ore di silenzio. San Silvestro suona sempre se attivo.") \
+  X(W_SND_STOP,   "Klang stoppen", "Stop sound", "Arrêter le son", "Detener sonido", "Ferma suono") \
+  X(W_AL_TONE,    "Weckton", "Alarm sound", "Sonnerie", "Sonido de alarma", "Suoneria") \
+  X(W_ALT0,       "Piepser", "Beeper", "Bips", "Pitidos", "Bip") \
+  X(W_ALT1,       "Klingel", "Bell ringer", "Sonnerie classique", "Timbre", "Campanello") \
+  X(W_ALT2,       "Fanfare", "Fanfare", "Fanfare", "Fanfarria", "Fanfara") \
+  X(W_ALT3,       "Kuckuck", "Cuckoo", "Coucou", "Cucú", "Cucù") \
+  X(W_ALT4,       "Gong (Ding-Dong)", "Gong (ding-dong)", "Gong (ding-dong)", "Gong (din-don)", "Gong (din-don)") \
+  X(W_ALT5,       "Morgenstimmung (Grieg)", "Morning Mood (Grieg)", "Au matin (Grieg)", "La mañana (Grieg)", "Il mattino (Grieg)") \
+  X(W_ALT6,       "Arcade", "Arcade", "Arcade", "Arcade", "Arcade") \
+  X(W_ALT7,       "Sirene", "Siren", "Sirène", "Sirena", "Sirena") \
+  X(W_ALT8,       "Vogelgezwitscher", "Birdsong", "Chant d'oiseaux", "Canto de pájaros", "Cinguettio") \
   X(W_BZ_TEST,    "Summer testen", "Test buzzer", "Tester le buzzer", "Probar el zumbador", "Prova il cicalino") \
   X(W_AL_ON,      "Wecker aktiv", "Alarm on", "Réveil actif", "Alarma activa", "Sveglia attiva") \
   X(W_AL_TIME,    "Weckzeit", "Alarm time", "Heure du réveil", "Hora de la alarma", "Orario sveglia") \

@@ -96,6 +96,7 @@ namespace Puff {
     hp--;
     invT = 60;
     vy = -3; vx = -face * 3;
+    Snd::fx(hp <= 1 ? Snd::DIE : Snd::CRASH);
     rumble(250, 0xA0);
     if (hp <= 0) { lives--; deadT = 60; spark(px, py - 8, 12, 25); }
   }
@@ -104,6 +105,7 @@ namespace Puff {
     f.on = false;
     score += pts;
     spark(f.x, f.y - 6, 8, 18);
+    Snd::fx(Snd::THUD);
     rumble(60, 0x60);
     if (spawnLeft > 0) { spawnFoe(); spawnLeft--; }
   }
@@ -130,12 +132,13 @@ namespace Puff {
     inhaling = cur.b && !full;
 
     if (E.a) {
-      if (ground) { vy = -6.2f; ground = false; flaps = 0; }
-      else if (!full && flaps < 6) { vy = -3.2f; flaps++; floating = true; rumble(15, 0x20); }
+      if (ground) { vy = -6.2f; ground = false; flaps = 0; Snd::fx(Snd::JUMP); }
+      else if (!full && flaps < 6) { vy = -3.2f; flaps++; floating = true; Snd::fx(Snd::FLAP); rumble(15, 0x20); }
     }
     if (full && E.b) {     // Stern spucken
       full = false;
       star = {px + face * 10, py - 8, face * 6.5f, true};
+      Snd::fx(Snd::SHOOT);
       rumble(80, 0x60);
     }
     float g = 0.38f;
@@ -168,7 +171,7 @@ namespace Puff {
         f.pulled = true;
         f.x += (dx > 0 ? 1 : -1) * 3.2f;
         f.y += dy * 0.12f;
-        if (fabsf(px - f.x) < 10 && fabsf(dy) < 14) { f.on = false; full = true; score += 50; rumble(60, 0x50);
+        if (fabsf(px - f.x) < 10 && fabsf(dy) < 14) { f.on = false; full = true; score += 50; Snd::fx(Snd::EAT); rumble(60, 0x50);
           if (spawnLeft > 0) { spawnFoe(); spawnLeft--; } continue; }
       } else {
         f.pulled = false;
@@ -199,7 +202,7 @@ namespace Puff {
       if (star.on && fabsf(star.x - f.x) < 12 && fabsf(star.y - (f.y - 7)) < 14) { defeat(f, 200); continue; }
       if (!inhaling && fabsf(px - f.x) < 12 && fabsf(dy) < 14) hurt();
     }
-    if (active == 0 && spawnLeft <= 0 && winT == 0) { winT = 60; score += 1000; }
+    if (active == 0 && spawnLeft <= 0 && winT == 0) { winT = 60; score += 1000; Snd::fx(Snd::WIN); }
     else if (active < 2 + stage / 2 && spawnLeft > 0 && tick % 45 == 0) { spawnFoe(); spawnLeft--; }
   }
 

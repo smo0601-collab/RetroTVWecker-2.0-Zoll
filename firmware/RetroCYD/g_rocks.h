@@ -79,7 +79,7 @@ namespace Rocks {
 
   void addScore(uint32_t v) {
     score += v;
-    if (score >= nextLife) { lives++; nextLife += 10000; rumble(150, 0x60); }
+    if (score >= nextLife) { lives++; nextLife += 10000; Snd::fx(Snd::LIFE, Snd::P_BIG); rumble(150, 0x60); }
   }
 
   void splitRock(Rock& r) {
@@ -89,6 +89,7 @@ namespace Rocks {
     r.on = false;
     addScore(size == 0 ? 20 : size == 1 ? 50 : 100);
     burst(x, y, 6 + (2 - size) * 3, C_GRAY);
+    Snd::fx(size == 0 ? Snd::CRASH : Snd::THUD);
     rumble(40, 0x40);
     if (size < 2) {
       spawnRock(x, y, size + 1);
@@ -100,6 +101,7 @@ namespace Rocks {
     alive = false;
     burst(sx, sy, 20, C_ORANGE);
     burst(sx, sy, 10, C_YELLOW);
+    Snd::big(Snd::BOOM);
     rumble(500, 0xD0);
     lives--;
     respawn = 75;
@@ -122,11 +124,13 @@ namespace Rocks {
           if (s.life > 0) continue;
           s = {sx + cosf(ang) * 10, sy + sinf(ang) * 10, cosf(ang) * 8 + svx, sinf(ang) * 8 + svy, 32};
           fireCd = 7;
+          Snd::fx(Snd::SHOOT);
           break;
         }
       }
       if (E.b) {   // Hypersprung
         burst(sx, sy, 8, C_CYAN);
+        Snd::fx(Snd::LOOP);
         sx = frand(20, SCR_W - 20); sy = frand(30, SCR_H - 20); svx = svy = 0;
         invul = 15;
       }
@@ -174,7 +178,7 @@ namespace Rocks {
       p.x += p.vx; p.y += p.vy; p.life--;
     }
     if (count == 0) {
-      if (levelWait == 0) levelWait = 45;
+      if (levelWait == 0) { levelWait = 45; Snd::fx(Snd::WIN); }
       else if (--levelWait == 0) { level++; startLevel(); }
     }
   }

@@ -306,7 +306,7 @@ Verstaerker fuer einen Lautsprecher, RGB-LED, USB. **Es muss nichts verdrahtet w
 | Display ILI9341 320 x 240 | SPI: SCK 14, MOSI 13, MISO 12, CS 15, DC 2 | gleiches Bild wie beim C3 |
 | Backlight | GPIO21 | **echte Helligkeitsregelung** (PWM), Standby schaltet das Licht ganz aus |
 | Touchscreen XPT2046 | CLK 25, MOSI 32, MISO 39, CS 33, IRQ 36 | die ganze Flaeche wirkt wie der Touch-Taster (siehe unten) |
-| Lautsprecher-Anschluss "SPEAK" | GPIO26 ueber Verstaerker | Wecker, Stundensignal, Klick; Ton per PWM (`BUZZER_TONE_HZ`, Standard 2700 Hz) |
+| Lautsprecher-Anschluss "SPEAK" | GPIO26 ueber Verstaerker | Wecker, Stundengong, Klick, Klang-Effekte; Ton per PWM (`sfx_core.h`) |
 | RGB-LED (Rueckseite) | GPIO4/16/17 | einstellbar (siehe unten "RGB-LED"); Wecker blinkt rot |
 
 **Bedienung am Touchscreen** (wie beim Touch-Taster): kurz tippen = naechstes Design aus der Wechsel-Liste,
@@ -318,6 +318,18 @@ steht der gemessene Druck (Z).
 **Ton:** einen kleinen Lautsprecher (8 Ohm, 0,5-2 W, Stecker JST 1,25 mm 2-polig) an "SPEAK" stecken. Ohne
 Lautsprecher bleibt die Uhr einfach stumm. Wer lieber einen **aktiven** 3-V-Summer nimmt: an CN1 (GPIO27 und GND),
 in `config.h` `PIN_BUZZER 27` und `BUZZER_TONE_HZ 0`.
+
+**Klaenge mit Lautsprecher (CYD):** Browser > "Summer & Wecker":
+
+- **Lautstaerke** (Regler, 5-100 %). Jeder Klang hat einen Knopf &#9654; zum Anhoeren - mit der Reglerstellung, ohne Speichern.
+- **Weckton**: Piepser, Klingel, Fanfare, Kuckuck, Gong, Morgenstimmung (Grieg), Arcade, Sirene, Vogelgezwitscher.
+- **Stundengong**: Piep-Piep, Westminster, Kuckuck und Glockenschlag (zaehlen die Stunde), Arcade-Muenze, Glockenspiel.
+- **Klang-Effekte** (einzeln abschaltbar): Melodie zur Feiertags-Einblendung (Weihnachten, Neujahr, Karneval,
+  Halloween, Valentinstag, Ostern, Ferien, sonst Troete; an stillen Feiertagen nichts), Silvester-Countdown mit
+  Feuerwerk um 0 Uhr, UFO im Flugradar, automatischer Designwechsel (Standard aus), Wetterwechsel (Regen, Schnee,
+  Gewitter beginnt).
+- Effekte schweigen im Standby, waehrend der Wecker klingelt und (wenn gewaehlt) waehrend der Zeitplan-Dimmung.
+- Die Toene sind Rechteckwellen per PWM (`sfx_core.h`, gleiche Ton-Engine wie in RetroCYD).
 
 **Stromversorgung:** USB-C oder Micro-USB mit 5 V, ca. 115 mA.
 

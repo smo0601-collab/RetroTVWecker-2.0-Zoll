@@ -119,13 +119,15 @@ namespace Racer {
     if (crashT > 0) crashT--;
     if (smokeT > 0) smokeT--;
     if (countT > 0) {
+      if (countT % 30 == 0) Snd::fx(Snd::COUNT1);         // Startampel piept
       countT--;
       const int ln = (countT + 29) / 30;                 // LED als Startampel: rot, orange, gelb, gruen
       Led::set(ln >= 3 ? Led::Rgb{255, 0, 0} : ln == 2 ? Led::Rgb{255, 90, 0} : Led::Rgb{255, 200, 0});
-      if (countT == 0) { snprintf(msg, sizeof(msg), "LOS!"); msgT = 30; rumble(150, 0x60); Led::set({0, 0, 0}); Led::flash({0, 255, 0}, 900); }
+      if (countT == 0) { snprintf(msg, sizeof(msg), "LOS!"); msgT = 30; Snd::fx(Snd::GO); rumble(150, 0x60); Led::set({0, 0, 0}); Led::flash({0, 255, 0}, 900); }
       return;
     }
     float sp = spd / MAXSPD;
+    Snd::engine((uint16_t)(85 + sp * 330 + (cur.a || cur.up ? 25 : 0)));   // Motor: hoeher mit dem Tempo
     bool gas = cur.a || cur.up;
     braking = cur.b || cur.down;
     if (crashT == 0) {
@@ -157,7 +159,7 @@ namespace Racer {
       uint32_t hh = hash(segIdx(seg));
       int side = (hh & 1) ? 1 : -1;
       if (fabsf(pX) > 1.3f && (hh % 5) < 2 && side == (pX > 0 ? 1 : -1) && sp > 0.15f && crashT == 0) {
-        spd *= 0.1f; crashT = 35; rumble(400, 0xD0); pX *= 0.6f;
+        spd *= 0.1f; crashT = 35; Snd::fx(Snd::CRASH); rumble(400, 0xD0); pX *= 0.6f;
       }
     }
     pX = constrain(pX, -2.0f, 2.0f);
@@ -172,6 +174,7 @@ namespace Racer {
         spd = min(spd, c.spd * 0.5f);
         crashT = 28;
         c.z = z + PLAYERZ + 300;
+        Snd::fx(Snd::CRASH);
         rumble(350, 0xC0);
       }
     }
@@ -186,6 +189,7 @@ namespace Racer {
       checks++;
       snprintf(msg, sizeof(msg), "+25 SEK");
       msgT = 60;
+      Snd::fx(Snd::POWER);
       rumble(200, 0x70);
     }
     score = meters + bonus;

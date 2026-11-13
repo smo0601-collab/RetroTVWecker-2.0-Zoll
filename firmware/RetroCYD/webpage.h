@@ -46,6 +46,11 @@ button.warn{background:#a02828}button.sec{background:#33335a}
 <label>Vibrationsstärke<input type="range" id="rumbleStr" min="20" max="255"></label>
 <label>LED-Effekte (Rückseite)<input type="checkbox" id="ledOn"></label>
 <label>LED-Helligkeit<input type="range" id="ledBri" min="1" max="100"></label>
+<label>Spiel-Sounds (Lautsprecher)<input type="checkbox" id="sndOn"></label>
+<label>Lautstärke<input type="range" id="sndVol" min="5" max="100"></label>
+<label>Klang anhören<select id="sndSel"></select></label>
+<button class="sec" onclick="post('/api/sndtest',{id:$('#sndSel').value,v:$('#sndVol').value})">&#9654; Anhören</button><button class="sec" onclick="post('/api/sndtest',{id:-1})">Stopp</button>
+<p class="small">Kleiner Lautsprecher (8 Ω, 0,5–2 W) am Anschluss „SPEAK“. Jede Vibration klingt mit, wichtige Ereignisse haben eigene Klänge. &#9654; spielt mit der Stellung des Reglers, auch ohne Speichern.</p>
 <label>Snake-Tempo<select id="snakeSpeed"><option value="0">Gemütlich</option><option value="1">Normal</option><option value="2">Schnell</option></select></label>
 <div class="small" id="hs"></div>
 <button class="warn" onclick="if(confirm('Alle Highscores löschen?'))post('/api/hsreset').then(()=>{toast('Gelöscht');load()})">Highscores zurücksetzen</button></section>
@@ -74,7 +79,8 @@ const $=s=>document.querySelector(s);
 const post=(u,d)=>fetch(u,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(d||{})}).then(r=>r.json()).catch(()=>({}));
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2500);}
-const VALS=['rot','bright','st7789','rumbleStr','snakeSpeed','ledBri'], CHK=['mirror','invert','rumbleOn','allowNew','ledOn'];
+const VALS=['rot','bright','st7789','rumbleStr','snakeSpeed','ledBri','sndVol'], CHK=['mirror','invert','rumbleOn','allowNew','ledOn','sndOn'];
+fetch('/api/sndlist').then(r=>r.json()).then(a=>{$('#sndSel').innerHTML=a.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');}).catch(()=>{});
 let first=true;
 async function load(){
  let s; try{s=await (await fetch('/api/state')).json();}catch(e){$('#info').textContent='keine Verbindung';return;}

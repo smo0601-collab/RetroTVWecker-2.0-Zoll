@@ -43,8 +43,8 @@
 #include "settings.h"
 #include "types.h"
 #include "cal.h"          // Kalender: Feiertage, besondere Tage, Schulferien
+#include "buzzer.h"       // Summer (ESP32-C3) bzw. Lautsprecher mit Klaengen (CYD), Wecker
 #include "faces.h"        // Themen-Zifferblaetter (Design 2..31)
-#include "buzzer.h"       // aktiver Piezo-Summer, Wecker
 
 #if DEBUG_SERIAL
 #define LOGF(...) Serial.printf(__VA_ARGS__)
@@ -251,6 +251,7 @@ static uint8_t  gPopId = 0;
 static bool     gPopOn = false;          // laeuft gerade
 static uint32_t gPopBlockedAt = 0;       // Einblendung liess sich nicht starten (Speicher): 10 min Pause
 static bool     gPopSayReq = false;      // Laufschrift mit dem Spruch des Tages starten
+static bool     gPopSndReq = false;      // Klang zur Einblendung (soundTick)
 static bool popNow() {
   static uint32_t at = 0;
   static bool v = false;
@@ -260,7 +261,7 @@ static bool popNow() {
   uint8_t id = 0;
   const bool blocked = gPopBlockedAt && now - gPopBlockedAt < 600000UL;
   v = !standby && !blocked && timeValid() && cal::popWant(id, gDimActive);
-  if (v && !gPopOn) { gPopId = id; gPopSayReq = true; }
+  if (v && !gPopOn) { gPopId = id; gPopSayReq = true; gPopSndReq = true; }
   gPopOn = v;
   return v;
 }
@@ -506,7 +507,7 @@ static void styleTick(uint32_t now) {
       if (listMask() & (1ULL << i)) { next = i; break; }
     }
   }
-  if (next >= 0 && next != gStyle) { gStyle = (uint8_t)next; needFull = true; gDbgSrc = 'A'; }
+  if (next >= 0 && next != gStyle) { gStyle = (uint8_t)next; needFull = true; gDbgSrc = 'A'; sndEvent(FX_STYLE); }
 }
 
 // ---------------------------------------------------------------------
@@ -612,10 +613,57 @@ static void startWake() {
 static void alarmStart(uint32_t now) {
   gAlarmRinging = true;
   gAlarmSince = now;
-  bz::play(BZ_PAT(bz::P_ALARM), true);
+  bz::alarm(gSet.alTone);
   if (standby) startWake();               // Display zum Wecken einschalten
   LOGF("Wecker klingelt\n");
 }
+
+#if SND_RICH
+static bool gSndTestVol = false;          // Test im Browser mit anderer Lautstaerke: danach zuruecksetzen
+// Wetter grob einteilen: 0 trocken, 1 Regen, 2 Schnee, 3 Gewitter
+static int wxClass(int c) {
+  if (c >= 95) return 3;
+  if ((c >= 71 && c <= 77) || c == 85 || c == 86) return 2;
+  if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) return 1;
+  return 0;
+}
+// Klang-Effekte (CYD-Lautsprecher): Ereignisse aus den Designs, Feiertag, Wetterwechsel, Silvester
+static void soundFx(const struct tm* t) {
+  if (gSndTestVol && !bz::busy()) { gSndTestVol = false; bz::setVolume(gSet.sndVol); }
+  const bool quiet = standby || gAlarmRinging || (gSet.bzQuiet && gDimActive);
+  const uint16_t ev = gSndEv;
+  gSndEv = 0;
+  if (!quiet) {
+    if ((ev & (1u << FX_UFO)) && (gSet.sndFx & FXB_UFO)) bz::fx(FX_UFO);
+    if ((ev & (1u << FX_STYLE)) && (gSet.sndFx & FXB_STYLE)) bz::fx(FX_STYLE);
+  }
+  if (gPopSndReq) {
+    gPopSndReq = false;
+    const uint8_t f = sndPopFx(gPopId);
+    if (!quiet && (gSet.sndFx & FXB_POP) && f != 255) bz::fx(f);
+  }
+  static uint32_t wxVer = 0;
+  static int wxCls = -1;
+  Weather w;
+  if (getWeather(w) && w.version != wxVer) {
+    wxVer = w.version;
+    const int c = wxClass(w.code);
+    if (wxCls >= 0 && c != wxCls && c > 0 && !quiet && (gSet.sndFx & FXB_WX)) bz::fx(c == 1 ? FX_RAIN : c == 2 ? FX_SNOW : FX_STORM);
+    wxCls = c;
+  }
+  if (t && (gSet.sndFx & FXB_NYE) && !gAlarmRinging) {     // Silvester: letzte 10 Sekunden ticken, um 0 Uhr Feuerwerk
+    static int lastNy = -1;
+    const bool eve = t->tm_mon == 11 && t->tm_mday == 31 && t->tm_hour == 23 && t->tm_min == 59 && t->tm_sec >= 50;
+    const bool mid = t->tm_mon == 0 && t->tm_mday == 1 && t->tm_hour == 0 && t->tm_min == 0 && t->tm_sec < 3;
+    const int key = eve ? t->tm_sec : (mid ? 60 : -1);
+    if (key >= 0 && key != lastNy) {
+      if (key == 60) bz::fx(FX_NEWYEAR, bz::PR_TEST);
+      else bz::fx(FX_NYTICK, bz::PR_CHIME);
+    }
+    lastNy = key;
+  }
+}
+#endif
 
 static void soundTick(uint32_t now) {
   bz::tick(now);
@@ -624,10 +672,18 @@ static void soundTick(uint32_t now) {
   static int lastMin = -1;
   if (now - last < 500) return;
   last = now;
-  if (!timeValid()) return;
+  if (!timeValid()) {
+#if SND_RICH
+    soundFx(nullptr);
+#endif
+    return;
+  }
   time_t n = time(nullptr);
   struct tm t;
   localtime_r(&n, &t);
+#if SND_RICH
+  soundFx(&t);
+#endif
   const int m = t.tm_hour * 60 + t.tm_min;
   if (m == lastMin) return;               // jede Minute nur einmal pruefen
   const bool first = (lastMin < 0);
@@ -636,7 +692,7 @@ static void soundTick(uint32_t now) {
   const int wd = (t.tm_wday + 6) % 7;     // 0 = Montag
   if (gSet.alOn && m == gSet.alTime && (gSet.alDays & (1 << wd))) { alarmStart(now); return; }
   if (gSet.bzHour && t.tm_min == 0 && !gAlarmRinging && !(gSet.bzQuiet && gDimActive))
-    bz::play(BZ_PAT(bz::P_HOUR));
+    bz::chime(gSet.hrTone, t.tm_hour);
 }
 
 // ---------------------------------------------------------------------
@@ -665,7 +721,7 @@ static void touchTick(uint32_t now) {
       gTouchCount++; gTouchLastMs = now;
       LOGF("Touch: Beruehrung erkannt (%lu)\n", (unsigned long)gTouchCount);
       if (gAlarmRinging) { alarmStop(); longDone = true; return; }   // klingelnder Wecker: nur abstellen
-      if (gSet.bzTouch && !bz::busy()) bz::play(BZ_PAT(bz::P_CLICK));
+      if (gSet.bzTouch && !bz::busy()) bz::click();
       if (standby) { startWake(); longDone = true; }   // Beruehrung weckt, ohne weitere Aktion
     }
   } else {
@@ -1849,6 +1905,7 @@ void setup() {
 #endif
   bz::init();                    // Summer-Pin sofort auf "aus"
   settingsLoad();
+  bz::setVolume(gSet.sndVol);
   cal::load();                   // gespeicherte Schulferien
   gStyle = listStyle(gSet.clockStyle);   // aktiver Wechsel: gleich mit einem Design aus der Liste starten
   gStyleSince = millis();
