@@ -158,7 +158,7 @@ bool clockPresent = false;   // Wetteruhr im anderen Programmbereich?
 uint32_t toClockAt = 0;      // Browser: zur Uhr wechseln (Zeitpunkt, 0 = nein)
 uint32_t relayToken = 0;     // Update-Modus fuer die Uhr (von der Uhr angefordert), 0 = aus
 
-#define FW_VERSION "4.0.1"
+#define FW_VERSION "4.0.2"
 #define AP_SSID    "RetroCYD-Setup"
 #define HOSTNAME   "retrocyd"
 

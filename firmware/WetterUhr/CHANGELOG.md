@@ -4,6 +4,18 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.13-3 - Browser-Seite bleibt erreichbar (Speicher)
+
+- Die Browser-Seite wird im neuen Ton-Bereich in kleinen Stuecken gesendet (vorher ein grosser Block von mehreren
+  KB, der bei knappem Speicher fehlschlagen konnte).
+- Flugradar: Bei wenig freiem Speicher wird die dauerhaft offene TLS-Verbindung nach jedem Abruf geschlossen
+  (gibt rund 40 KB frei), damit die Uhr im Browser erreichbar bleibt.
+- Ton-Task wieder mit kleinerem Stack (2,5 KB reichen ohne Treiberaufrufe).
+- Status: freier Speicher zusaetzlich mit dem groessten zusammenhaengenden Block.
+- RetroCYD 4.0.2: gleiche Ton-Engine (kleinerer Stack).
+
+Geaenderte Dateien: `webui.h`, `WetterUhr.ino`, `sfx_core.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.13-2 - Korrektur: Absturz und Knacken beim Abspielen von Klaengen (CYD)
 
 - Die Tonhoehe wurde bisher mit `ledcChangeFrequency` umgestellt. Das konfiguriert den LEDC-Zeitgeber jedes Mal

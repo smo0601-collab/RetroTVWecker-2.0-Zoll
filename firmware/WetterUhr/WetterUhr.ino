@@ -1095,7 +1095,9 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
     err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
   }
   http.end();                                        // Verbindung bleibt wegen setReuse(true) offen
-  if (err) gRadarClient->stop();
+  // Wenig freier Speicher: TLS-Verbindung schliessen (gibt rund 40 KB frei), damit die Browser-Seite
+  // weiter erreichbar bleibt. Der naechste Abruf baut sie neu auf.
+  if (err || ESP.getFreeHeap() < 60000 || ESP.getMaxAllocHeap() < 24000) gRadarClient->stop();
   if (err) { LOGF("Radar: JSON %s\n", err.c_str()); return false; }
   JsonArray arr = doc["ac"].as<JsonArray>();
   if (arr.isNull()) arr = doc["aircraft"].as<JsonArray>();

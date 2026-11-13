@@ -589,7 +589,7 @@ static void handleRoot() {
     rowh(W_R_ALARM, hhmm(gSet.alTime) + (d.length() ? String("  ") + d : String(TR(W_NO_DAY))));
   } else rowh(W_R_ALARM, TR(W_OFF));
   rowh(W_R_LANG, LANG_NAME[LANG_IDX]);
-  row(W_R_HEAP, String(ESP.getFreeHeap()) + " Bytes");
+  row(W_R_HEAP, String(ESP.getFreeHeap()) + " Bytes (" + String(ESP.getMaxAllocHeap()) + " am Stück)");
   row(W_R_BOARD, boardName());
   row(W_R_PANEL, boardPanelInfo());
 #if BOARD_CYD
@@ -795,6 +795,7 @@ static void handleRoot() {
     p += k; p += F("',"); p += n; p += F(")\">&#9654;</button>");
   };
   auto opts = [&](const char* name, uint16_t first, int count, int cur) {
+    fl();                                                 // Seite stueckweise senden: kleiner Puffer, wenig RAM
     p += F("<div style='display:flex;align-items:center'><select name="); p += name; p += F(" id="); p += name; p += F(" style='flex:1'>");
     for (int i = 0; i < count; i++) { p += F("<option value="); p += String(i); sel(cur == i); p += '>'; T(first + i); p += F("</option>"); }
     p += F("</select>");
@@ -814,6 +815,7 @@ static void handleRoot() {
 #endif
   p += F("<h2>"); T(W_H_FX); p += F("</h2>");
   auto fxRow = [&](uint8_t bit, uint16_t txt, const char* n) {
+    fl();
     p += F("<div style='display:flex;align-items:center'><label style='flex:1'><input type=checkbox name=sfx"); p += String(bit);
     p += F(" value=1"); chk(gSet.sndFx & (1 << bit)); p += '>'; T(txt); p += F("</label>");
     if (n) play("f", n);

@@ -184,7 +184,7 @@ static void begin(int p, uint8_t ch = 0) {
   }
   srcHz = LEDC.timer_group[grp].timer[tmr].conf.tick_sel ? 80000000UL : 1000000UL;
   hwDuty(0); lastF = 2000; lastD = 0;
-  xTaskCreatePinnedToCore(taskFn, "sfx", 4096, nullptr, 2, &task, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(taskFn, "sfx", 2560, nullptr, 2, &task, ARDUINO_RUNNING_CORE);
 }
 static bool ready() { return task != nullptr; }
 static void wake() { if (task) xTaskNotifyGive(task); }
