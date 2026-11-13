@@ -20,9 +20,9 @@ namespace Led {
   bool inited = false;
 
   void begin() {
-    ledcSetup(CH_R, 5000, 8); ledcAttachPin(PR, CH_R);
-    ledcSetup(CH_G, 5000, 8); ledcAttachPin(PG, CH_G);
-    ledcSetup(CH_B, 5000, 8); ledcAttachPin(PB, CH_B);
+    ledcSetup(CH_R, 25000, 8); ledcAttachPin(PR, CH_R);
+    ledcSetup(CH_G, 25000, 8); ledcAttachPin(PG, CH_G);
+    ledcSetup(CH_B, 25000, 8); ledcAttachPin(PB, CH_B);
     ledcWrite(CH_R, 255); ledcWrite(CH_G, 255); ledcWrite(CH_B, 255);   // 255 = aus (LOW = an)
     inited = true;
   }

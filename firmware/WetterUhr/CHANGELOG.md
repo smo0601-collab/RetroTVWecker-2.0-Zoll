@@ -4,6 +4,26 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.13-4 - Keine Stoergeraeusche mehr im Lautsprecher (CYD)
+
+- Hintergrundbeleuchtung (PWM 2 kHz) und RGB-LED (5 kHz) wurden mit hoerbaren Frequenzen gedimmt. Der Strom
+  dafuer koppelt in den Lautsprecher-Verstaerker ein: dauerndes Pfeifen/Brummen, sobald ein Lautsprecher steckt
+  und die Helligkeit unter 100 % liegt oder die LED leuchtet. Jetzt beide mit 25 kHz (unhoerbar).
+- RetroCYD 4.0.3: RGB-LED ebenfalls mit 25 kHz (die Hintergrundbeleuchtung lief dort schon mit 44 kHz).
+
+Geaenderte Dateien: `config.h`, `led.h`, `CHANGELOG.md`
+
+## 2026.11.13-4 - Weniger Stoergeraeusche im Lautsprecher (CYD)
+
+- In Ruhe wird der Lautsprecher-Ausgang (GPIO 26) jetzt abgeschaltet (hochohmig mit schwachem Pull-down) statt
+  aktiv auf 0 V gehalten. Ein aktiv getriebener Pin koppelt Stoerungen von WLAN und Display in den Verstaerker -
+  das war als dauerndes Brummen/Zirpen zu hoeren. Beim naechsten Klang wird er wieder eingeschaltet (kein Knacken,
+  gleiche Spannung).
+- Abschaltbar unter "Summer & Wecker" (Lautsprecher-Ausgang in Ruhe abschalten), zum Vergleichen.
+- RetroCYD 4.0.3 mit derselben Aenderung.
+
+Geaenderte Dateien: `sfx_core.h`, `buzzer.h`, `webui.h`, `lang_web.h`, `WetterUhr.ino`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.13-3 - Browser-Seite bleibt erreichbar (Speicher)
 
 - Die Browser-Seite wird im neuen Ton-Bereich in kleinen Stuecken gesendet (vorher ein grosser Block von mehreren

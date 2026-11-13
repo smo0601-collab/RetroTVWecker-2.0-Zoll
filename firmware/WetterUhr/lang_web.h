@@ -240,6 +240,8 @@
   X(W_SND_VOL,    "Lautst&auml;rke:", "Volume:", "Volume :", "Volumen:", "Volume:") \
   X(W_SND_HINT,   "&#9654; spielt einen Klang mit der Lautst&auml;rke des Reglers ab &ndash; auch ohne Speichern.", "&#9654; plays a sound at the slider volume &ndash; no need to save first.", \
                   "&#9654; joue le son au volume du curseur &ndash; sans enregistrer.", "&#9654; reproduce el sonido con el volumen del control, sin guardar.", "&#9654; riproduce il suono al volume del cursore, senza salvare.") \
+  X(W_SND_IDLE,   "Lautsprecher-Ausgang in Ruhe abschalten (gegen St&ouml;rger&auml;usche)", "Switch speaker output off when silent (against noise)", \
+                  "Couper la sortie haut-parleur au repos (contre les parasites)", "Apagar la salida del altavoz en reposo (contra ruidos)", "Spegni l'uscita altoparlante a riposo (contro i disturbi)") \
   X(W_HR_ON,      "Stundengong zur vollen Stunde", "Hourly chime on the hour", "Carillon à chaque heure pile", "Campanada a la hora en punto", "Rintocco allo scoccare dell'ora") \
   X(W_SND_QUIET,  "Ruhe w&auml;hrend der Zeitplan-Dimmung (kein Gong, keine Effekte)", "Quiet during scheduled dimming (no chime, no effects)", \
                   "Silence pendant l'atténuation programmée (ni carillon ni effets)", "Silencio durante la atenuación programada (sin campanada ni efectos)", "Silenzio durante l'attenuazione programmata (niente rintocchi né effetti)") \

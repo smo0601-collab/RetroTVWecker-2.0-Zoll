@@ -72,7 +72,7 @@
 // ---------------------------------------------------------------------
 // Firmware-Version (im Browser unter Status und System sichtbar; bei jeder neuen Version erhoehen)
 // ---------------------------------------------------------------------
-#define FW_VERSION "2026.11.13-3"
+#define FW_VERSION "2026.11.13-4"
 
 // Update ueber WLAN aus der Arduino IDE (Netzwerk-Port), 1 = an. Passwort = Web-Passwort (falls gesetzt).
 #define ARDUINO_OTA          1
@@ -186,7 +186,7 @@
 #endif
 #define ALARM_MAX_MS         (5UL * 60UL * 1000UL)   // Wecker verstummt spaetestens nach 5 Minuten
 
-#define BL_PWM_FREQ          2000
+#define BL_PWM_FREQ          25000  // ueber dem Hoerbereich: sonst pfeift die Hintergrundbeleuchtung im Lautsprecher (CYD)
 #define BL_PWM_CHANNEL       0    // nur fuer aeltere ESP32-Cores (2.x)
 
 // ---------------------------------------------------------------------

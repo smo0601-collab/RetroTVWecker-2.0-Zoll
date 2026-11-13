@@ -16,6 +16,9 @@
 #include <esp_arduino_version.h>
 #include <driver/ledc.h>
 #include <soc/ledc_struct.h>
+#include <driver/gpio.h>
+#include <esp_rom_gpio.h>
+#include <soc/gpio_sig_map.h>
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
 #include "esp32-hal-periman.h"
 #endif
@@ -124,6 +127,29 @@ static void hwDuty(uint32_t d) {
   ledcWrite(chan, d);
 #endif
 }
+// Ruhezustand: Ausgang abschalten (hochohmig, schwacher Pull-down). Ein aktiv auf 0 V gehaltener Pin koppelt
+// Stoerungen von WLAN und Display (Masse des ESP32) in den Verstaerker - das brummt/zirpt dauernd im Lautsprecher.
+// Gleiche Gleichspannung wie vorher (0 V), daher kein Knacken beim Umschalten.
+static volatile bool idleOff = true;           // abschaltbar (Einstellung in der Uhr)
+static bool driven = true;
+static void release() {
+  if (!driven || !idleOff || pin < 0) return;
+  gpio_set_pull_mode((gpio_num_t)pin, GPIO_PULLDOWN_ONLY);
+  gpio_set_direction((gpio_num_t)pin, GPIO_MODE_INPUT);
+  driven = false;
+}
+static uint8_t hwCh = 0;                       // LEDC-Kanal innerhalb der Gruppe (0..7)
+static void connectOut() {                     // Ausgang einschalten und das LEDC-Signal wieder auf den Pin legen
+  gpio_set_pull_mode((gpio_num_t)pin, GPIO_FLOATING);
+  gpio_set_direction((gpio_num_t)pin, GPIO_MODE_OUTPUT);
+  esp_rom_gpio_connect_out_signal(pin, (grp == (ledc_mode_t)0 ? LEDC_HS_SIG_OUT0_IDX : LEDC_LS_SIG_OUT0_IDX) + hwCh, false, false);
+}
+static void drive() {
+  if (driven || pin < 0) return;
+  connectOut();
+  driven = true;
+}
+
 static void out(uint32_t f, uint32_t lvl) {
   uint32_t d = 0;
   if (f && lvl && vol) {
@@ -137,12 +163,18 @@ static void out(uint32_t f, uint32_t lvl) {
   }
   if (d && f != lastF) { hwFreq(f); lastF = f; }
   if (d != lastD) { hwDuty(d); lastD = d; }
+  if (d) drive();
 }
 
 static void taskFn(void*) {
   uint32_t seen = 0;
   for (;;) {
-    if (!pl.act && !motorF) { out(0, 0); active = false; curPrio = 0; ulTaskNotifyTake(pdTRUE, portMAX_DELAY); }
+    if (!pl.act && !motorF) {
+      out(0, 0); active = false; curPrio = 0;
+      vTaskDelay(20);                                  // Puls sicher zu Ende, dann Ausgang abschalten
+      if (!pl.act && !motorF && pendSer == seen) release();
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
     const uint32_t now = millis();
     portENTER_CRITICAL(&mux);
     const bool st = pendStop; pendStop = false;
@@ -170,11 +202,13 @@ static void begin(int p, uint8_t ch = 0) {
   if (!b) return;
   grp = (ledc_mode_t)(b->channel / SOC_LEDC_CHANNEL_NUM);
   tmr = (ledc_timer_t)b->timer_num;
+  hwCh = (uint8_t)(b->channel % SOC_LEDC_CHANNEL_NUM);
 #else
   ledcSetup(chan, 2000, 10);
   ledcAttachPin(pin, chan);
   grp = (ledc_mode_t)(chan / 8);
   tmr = (ledc_timer_t)((chan / 2) % 4);
+  hwCh = (uint8_t)(chan % 8);
 #endif
   // Zeitgeber sicher am APB-Takt (80 MHz) betreiben, damit der ganze Tonbereich 80..9000 Hz geht
   if (!LEDC.timer_group[grp].timer[tmr].conf.tick_sel) {
@@ -184,6 +218,8 @@ static void begin(int p, uint8_t ch = 0) {
   }
   srcHz = LEDC.timer_group[grp].timer[tmr].conf.tick_sel ? 80000000UL : 1000000UL;
   hwDuty(0); lastF = 2000; lastD = 0;
+  driven = true;
+  release();
   xTaskCreatePinnedToCore(taskFn, "sfx", 2560, nullptr, 2, &task, ARDUINO_RUNNING_CORE);
 }
 static bool ready() { return task != nullptr; }
@@ -212,6 +248,13 @@ static void stop() {
 static bool busy() { return active && curPrio > 0; }
 static uint8_t prio() { return active ? curPrio : 0; }
 static void setVolume(uint8_t v) { vol = v > 100 ? 100 : v; }
+// Ausgang in Ruhe abschalten (Standard) oder dauernd auf 0 V halten
+static void setIdleOff(bool on) {
+  idleOff = on;
+  if (!task) return;
+  if (!on && !driven) { connectOut(); driven = true; }
+  else if (on && !active) release();
+}
 // Dauerton (0 = aus); laeuft nur, solange kein anderer Klang spielt
 static void motor(uint16_t f) { if (motorF != f) { motorF = f; wake(); } }
 

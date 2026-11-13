@@ -23,7 +23,7 @@
 #define SND_AL_COUNT  9     // Wecktoene
 #define SND_HR_COUNT  6     // Stundengong
 // Effekte (Bits in gSet.sndFx)
-enum : uint8_t { FXB_POP = 1, FXB_NYE = 2, FXB_UFO = 4, FXB_STYLE = 8, FXB_WX = 16 };
+enum : uint8_t { FXB_POP = 1, FXB_NYE = 2, FXB_UFO = 4, FXB_STYLE = 8, FXB_WX = 16, FXB_HOLD = 0x80 };   // HOLD: Ausgang in Ruhe nicht abschalten
 #define SND_FX_DEFAULT (FXB_POP | FXB_NYE | FXB_UFO | FXB_WX)
 // Effekt-Kennungen (Test im Browser, Ereignisse aus den Designs)
 enum : uint8_t {
@@ -136,6 +136,7 @@ static void fx(uint8_t id, uint8_t prio = PR_FX) { if (id < FX_COUNT) sfx::play(
 static void alarmTest(uint8_t i) { const Tone& t = ALARMS[i < SND_AL_COUNT ? i : 0]; sfx::play(t.s, PR_TEST, 1); }
 static void test() { chime(0, 0, PR_TEST); }
 static void setVolume(uint8_t v) { sfx::setVolume(v); }
+static void setIdleOff(bool on) { sfx::setIdleOff(on); }
 
 #else
 // =====================================================================
@@ -191,6 +192,7 @@ static void fx(uint8_t, uint8_t = 0) {}
 static void alarmTest(uint8_t) { play(BZ_PAT(P_ALARM)); }
 static void test() { play(BZ_PAT(P_TEST)); }
 static void setVolume(uint8_t) {}
+static void setIdleOff(bool) {}
 #endif
 
 }  // namespace bz

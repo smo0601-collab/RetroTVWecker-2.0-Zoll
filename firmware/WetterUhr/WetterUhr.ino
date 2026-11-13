@@ -1908,6 +1908,7 @@ void setup() {
   bz::init();                    // Summer-Pin sofort auf "aus"
   settingsLoad();
   bz::setVolume(gSet.sndVol);
+  bz::setIdleOff(!(gSet.sndFx & FXB_HOLD));
   cal::load();                   // gespeicherte Schulferien
   gStyle = listStyle(gSet.clockStyle);   // aktiver Wechsel: gleich mit einem Design aus der Liste starten
   gStyleSince = millis();

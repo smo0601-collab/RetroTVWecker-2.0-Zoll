@@ -804,6 +804,8 @@ static void handleRoot() {
   p += String(gSet.sndVol);
   p += F("</span> %</label><input id=svol name=svol type=range min=5 max=100 value="); p += String(gSet.sndVol);
   p += F(" oninput=\"svv.textContent=this.value\"><small>"); T(W_SND_HINT); p += F("</small>");
+  p += F("<label><input type=checkbox name=sidle value=1"); chk(!(gSet.sndFx & FXB_HOLD));
+  p += F(">"); T(W_SND_IDLE); p += F("</label>");
   p += F("<label><input type=checkbox name=bzhr value=1"); chk(gSet.bzHour);
   p += F(">"); T(W_HR_ON); p += F("</label>");
   opts("hrtone", W_HRT0, SND_HR_COUNT, gSet.hrTone); play("h", "hrtone.value"); p += F("</div>");
@@ -1189,6 +1191,7 @@ static void handleSave() {
     n.hrTone = (uint8_t)constrain(server.arg("hrtone").toInt(), 0, SND_HR_COUNT - 1);
     n.sndFx = 0;
     for (int i = 0; i < 5; i++) if (server.hasArg(String("sfx") + i)) n.sndFx |= (uint8_t)(1 << i);
+    if (!server.hasArg("sidle")) n.sndFx |= FXB_HOLD;
   }
 #endif
   n.nyeAuto = server.hasArg("nyeauto");
@@ -1245,6 +1248,7 @@ static void handleSave() {
   gSet = n;
   settingsSave();
   bz::setVolume(gSet.sndVol);
+  bz::setIdleOff(!(gSet.sndFx & FXB_HOLD));
   gHolAt = 0;                                         // Feiertags-Fenster neu berechnen
   if (ntpChanged) {                     // NTP ein/aus ohne Neustart
     if (!gSet.ntpOn) ntpStop();

@@ -32,9 +32,9 @@ static bool  wxDay = true;
 static uint32_t wxAt = 0;
 
 static void begin() {
-  ledcAttach(PIN_LED_R, 5000, 8);
-  ledcAttach(PIN_LED_G, 5000, 8);
-  ledcAttach(PIN_LED_B, 5000, 8);
+  ledcAttach(PIN_LED_R, 25000, 8);
+  ledcAttach(PIN_LED_G, 25000, 8);
+  ledcAttach(PIN_LED_B, 25000, 8);
   ledcWrite(PIN_LED_R, 255); ledcWrite(PIN_LED_G, 255); ledcWrite(PIN_LED_B, 255);   // LOW = an -> 255 = aus
   inited = true;
 }

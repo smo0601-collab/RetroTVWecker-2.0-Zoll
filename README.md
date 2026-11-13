@@ -167,7 +167,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.13-3`](releases/2026.11.13-3): Uhr 2026.11.13-3 mit RetroCYD 4.0.2), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.13-4`](releases/2026.11.13-4): Uhr 2026.11.13-4 mit RetroCYD 4.0.3), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
