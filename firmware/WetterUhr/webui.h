@@ -603,6 +603,16 @@ static void handleRoot() {
   }
 #endif
   row(W_R_FW, String(FW_VERSION) + "  (" + TR(W_BUILT) + " " + __DATE__ + " " + __TIME__ + ")");
+  {                                                   // Grund des letzten Neustarts (Fehlersuche: Absturz, Spannungseinbruch ...)
+    static const char* const RR[] = {"?", "Einschalten / Power-on", "extern", "Software (Neustart)", "PANIC (Absturz)",
+                                     "Interrupt-Watchdog", "Task-Watchdog", "Watchdog", "Deep-Sleep",
+                                     "BROWNOUT (Spannungseinbruch)", "SDIO"};
+    const int r = (int)esp_reset_reason();
+    char b[96];
+    snprintf(b, sizeof(b), "%s, %s %lu min", r >= 0 && r < (int)(sizeof(RR) / sizeof(RR[0])) ? RR[r] : "?", TR(W_UPTIME),
+             (unsigned long)(millis() / 60000UL));
+    rowh(W_R_RESET, b);
+  }
   p += F("</table>");
   if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }
   p += F("</section>");

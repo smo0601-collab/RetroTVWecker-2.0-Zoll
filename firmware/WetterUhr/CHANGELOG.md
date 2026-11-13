@@ -4,6 +4,20 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.13-2 - Korrektur: Absturz und Knacken beim Abspielen von Klaengen (CYD)
+
+- Die Tonhoehe wurde bisher mit `ledcChangeFrequency` umgestellt. Das konfiguriert den LEDC-Zeitgeber jedes Mal
+  komplett neu und setzt ihn zurueck - bei Gleittoenen und Rauschen bis zu 1000-mal pro Sekunde. Folge: Knacken
+  und (sehr wahrscheinlich) die Abstuerze, auch bei Klaengen, die ein Wetterwechsel oder das UFO ausloest.
+  Jetzt wird nur noch der Teiler des eigenen Zeitgebers im Register umgestellt (kein Treiberaufruf, kein Reset).
+- Ton-Task mit mehr Stack (4 KB) und niedrigerem Vorrang.
+- Hoechstens 35 % Tastverhaeltnis: weniger Spitzenstrom fuer den Verstaerker (kaum leiser).
+- Status: neue Zeile "Letzter Neustart" mit dem Grund (z. B. PANIC = Absturz, BROWNOUT = Spannungseinbruch)
+  und Laufzeit - hilft bei der Fehlersuche.
+- RetroCYD 4.0.1 mit derselben Ton-Korrektur.
+
+Geaenderte Dateien: `sfx_core.h`, `webui.h`, `lang_web.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.13 - Klaenge fuer den CYD-Lautsprecher, mit Test im Browser
 
 - CYD mit Lautsprecher an "SPEAK": neue Ton-Engine (`sfx_core.h`) mit Melodien, Gleittoenen, Rauschen und

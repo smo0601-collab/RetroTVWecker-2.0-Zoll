@@ -14,6 +14,11 @@
 #ifndef SFX_HOST
 #include <Arduino.h>
 #include <esp_arduino_version.h>
+#include <driver/ledc.h>
+#include <soc/ledc_struct.h>
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+#include "esp32-hal-periman.h"
+#endif
 #endif
 #include <stdint.h>
 
@@ -97,13 +102,20 @@ static TaskHandle_t task = nullptr;
 static int pin = -1;
 static uint8_t chan = 0;
 static uint32_t lastF = 0, lastD = 0;
+static ledc_mode_t grp = (ledc_mode_t)0;
+static ledc_timer_t tmr = (ledc_timer_t)0;
 
+static uint32_t srcHz = 80000000;
+
+// Tonhoehe: nur den Teiler des eigenen Zeitgebers direkt im Register umstellen (Festkomma 10.8).
+// Kein Treiberaufruf, kein Neustart des Zeitgebers, kein Knacken, keine Sperren - auch 1000-mal pro Sekunde.
+// (Frueher ledcChangeFrequency: konfiguriert den Zeitgeber jedes Mal komplett neu und setzt ihn zurueck.)
 static void hwFreq(uint32_t f) {
-#if ESP_ARDUINO_VERSION_MAJOR >= 3
-  ledcChangeFrequency(pin, f, 10);
-#else
-  ledcChangeFrequency(chan, f, 10);
-#endif
+  uint64_t div = ((uint64_t)srcHz << 8) / ((uint64_t)f << 10);
+  if (div < 256) div = 256;
+  if (div > 0x3FFFF) div = 0x3FFFF;
+  LEDC.timer_group[grp].timer[tmr].conf.clock_divider = (uint32_t)div;
+  if (grp != (ledc_mode_t)0) LEDC.timer_group[grp].timer[tmr].conf.low_speed_update = 1;
 }
 static void hwDuty(uint32_t d) {
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
@@ -118,11 +130,12 @@ static void out(uint32_t f, uint32_t lvl) {
     if (f > 9000) f = 9000;
     if (f < 80) f = 80;                                   // LEDC: tiefer geht mit 10 Bit nicht sicher
     const uint32_t v = vol;
-    const uint32_t base = 1 + 511 * v * v * v / 1000000;   // 1..512 (kubisch: leise Stufen fein einstellbar)
+    const uint32_t base = 1 + 359 * v * v * v / 1000000;   // 1..360 = hoechstens 35 % Tastverhaeltnis (kubisch: leise
+                                                            // Stufen fein einstellbar; weniger Spitzenstrom fuer den Verstaerker)
     d = base * lvl / 255;
     if (!d) d = 1;
   }
-  if (d && f != lastF) { hwFreq(f); lastF = f; lastD = 0xFFFF; }
+  if (d && f != lastF) { hwFreq(f); lastF = f; }
   if (d != lastD) { hwDuty(d); lastD = d; }
 }
 
@@ -152,13 +165,26 @@ static void begin(int p, uint8_t ch = 0) {
   if (task || p < 0) return;
   pin = p; chan = ch;
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
-  ledcAttach(pin, 1000, 10);
+  if (!ledcAttach(pin, 2000, 10)) return;
+  const ledc_channel_handle_t* b = (const ledc_channel_handle_t*)perimanGetPinBus(pin, ESP32_BUS_TYPE_LEDC);
+  if (!b) return;
+  grp = (ledc_mode_t)(b->channel / SOC_LEDC_CHANNEL_NUM);
+  tmr = (ledc_timer_t)b->timer_num;
 #else
-  ledcSetup(chan, 1000, 10);
+  ledcSetup(chan, 2000, 10);
   ledcAttachPin(pin, chan);
+  grp = (ledc_mode_t)(chan / 8);
+  tmr = (ledc_timer_t)((chan / 2) % 4);
 #endif
-  hwDuty(0); lastF = 1000; lastD = 0;
-  xTaskCreatePinnedToCore(taskFn, "sfx", 2560, nullptr, 3, &task, ARDUINO_RUNNING_CORE);
+  // Zeitgeber sicher am APB-Takt (80 MHz) betreiben, damit der ganze Tonbereich 80..9000 Hz geht
+  if (!LEDC.timer_group[grp].timer[tmr].conf.tick_sel) {
+    ledc_timer_config_t tc = {};
+    tc.speed_mode = grp; tc.timer_num = tmr; tc.duty_resolution = LEDC_TIMER_10_BIT; tc.freq_hz = 2000; tc.clk_cfg = LEDC_USE_APB_CLK;
+    ledc_timer_config(&tc);
+  }
+  srcHz = LEDC.timer_group[grp].timer[tmr].conf.tick_sel ? 80000000UL : 1000000UL;
+  hwDuty(0); lastF = 2000; lastD = 0;
+  xTaskCreatePinnedToCore(taskFn, "sfx", 4096, nullptr, 2, &task, ARDUINO_RUNNING_CORE);
 }
 static bool ready() { return task != nullptr; }
 static void wake() { if (task) xTaskNotifyGive(task); }

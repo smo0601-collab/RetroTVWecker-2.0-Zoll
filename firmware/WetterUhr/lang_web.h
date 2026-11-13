@@ -72,6 +72,8 @@
   X(W_R_BOARD,    "Hardware", "Hardware", "Matériel", "Hardware", "Hardware") \
   X(W_R_PANEL,    "Display-Controller", "Display controller", "Contrôleur d'écran", "Controlador de pantalla", "Controller del display") \
   X(W_R_FW,       "Firmware", "Firmware", "Micrologiciel", "Firmware", "Firmware") \
+  X(W_R_RESET,    "Letzter Neustart", "Last restart", "Dernier redémarrage", "Último reinicio", "Ultimo riavvio") \
+  X(W_UPTIME,     "l&auml;uft seit", "running for", "en marche depuis", "en marcha desde hace", "attivo da") \
   X(W_BUILT,      "gebaut", "built", "compilé", "compilado", "compilato") \
   X(W_AL_STOP,    "Wecker abstellen", "Stop alarm", "Arrêter le réveil", "Parar la alarma", "Ferma la sveglia") \
   X(W_R_LANG,     "Sprache", "Language", "Langue", "Idioma", "Lingua") \
