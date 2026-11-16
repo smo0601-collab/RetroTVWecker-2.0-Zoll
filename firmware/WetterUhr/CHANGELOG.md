@@ -4,6 +4,16 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-5 - Wetterabruf: Fehler sichtbar, Namensaufloesung abgesichert
+
+- Gemeldet: Es werden keine Wetterdaten geladen (Browser-Seite erreichbar, Uhrzeit falsch).
+- Status > Wetter zeigt jetzt den letzten Fehler des Abrufs und den DNS-Server; das Protokoll (/log) zusaetzlich
+  Speicher und DNS zum Zeitpunkt des Fehlers.
+- Namensaufloesung: Nach dem Verbinden (und nach dem Abschalten des Notfall-Access-Points) werden Ersatz-DNS-Server
+  eingetragen (1.1.1.1, 8.8.8.8); fehlt der DNS-Server des Routers, wird der Router selbst eingetragen.
+
+Geaenderte Dateien: `WetterUhr.ino`, `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-4 - Protokoll ueber Neustarts hinweg, Selbstheilung des Netzes
 
 - Gemeldet: Uhr im Browser nicht erreichbar, Designs laufen weiter, Wetter "noch keine Daten"; erst ein Neustart hilft.

@@ -572,7 +572,12 @@ static void handleRoot() {
   if (hv) {
     snprintf(fb, sizeof(fb), TR(W_WX_FMT), (double)w.temp, (unsigned long)((millis() - w.fetchedMs) / 60000UL));
     rowh(W_R_WX, fb);
-  } else rowh(W_R_WX, TR(W_NO_DATA));
+  } else {
+    String t = TR(W_NO_DATA);
+    if (gWxErr[0]) { t += " (letzter Fehler: "; t += gWxErr; t += ")"; }
+    t += " &middot; DNS "; t += WiFi.dnsIP(0).toString();
+    rowh(W_R_WX, t);
+  }
   rowh(W_R_DESIGN, String(TR(W_ST0 + (gStyle < CLOCK_STYLE_COUNT ? gStyle : 0))) +
                    (nyeNow() ? String(TR(W_NYE_S)) : (nightTv() ? String(TR(W_NIGHT_S)) : (autoActive() ? autoInfo() : String("")))) +
                    ", " + TR(W_AC0 + (gSet.accent < ACCENT_COUNT ? gSet.accent : 0)));

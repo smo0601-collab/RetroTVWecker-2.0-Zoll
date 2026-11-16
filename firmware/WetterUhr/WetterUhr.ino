@@ -27,6 +27,7 @@
 #include <ArduinoJson.h>
 #include <esp_idf_version.h>
 #include <esp_sntp.h>
+#include <esp_netif.h>
 #include <Update.h>
 #include <esp_ota_ops.h>
 #include <ArduinoOTA.h>
@@ -89,6 +90,7 @@ static void rlogRead(String& out, uint32_t which) {       // which: 0 = aktuelle
 #define LOGF(...) rlogf(__VA_ARGS__)
 static volatile uint32_t gNetOkAt = 0;    // letzter erfolgreicher Netzabruf (Wetter, Radar, ISS, NTP)
 static volatile uint32_t gWebReq = 0;     // Anzahl Browser-Anfragen
+static char gWxErr[48] = "";              // letzter Fehler beim Wetterabruf (Anzeige im Status)
 
 // =====================================================================
 // Globale Objekte und Zustand
@@ -930,10 +932,34 @@ static void startAp() {
   LOGF("Access-Point %s: %s\n", AP_SSID, WiFi.softAPIP().toString().c_str());
 }
 
+// Namensaufloesung absichern: Ersatz-DNS (Cloudflare, Google) eintragen, und falls der vom Router fehlt
+// (kommt vor, nachdem der Notfall-Access-Point lief), den Router selbst. Ohne DNS scheitern Wetter, Zeit, Radar, ISS.
+static void dnsFix() {
+  esp_netif_t* nif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+  if (!nif) return;
+  esp_netif_dns_info_t d;
+  memset(&d, 0, sizeof(d));
+  const bool mainOk = esp_netif_get_dns_info(nif, ESP_NETIF_DNS_MAIN, &d) == ESP_OK && d.ip.u_addr.ip4.addr != 0;
+  if (!mainOk) {
+    memset(&d, 0, sizeof(d));
+    d.ip.type = ESP_IPADDR_TYPE_V4;
+    d.ip.u_addr.ip4.addr = (uint32_t)WiFi.gatewayIP();
+    esp_netif_set_dns_info(nif, ESP_NETIF_DNS_MAIN, &d);
+  }
+  memset(&d, 0, sizeof(d)); d.ip.type = ESP_IPADDR_TYPE_V4;
+  d.ip.u_addr.ip4.addr = (uint32_t)IPAddress(1, 1, 1, 1);
+  esp_netif_set_dns_info(nif, ESP_NETIF_DNS_BACKUP, &d);
+  memset(&d, 0, sizeof(d)); d.ip.type = ESP_IPADDR_TYPE_V4;
+  d.ip.u_addr.ip4.addr = (uint32_t)IPAddress(8, 8, 8, 8);
+  esp_netif_set_dns_info(nif, ESP_NETIF_DNS_FALLBACK, &d);
+  LOGF("DNS: %s%s\n", WiFi.dnsIP(0).toString().c_str(), mainOk ? "" : " (fehlte, Router eingetragen)");
+}
+
 static void stopAp() {
   WiFi.softAPdisconnect(true);
   apActive = false;
   LOGF("Access-Point aus\n");
+  if (WiFi.status() == WL_CONNECTED) dnsFix();
 }
 
 static void wifiBegin() {
@@ -971,6 +997,7 @@ static void wifiLoop(uint32_t now) {
       if (!gArduinoOtaOn) arduinoOtaBegin();
 #endif
       LOGF("WLAN ok: %s\n", WiFi.localIP().toString().c_str());
+      dnsFix();
     }
     if (apActive) stopAp();               // Fallback-AP beenden, sobald das WLAN wieder da ist
     // Selbstheilung: WLAN gilt als verbunden, aber seit 20 Minuten klappt kein einziger Abruf (Wetter, Radar, ISS,
@@ -1012,11 +1039,13 @@ static bool fetchWeather(Weather& out) {
   HTTPClient http;
   http.setConnectTimeout(WEATHER_HTTP_TIMEOUT_MS);
   http.setTimeout(WEATHER_HTTP_TIMEOUT_MS);
-  if (!http.begin(client, url)) { LOGF("Wetter: begin() fehlgeschlagen\n"); return false; }
+  if (!http.begin(client, url)) { LOGF("Wetter: begin() fehlgeschlagen\n"); strlcpy(gWxErr, "begin", sizeof(gWxErr)); return false; }
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
-    LOGF("Wetter: HTTP %d\n", code);
+    LOGF("Wetter: HTTP %d (%s), Speicher %u/%u, DNS %s\n", code, http.errorToString(code).c_str(),
+         (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), WiFi.dnsIP(0).toString().c_str());
+    snprintf(gWxErr, sizeof(gWxErr), "HTTP %d %s", code, code < 0 ? http.errorToString(code).c_str() : "");
     http.end();
     return false;
   }
@@ -1025,7 +1054,7 @@ static bool fetchWeather(Weather& out) {
 
   JsonDocument doc;
   DeserializationError err = deserializeJson(doc, body);
-  if (err) { LOGF("Wetter: JSON-Fehler %s\n", err.c_str()); return false; }
+  if (err) { LOGF("Wetter: JSON-Fehler %s\n", err.c_str()); snprintf(gWxErr, sizeof(gWxErr), "JSON %s", err.c_str()); return false; }
 
   JsonObject cur = doc["current"];
   if (cur.isNull() || cur["temperature_2m"].isNull()) { LOGF("Wetter: keine current-Daten\n"); return false; }
@@ -1081,6 +1110,7 @@ static void weatherStep() {
           xSemaphoreGive(gMutex);
           lastOk = true;
           LOGF("Wetter aktualisiert: %.1f C\n", nw.temp);
+          gWxErr[0] = 0;
           gNetOkAt = millis() | 1;
         } else {
           lastOk = false;   // alte Daten bleiben erhalten und werden als veraltet markiert
