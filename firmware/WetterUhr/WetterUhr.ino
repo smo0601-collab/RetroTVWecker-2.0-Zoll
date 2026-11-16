@@ -759,7 +759,7 @@ static void heapGuard(uint32_t now) {
     LOGF("Zustand: Speicher %u/%u (min %u), WLAN %d %d dBm, Zeit %02d.%02d.%d %02d:%02d, Wetter %s, Netz-ok vor %lu s, Web %lu\n",
          (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), (unsigned)esp_get_minimum_free_heap_size(),
          (int)WiFi.status(), (int)WiFi.RSSI(), lt.tm_mday, lt.tm_mon + 1, lt.tm_year + 1900, lt.tm_hour, lt.tm_min,
-         wv ? "ok" : "fehlt", gNetOkAt ? (unsigned long)((now - gNetOkAt) / 1000) : 0UL, (unsigned long)gWebReq);
+         wv ? "ok" : "fehlt", gNetOkAt ? (unsigned long)((millis() - gNetOkAt) / 1000) : 0UL, (unsigned long)gWebReq);
   }
   if (ESP.getMaxAllocHeap() >= 16000) { lowSince = 0; return; }
   if (!lowSince) { lowSince = now ? now : 1; LOGF("Speicher knapp: groesster Block %u\n", (unsigned)ESP.getMaxAllocHeap()); return; }
@@ -1020,7 +1020,8 @@ static void wifiLoop(uint32_t now) {
     if (apActive) stopAp();               // Fallback-AP beenden, sobald das WLAN wieder da ist
     // Selbstheilung: WLAN gilt als verbunden, aber seit 20 Minuten klappt kein einziger Abruf (Wetter, Radar, ISS,
     // Zeit) - dann haengt die Verbindung (z. B. IP-Adresse verloren). Neu verbinden.
-    if (gNetOkAt && now - gNetOkAt > 20UL * 60000UL && !webBusy()) {
+    const uint32_t okAt = gNetOkAt;
+    if (okAt && (int32_t)(millis() - okAt) > (int32_t)(20UL * 60000UL) && !webBusy()) {
       LOGF("Netz: seit 20 min kein Abruf erfolgreich - WLAN neu verbinden\n");
       gNetOkAt = now ? now : 1;
       WiFi.disconnect();
@@ -1105,6 +1106,7 @@ static bool fetchWeather(Weather& out) {
   return true;
 }
 
+static void radarDrop();
 static void weatherStep() {
   static uint32_t lastAttempt = 0;
   static bool haveAttempt = false, lastOk = false;
@@ -1119,6 +1121,7 @@ static void weatherStep() {
         Weather nw;
         xSemaphoreTake(gNetMutex, portMAX_DELAY);
         gCrumbNet = 11;
+        radarDrop();                            // offene Radar-Verbindung (rund 40 KB) vorher schliessen
         netMem(true);
         const bool wxOk = fetchWeather(nw);
         netMem(false);
@@ -1141,6 +1144,7 @@ static void weatherStep() {
       if (timeValid()) {                        // Kalender: Schulferien abrufen, wenn noetig (cal.h)
         xSemaphoreTake(gNetMutex, portMAX_DELAY);
         gCrumbNet = 12;
+        if (cal::netWanted()) radarDrop();
         cal::netTick(true);
         xSemaphoreGive(gNetMutex);
       }
@@ -1177,6 +1181,8 @@ static void planeInsert(PlaneList& L, const Plane& p) {
 }
 
 static WiFiClientSecure* gRadarClient = nullptr;   // dauerhaft (Keep-Alive), nur waehrend das Radar laeuft
+// Radar-Verbindung schliessen (gibt rund 40 KB frei) - nur aus dem Netz-Task aufrufen
+static void radarDrop() { if (gRadarClient && gRadarClient->connected()) gRadarClient->stop(); }
 
 // Liest einen HTTP-"chunked"-Rumpf als gewoehnlichen Stream.
 class ChunkStream : public Stream {
@@ -1349,14 +1355,17 @@ static float issDistKm(float la1, float lo1, float la2, float lo2) {
 }
 static float jsonNum(JsonVariantConst v) { return v.is<const char*>() ? (float)atof(v.as<const char*>()) : v.as<float>(); }
 
+static int gIssCode = 0;                          // letzter HTTP-Code des ISS-Abrufs (Protokoll)
 static bool fetchIss(IssData& d) {
   static uint32_t prevTs = 0;
   WiFiClient client;
   HTTPClient http;
   http.setConnectTimeout(5000);
   http.setTimeout(5000);
+  gIssCode = 0;
   if (!http.begin(client, "http://api.open-notify.org/iss-now.json")) return false;
-  if (http.GET() != HTTP_CODE_OK) { http.end(); return false; }
+  gIssCode = http.GET();
+  if (gIssCode != HTTP_CODE_OK) { http.end(); return false; }
   JsonDocument doc;
   const DeserializationError err = deserializeJson(doc, http.getStream());
   http.end();
@@ -1398,15 +1407,18 @@ static uint8_t fetchCrew() {                      // Personen auf der ISS (open-
 
 static void issStep() {
   static IssData nd;
-  static uint32_t lastTry = 0, lastCrew = 0;
+  static uint32_t lastTry = 0, lastCrew = 0, lastOkMs = 0;
   static bool have = false, wasWanted = false;
+  static uint16_t fails = 0;                          // Fehlversuche in Folge (Dienst open-notify ist oft kurz weg)
   {
     const uint32_t now = millis();
     const uint32_t wa = gIssWantedAt;
     const bool wanted = wa != 0 && now - wa < 4000;
     if (wanted && !wasWanted) have = false;
     wasWanted = wanted;
-    if (wanted && !webBusy() && WiFi.status() == WL_CONNECTED && (!have || now - lastTry >= ISS_POLL_MS)) {
+    // nach Fehlern seltener fragen: 5 s, 10 s, 20 s, 40 s, dann jede Minute
+    const uint32_t every = fails ? min(60000UL, ISS_POLL_MS << min<uint16_t>(fails, 4)) : ISS_POLL_MS;
+    if (wanted && !webBusy() && WiFi.status() == WL_CONNECTED && (!have || now - lastTry >= every)) {
       lastTry = now; have = true;
       xSemaphoreTake(gMutex, portMAX_DELAY); nd = gIss; xSemaphoreGive(gMutex);
       gCrumbNet = 31;
@@ -1415,11 +1427,19 @@ static void issStep() {
       if (ok && (lastCrew == 0 || now - lastCrew > 1800000UL)) { lastCrew = now ? now : 1; const uint8_t c = fetchCrew(); if (c) nd.crew = c; }
       xSemaphoreTake(gMutex, portMAX_DELAY);
       if (ok) { nd.status = 1; nd.fetchedMs = millis(); gIss = nd; }
-      else    { gIss.status = 2; }
+      else if (!lastOkMs || millis() - lastOkMs > 120000UL) { gIss.status = 2; }   // kurze Aussetzer: Bahn weiterrechnen
       gIssVer++;
       xSemaphoreGive(gMutex);
-      if (ok) gNetOkAt = millis() | 1;
-      else LOGF("ISS: Fehler\n");
+      if (ok) {
+        gNetOkAt = millis() | 1;
+        lastOkMs = millis() | 1;
+        if (fails) LOGF("ISS: wieder ok (nach %u Fehlversuchen)\n", (unsigned)fails);
+        fails = 0;
+      } else {
+        if (!fails) LOGF("ISS: Fehler HTTP %d (%s) - weitere Versuche seltener\n", gIssCode,
+                         gIssCode < 0 ? HTTPClient::errorToString(gIssCode).c_str() : "Dienst");
+        if (fails < 60000) fails++;
+      }
     }
   }
 }

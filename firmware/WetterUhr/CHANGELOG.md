@@ -4,6 +4,20 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-7 - Wetter neben dem Flugradar, ISS-Aussetzer, Selbstheilung
+
+Aus dem Protokoll vom Geraet:
+- Waehrend das Flugradar lief, scheiterte der Wetterabruf jede Minute mit "TLS -32512 SSL - Memory allocation
+  failed": die offene Radar-Verbindung belegt rund 40 KB. Jetzt wird sie vor jedem Wetter- und Ferienabruf
+  geschlossen (beide laufen im selben Netz-Task) und danach neu aufgebaut.
+- Die Selbstheilung loeste aus, obwohl 14 s vorher ein Abruf geklappt hatte: Rechenfehler, wenn der Netz-Task den
+  Zeitstempel nach dem Zeitpunkt der Hauptschleife setzte (Unterlauf). Behoben.
+- ISS-Tracker: Der Dienst open-notify faellt oft kurz aus; bisher alle 5 s ein neuer Versuch und eine Zeile
+  "ISS: Fehler". Jetzt nach Fehlern seltener (10 s, 20 s, 40 s, dann jede Minute), im Protokoll nur der erste
+  Fehler mit HTTP-Code und "wieder ok". Bei Aussetzern bis 2 Minuten rechnet die Anzeige die Bahn weiter.
+
+Geaenderte Dateien: `WetterUhr.ino`, `cal.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-6 - Wetterabruf: Speicher fuer die verschluesselte Verbindung freimachen
 
 - Protokoll vom Geraet: "Wetter: HTTP -1 (connection refused)", DNS in Ordnung, kleinster freier Speicher 40 Bytes.

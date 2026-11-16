@@ -291,6 +291,13 @@ static void netTick(bool timeOk) {
   netMem(false);
 }
 
+// Wird gleich ein Abruf faellig? (Netz-Task schliesst dann vorher die Radar-Verbindung)
+static bool netWanted() {
+  if (!(gSet.calFlags & CF_SCHOOL) || !calBl()) return false;
+  const uint32_t now = (uint32_t)time(nullptr), ms = millis();
+  const bool need = ferBl != calBl() || !ferFetched || now - ferFetched > 7UL * 86400UL;
+  return need && !(ferTriedMs && ms - ferTriedMs < (ferBl != calBl() ? 60000UL : 3600000UL));
+}
 static bool ferOk() { return (gSet.calFlags & CF_SCHOOL) && calBl() && ferBl == calBl() && ferN > 0; }
 static int ferAt(int32_t dn) {                         // Ferien, in denen dn liegt (-1 = keine)
   if (!ferOk()) return -1;
