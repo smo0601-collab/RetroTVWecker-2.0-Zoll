@@ -2127,7 +2127,9 @@ void setup() {
   wifiBegin();
   webBegin();
   gNetMutex = xSemaphoreCreateMutex();
-  xTaskCreatePinnedToCore(netTask, "net", 12288, nullptr, 1, nullptr, 0);   // Wetter, Kalender, Radar, ISS (Kern 0, beim WLAN)
+  // Prioritaet 0 (wie der Leerlauf-Task): Warteschleifen beim Lesen (HTTP-Zeitlimit bis 8 s, ohne Pause) duerfen den
+  // Leerlauf-Task von Kern 0 nicht aushungern - sonst schlaegt der Task-Watchdog zu (gemeldet beim Flugradar).
+  xTaskCreatePinnedToCore(netTask, "net", 12288, nullptr, tskIDLE_PRIORITY, nullptr, 0);   // Wetter, Kalender, Radar, ISS
 
   resetCaches();
   needFull = true;

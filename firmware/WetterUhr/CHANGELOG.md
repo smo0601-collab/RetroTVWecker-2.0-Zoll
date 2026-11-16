@@ -4,6 +4,15 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-8 - Korrektur: Task-Watchdog beim Flugradar
+
+- Gemeldet: Neustart "Task-Watchdog", Absturz-Spur "Netz: Flugradar", kurz nach "Radar: HTTP -11" (Zeitlimit beim
+  Lesen). Beim Warten auf Daten dreht die HTTP-Bibliothek bis zu 8 s in einer Schleife ohne Pause. Seit
+  2026.11.16-3 lief der gemeinsame Netz-Task mit Prioritaet 1 auf Kern 0 und hungerte dabei den Leerlauf-Task aus -
+  nach 5 s schlug der Task-Watchdog zu. Jetzt Prioritaet 0 wie frueher beim Radar-Task.
+
+Geaenderte Dateien: `WetterUhr.ino`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-7 - Wetter neben dem Flugradar, ISS-Aussetzer, Selbstheilung
 
 Aus dem Protokoll vom Geraet:
