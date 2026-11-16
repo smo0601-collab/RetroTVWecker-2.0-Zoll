@@ -4,6 +4,17 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-9 - Task-Watchdog beim Flugradar: Netz-Task ohne Kernbindung, genauere Spur
+
+- Gemeldet: auch mit 2026.11.16-8 nach rund einer Stunde Neustart durch den Task-Watchdog, wieder kurz nachdem das
+  Flugradar seine Verbindung neu aufgebaut hatte.
+- Der Netz-Task ist nicht mehr fest an Kern 0 gebunden (so lief frueher der Radar-Task, ohne Watchdog-Meldungen).
+- Diagnose: Schlaegt der Watchdog zu, merkt sich die Uhr (im Watchdog-Interrupt), welche Tasks gerade auf Kern 0
+  und 1 liefen; Anzeige in der Absturz-Spur und im Protokoll. Die Radar-Spur unterscheidet jetzt Verbindung/Anfrage,
+  Daten lesen und Auswerten. Im Protokoll steht beim Start zusaetzlich die Spur der vorigen Sitzung.
+
+Geaenderte Dateien: `WetterUhr.ino`, `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-8 - Korrektur: Task-Watchdog beim Flugradar
 
 - Gemeldet: Neustart "Task-Watchdog", Absturz-Spur "Netz: Flugradar", kurz nach "Radar: HTTP -11" (Zeitlimit beim

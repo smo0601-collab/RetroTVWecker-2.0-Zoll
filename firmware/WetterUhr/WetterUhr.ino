@@ -151,12 +151,30 @@ RTC_NOINIT_ATTR static uint32_t rtcMagic, rtcCrumbLoop, rtcCrumbNet, rtcMinHeap,
 #define gCrumbLoop rtcCrumbLoop
 #define gCrumbNet  rtcCrumbNet
 static uint32_t gPrevLoop = 0, gPrevNet = 0, gPrevMinHeap = 0, gPrevUpMin = 0;
+// Task-Watchdog: welche Tasks liefen gerade auf Kern 0 und 1? (wird im Watchdog-Interrupt kurz vor dem Neustart gemerkt)
+RTC_NOINIT_ATTR static char rtcWdt[2][16];
+RTC_NOINIT_ATTR static uint32_t rtcWdtMagic;
+static char gPrevWdt[2][16] = {"", ""};
+extern "C" void IRAM_ATTR esp_task_wdt_isr_user_handler(void) {
+  for (int c = 0; c < portNUM_PROCESSORS && c < 2; c++) {
+    TaskHandle_t h = xTaskGetCurrentTaskHandleForCore(c);
+    const char* n = h ? pcTaskGetName(h) : "?";
+    int i = 0;
+    for (; n && n[i] && i < 15; i++) rtcWdt[c][i] = n[i];
+    rtcWdt[c][i] = 0;
+  }
+  rtcWdtMagic = 0x57444731u;
+}
 static bool gPrevValid = false;
 static void crumbsBoot() {
   if (rtcMagic == 0x57554852u) {
     gPrevValid = true;
     gPrevLoop = rtcCrumbLoop; gPrevNet = rtcCrumbNet; gPrevMinHeap = rtcMinHeap; gPrevUpMin = rtcUpMin;
   }
+  if (rtcWdtMagic == 0x57444731u && esp_reset_reason() == ESP_RST_TASK_WDT) {
+    for (int c = 0; c < 2; c++) { memcpy(gPrevWdt[c], rtcWdt[c], 15); gPrevWdt[c][15] = 0; }
+  }
+  rtcWdtMagic = 0;
   rtcMagic = 0x57554852u; rtcCrumbLoop = 0; rtcCrumbNet = 0; rtcMinHeap = 0; rtcUpMin = 0;
 }
 static bool webBusy() { const uint32_t w = gWebAt; return w && millis() - w < 6000; }
@@ -1233,7 +1251,9 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
   http.setTimeout(8000);
   http.setUserAgent("WetterUhr/1.0");
   if (!http.begin(*gRadarClient, url)) return false;
+  gCrumbNet = 24;                                     // Verbindung/TLS/Anfrage
   const int code = http.GET();
+  gCrumbNet = 25;                                     // Antwort lesen und auswerten
   if (code != HTTP_CODE_OK) { LOGF("Radar: HTTP %d\n", code); http.end(); gRadarClient->stop(); return false; }
 
   JsonDocument filter;                               // nur die noetigen Felder behalten (spart RAM)
@@ -1254,6 +1274,7 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
   // weiter erreichbar bleibt. Der naechste Abruf baut sie neu auf.
   if (err || ESP.getFreeHeap() < 60000 || ESP.getMaxAllocHeap() < 24000) gRadarClient->stop();
   if (err) { LOGF("Radar: JSON %s\n", err.c_str()); return false; }
+  gCrumbNet = 26;                                     // Flugzeuge uebernehmen
   JsonArray arr = doc["ac"].as<JsonArray>();
   if (arr.isNull()) arr = doc["aircraft"].as<JsonArray>();
   if (arr.isNull()) return false;
@@ -2090,6 +2111,9 @@ void setup() {
   {
     const time_t t = time(nullptr);
     LOGF("Start %s, Neustart-Grund %d, Systemzeit %lld\n", FW_VERSION, (int)esp_reset_reason(), (long long)t);
+    if (gPrevValid) LOGF("Vorher: Schleife %08lx, Netz %lu, min. Speicher %lu, nach %lu min\n", (unsigned long)gPrevLoop,
+                         (unsigned long)gPrevNet, (unsigned long)gPrevMinHeap, (unsigned long)gPrevUpMin);
+    if (gPrevWdt[0][0]) LOGF("Watchdog: auf Kern 0 lief '%s', auf Kern 1 '%s'\n", gPrevWdt[0], gPrevWdt[1]);
   }
   sntp_set_time_sync_notification_cb([](struct timeval* tv) {
     gNetOkAt = millis() | 1;
@@ -2129,7 +2153,8 @@ void setup() {
   gNetMutex = xSemaphoreCreateMutex();
   // Prioritaet 0 (wie der Leerlauf-Task): Warteschleifen beim Lesen (HTTP-Zeitlimit bis 8 s, ohne Pause) duerfen den
   // Leerlauf-Task von Kern 0 nicht aushungern - sonst schlaegt der Task-Watchdog zu (gemeldet beim Flugradar).
-  xTaskCreatePinnedToCore(netTask, "net", 12288, nullptr, tskIDLE_PRIORITY, nullptr, 0);   // Wetter, Kalender, Radar, ISS
+  // Ohne feste Kernbindung (wie frueher der Radar-Task): kann auch auf Kern 1 laufen, dessen Leerlauf nicht ueberwacht wird.
+  xTaskCreatePinnedToCore(netTask, "net", 12288, nullptr, tskIDLE_PRIORITY, nullptr, tskNO_AFFINITY);   // Wetter, Kalender, Radar, ISS
 
   resetCaches();
   needFull = true;

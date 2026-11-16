@@ -653,10 +653,14 @@ static void handleRoot() {
         case 1: case 11: t += "Wetter"; break;
         case 12: t += "Kalender"; break;
         case 2: case 21: case 22: case 23: t += "Flugradar"; break;
+        case 24: t += "Flugradar (Verbindung/Anfrage)"; break;
+        case 25: t += "Flugradar (Daten lesen)"; break;
+        case 26: t += "Flugradar (Auswerten)"; break;
         case 3: case 31: t += "ISS-Position"; break;
         case 32: t += "ISS-Besatzung"; break;
         default: t += String(gPrevNet);
       }
+      if (gPrevWdt[0][0]) { t += ", Watchdog: Kern 0 '"; t += gPrevWdt[0]; t += "', Kern 1 '"; t += gPrevWdt[1]; t += "'"; }
       t += ", min. freier Speicher "; t += String(gPrevMinHeap); t += " B, nach "; t += String(gPrevUpMin); t += " min";
       row(W_R_CRASH, t);
       rowh(W_R_LOG, "<a href=/log>Protokoll ansehen</a> (auch vor dem Absturz)");
