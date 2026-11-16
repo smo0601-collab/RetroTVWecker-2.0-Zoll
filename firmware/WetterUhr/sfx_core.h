@@ -220,7 +220,7 @@ static void begin(int p, uint8_t ch = 0) {
   hwDuty(0); lastF = 2000; lastD = 0;
   driven = true;
   release();
-  xTaskCreatePinnedToCore(taskFn, "sfx", 2560, nullptr, 2, &task, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(taskFn, "sfx", 3072, nullptr, 2, &task, ARDUINO_RUNNING_CORE);
 }
 static bool ready() { return task != nullptr; }
 static void wake() { if (task) xTaskNotifyGive(task); }

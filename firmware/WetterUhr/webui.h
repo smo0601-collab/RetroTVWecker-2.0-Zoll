@@ -81,6 +81,12 @@ static bool parseHhmm(const String& s, uint16_t& out) {
 
 static bool authOk() {
   gWebAt = millis() | 1;                             // Browser aktiv: Netzabrufe im Hintergrund pausieren
+  {                                                  // Spur: welche Seite (erste 3 Zeichen nach "/")
+    const String& u = server.uri();
+    uint32_t c = 2;
+    for (int i = 1; i <= 3 && i < (int)u.length(); i++) c |= (uint32_t)(uint8_t)u[i] << (8 * i);
+    gCrumbLoop = c;
+  }
   if (gSet.webPw[0] == 0) return true;
   if (server.authenticate("admin", gSet.webPw)) return true;
   server.requestAuthentication();
@@ -625,6 +631,27 @@ static void handleRoot() {
     snprintf(b, sizeof(b), "%s, %s %lu min", r >= 0 && r < (int)(sizeof(RR) / sizeof(RR[0])) ? RR[r] : "?", TR(W_UPTIME),
              (unsigned long)(millis() / 60000UL));
     rowh(W_R_RESET, b);
+    if (gPrevValid && (r == ESP_RST_PANIC || r == ESP_RST_INT_WDT || r == ESP_RST_TASK_WDT || r == ESP_RST_WDT)) {
+      // Spur vom Absturz: was lief gerade (Hauptschleife / Netz-Task)
+      static const char* const LS[] = {"?", "WLAN", "Browser", "Dimmung/Design", "Ton", "Laufschrift/Touch/LED", "Zeichnen", "nach dem Zeichnen"};
+      String t = "Schleife: ";
+      const uint32_t L = gPrevLoop, st = L & 0xFF;
+      t += st < 8 ? LS[st] : "?";
+      if (st == 6) { t += " (Design "; t += String((L >> 8) & 0xFF); t += ')'; }
+      if (st == 2 && (L >> 8)) { t += " /"; for (int i = 1; i <= 3; i++) { const char ch = (char)((L >> (8 * i)) & 0xFF); if (ch >= 32 && ch < 127) t += ch; } }
+      t += ", Netz: ";
+      switch (gPrevNet) {
+        case 0: t += "ruhig"; break;
+        case 1: case 11: t += "Wetter"; break;
+        case 12: t += "Kalender"; break;
+        case 2: case 21: case 22: case 23: t += "Flugradar"; break;
+        case 3: case 31: t += "ISS-Position"; break;
+        case 32: t += "ISS-Besatzung"; break;
+        default: t += String(gPrevNet);
+      }
+      t += ", min. freier Speicher "; t += String(gPrevMinHeap); t += " B, nach "; t += String(gPrevUpMin); t += " min";
+      row(W_R_CRASH, t);
+    }
   }
   p += F("</table>");
   if (gAlarmRinging) { p += F("<button type=submit class=red formaction=/alarmoff formmethod=post formnovalidate>"); T(W_AL_STOP); p += F("</button>"); }

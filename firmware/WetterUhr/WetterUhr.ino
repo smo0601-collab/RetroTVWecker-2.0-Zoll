@@ -87,6 +87,20 @@ static SemaphoreHandle_t gNetMutex = nullptr;     // immer nur ein HTTPS-Abruf g
 // ISS-Abrufe und die offene TLS-Verbindung wird geschlossen: der Speicher (rund 40-70 KB) fehlt sonst dem Netz,
 // die Seite kommt nur noch tropfenweise an und die Uhr steht bis zu einer Minute still.
 static volatile uint32_t gWebAt = 0;
+// Spuren fuer die Fehlersuche: was lief gerade, als die Uhr abstuerzte? Liegen im RTC-Speicher, der einen
+// Absturz-Neustart uebersteht; Anzeige im Browser unter Status > Letzter Neustart.
+RTC_NOINIT_ATTR static uint32_t rtcMagic, rtcCrumbLoop, rtcCrumbNet, rtcMinHeap, rtcUpMin;
+#define gCrumbLoop rtcCrumbLoop
+#define gCrumbNet  rtcCrumbNet
+static uint32_t gPrevLoop = 0, gPrevNet = 0, gPrevMinHeap = 0, gPrevUpMin = 0;
+static bool gPrevValid = false;
+static void crumbsBoot() {
+  if (rtcMagic == 0x57554852u) {
+    gPrevValid = true;
+    gPrevLoop = rtcCrumbLoop; gPrevNet = rtcCrumbNet; gPrevMinHeap = rtcMinHeap; gPrevUpMin = rtcUpMin;
+  }
+  rtcMagic = 0x57554852u; rtcCrumbLoop = 0; rtcCrumbNet = 0; rtcMinHeap = 0; rtcUpMin = 0;
+}
 static bool webBusy() { const uint32_t w = gWebAt; return w && millis() - w < 6000; }
 
 static volatile uint32_t gDiagSec[4] = {0,0,0,0}, gDiagSecLast[4] = {0,0,0,0};   // wifi, web, render, delay(2)
@@ -676,6 +690,8 @@ static void heapGuard(uint32_t now) {
   static uint32_t last = 0, lowSince = 0;
   if (now - last < 10000) return;
   last = now;
+  rtcMinHeap = esp_get_minimum_free_heap_size();
+  rtcUpMin = now / 60000UL;
   if (ESP.getMaxAllocHeap() >= 16000) { lowSince = 0; return; }
   if (!lowSince) { lowSince = now ? now : 1; LOGF("Speicher knapp: groesster Block %u\n", (unsigned)ESP.getMaxAllocHeap()); return; }
   if (now - lowSince > 10UL * 60000UL && !gAlarmRinging && !bz::busy()) {
@@ -981,10 +997,10 @@ static bool fetchWeather(Weather& out) {
   return true;
 }
 
-static void weatherTask(void*) {
-  uint32_t lastAttempt = 0;
-  bool haveAttempt = false, lastOk = false;
-  for (;;) {
+static void weatherStep() {
+  static uint32_t lastAttempt = 0;
+  static bool haveAttempt = false, lastOk = false;
+  {
     uint32_t now = millis();
     if (WiFi.status() == WL_CONNECTED) {
       uint32_t interval = lastOk ? (uint32_t)gSet.updMin * 60000UL : WEATHER_RETRY_MS;
@@ -994,6 +1010,7 @@ static void weatherTask(void*) {
         lastAttempt = now;
         Weather nw;
         xSemaphoreTake(gNetMutex, portMAX_DELAY);
+        gCrumbNet = 11;
         const bool wxOk = fetchWeather(nw);
         xSemaphoreGive(gNetMutex);
         if (wxOk) {
@@ -1011,11 +1028,11 @@ static void weatherTask(void*) {
       }
       if (timeValid()) {                        // Kalender: Schulferien abrufen, wenn noetig (cal.h)
         xSemaphoreTake(gNetMutex, portMAX_DELAY);
+        gCrumbNet = 12;
         cal::netTick(true);
         xSemaphoreGive(gNetMutex);
       }
     }
-    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
@@ -1158,11 +1175,11 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
   return true;
 }
 
-static void radarTask(void*) {
+static void radarStep() {
   static PlaneList nl;                                // statisch: schont den Task-Stack
-  uint32_t lastTry = 0;
-  bool have = false;
-  for (;;) {
+  static uint32_t lastTry = 0;
+  static bool have = false;
+  {
     const uint32_t now = millis();
     const uint32_t wa = gRadarWantedAt;
     const bool wanted = wa != 0 && now - wa < 4000;
@@ -1177,6 +1194,7 @@ static void radarTask(void*) {
       xSemaphoreTake(gNetMutex, portMAX_DELAY);
       for (int k = 0; k < 3 && !ok; k++) {
         const uint8_t h = (gRadarHost + k) % 3;
+        gCrumbNet = 21 + h;
         ok = fetchPlanesFrom(RADAR_URL[h], nl);
         if (ok) gRadarHost = h;
       }
@@ -1197,7 +1215,6 @@ static void radarTask(void*) {
       gPlanesVer++;
       xSemaphoreGive(gMutex);
     }
-    vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 
@@ -1266,11 +1283,11 @@ static uint8_t fetchCrew() {                      // Personen auf der ISS (open-
   return (uint8_t)n;
 }
 
-static void issTask(void*) {
+static void issStep() {
   static IssData nd;
-  uint32_t lastTry = 0, lastCrew = 0;
-  bool have = false, wasWanted = false;
-  for (;;) {
+  static uint32_t lastTry = 0, lastCrew = 0;
+  static bool have = false, wasWanted = false;
+  {
     const uint32_t now = millis();
     const uint32_t wa = gIssWantedAt;
     const bool wanted = wa != 0 && now - wa < 4000;
@@ -1279,7 +1296,9 @@ static void issTask(void*) {
     if (wanted && !webBusy() && WiFi.status() == WL_CONNECTED && (!have || now - lastTry >= ISS_POLL_MS)) {
       lastTry = now; have = true;
       xSemaphoreTake(gMutex, portMAX_DELAY); nd = gIss; xSemaphoreGive(gMutex);
+      gCrumbNet = 31;
       const bool ok = fetchIss(nd);
+      gCrumbNet = 32;
       if (ok && (lastCrew == 0 || now - lastCrew > 1800000UL)) { lastCrew = now ? now : 1; const uint8_t c = fetchCrew(); if (c) nd.crew = c; }
       xSemaphoreTake(gMutex, portMAX_DELAY);
       if (ok) { nd.status = 1; nd.fetchedMs = millis(); gIss = nd; }
@@ -1288,7 +1307,18 @@ static void issTask(void*) {
       xSemaphoreGive(gMutex);
       LOGF("ISS: %s\n", ok ? "ok" : "Fehler");
     }
-    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+}
+
+// Ein gemeinsamer Netz-Task fuer Wetter, Kalender, Flugradar und ISS (vorher drei Tasks mit zusammen 30 KB Stack;
+// die Abrufe liefen wegen gNetMutex ohnehin nacheinander). Spart rund 18 KB Arbeitsspeicher.
+static void netTask(void*) {
+  for (;;) {
+    gCrumbNet = 1; weatherStep();
+    gCrumbNet = 2; radarStep();
+    gCrumbNet = 3; issStep();
+    gCrumbNet = 0;
+    vTaskDelay(pdMS_TO_TICKS(250));
   }
 }
 
@@ -1928,6 +1958,7 @@ void setup() {
 #endif
 #endif
   bz::init();                    // Summer-Pin sofort auf "aus"
+  crumbsBoot();
   settingsLoad();
   bz::setVolume(gSet.sndVol);
   bz::setIdleOff(!(gSet.sndFx & FXB_HOLD));
@@ -1960,9 +1991,7 @@ void setup() {
   wifiBegin();
   webBegin();
   gNetMutex = xSemaphoreCreateMutex();
-  xTaskCreate(weatherTask, "weather", 10240, nullptr, 1, nullptr);
-  xTaskCreate(radarTask, "radar", 12288, nullptr, 0, nullptr);   // Prioritaet 0: der Netzabruf bremst die Anzeige nie
-  xTaskCreate(issTask, "iss", 8192, nullptr, 0, nullptr);
+  xTaskCreatePinnedToCore(netTask, "net", 12288, nullptr, 1, nullptr, 0);   // Wetter, Kalender, Radar, ISS (Kern 0, beim WLAN)
 
   resetCaches();
   needFull = true;
@@ -1985,17 +2014,22 @@ void loop() {
   }
   uint32_t m0 = micros();
   auto lap = [&](int k) { const uint32_t t = micros(); const uint32_t d = t - m0; m0 = t; if (d > gDiagSec[k]) gDiagSec[k] = d; };
+  gCrumbLoop = 1;
   wifiLoop(now);
   lap(0);
+  gCrumbLoop = 2;
   webLoop(now);
 #if ARDUINO_OTA
   if (gArduinoOtaOn) ArduinoOTA.handle();
 #endif
   lap(1);
+  gCrumbLoop = 3;
   dimTick(now, false);
   styleTick(now);
+  gCrumbLoop = 4;
   soundTick(now);
   heapGuard(now);
+  gCrumbLoop = 5;
 #if BOARD_CYD
   const bool dualUi = dual::tick(now);   // Menue oder Kalibrierung auf dem Bildschirm
 #else
@@ -2017,7 +2051,9 @@ void loop() {
 #else
   const bool uiOpen = dualUi;
 #endif
+  gCrumbLoop = 6 | ((uint32_t)gStyle << 8);
   if (!standby && !wakePending && !gOtaActive && !uiOpen) renderTick(now);
+  gCrumbLoop = 7;
   lap(2);
   if (setDirty && now - setDirtyAt > 3000) {   // Helligkeit erst nach Ruhephase speichern
     settingsSave();

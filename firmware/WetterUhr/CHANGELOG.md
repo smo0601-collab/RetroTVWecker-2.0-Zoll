@@ -4,6 +4,18 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-3 - Mehr freier Speicher, Absturz-Spur im Status
+
+- Wetter, Kalender, Flugradar und ISS holen ihre Daten jetzt in einem gemeinsamen Netz-Task (Kern 0) statt in drei
+  Tasks mit zusammen 30 KB Stack. Die Abrufe liefen ohnehin nacheinander. Spart rund 18 KB Arbeitsspeicher
+  (gemeldet: nur noch 53 KB frei, 32 KB am Stueck, Absturz beim ISS-Tracker).
+- Absturz-Spur: Was gerade lief (Hauptschleife: Zeichnen mit Design-Nummer, Browser-Seite, Ton ...; Netz: Wetter,
+  Radar, ISS ...), der kleinste freie Speicher und die Laufzeit werden im RTC-Speicher mitgeschrieben und nach
+  einem Absturz unter Status > "Absturz-Spur" angezeigt.
+- Ton-Task wieder mit 3 KB Stack.
+
+Geaenderte Dateien: `WetterUhr.ino`, `webui.h`, `lang_web.h`, `sfx_core.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-2 - Browser-Seite auch bei Flugradar und ISS-Tracker erreichbar
 
 - Flugradar und ISS-Tracker holen staendig Daten aus dem Internet; das Radar haelt dazu eine TLS-Verbindung offen
