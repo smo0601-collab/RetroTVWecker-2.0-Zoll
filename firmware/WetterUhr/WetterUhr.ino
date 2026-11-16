@@ -46,11 +46,49 @@
 #include "buzzer.h"       // Summer (ESP32-C3) bzw. Lautsprecher mit Klaengen (CYD), Wecker
 #include "faces.h"        // Themen-Zifferblaetter (Design 2..31)
 
+// ---- Protokoll: Serial (wenn DEBUG_SERIAL) und Ringpuffer im RTC-Speicher ----
+// Der RTC-Speicher uebersteht Neustart und Absturz: unter http://<uhr>/log steht auch, was vor dem letzten
+// Neustart passiert ist (zwei Puffer: vorige und aktuelle Sitzung).
+#define RLOG_SZ 2000
+RTC_NOINIT_ATTR static char rtcLog[2][RLOG_SZ];
+RTC_NOINIT_ATTR static uint32_t rtcLogPos[2], rtcLogWrap[2], rtcLogCur, rtcLogMagic;
+static portMUX_TYPE gLogMux = portMUX_INITIALIZER_UNLOCKED;
+static void rlogBoot() {
+  if (rtcLogMagic != 0x4C4F4731u || rtcLogCur > 1 || rtcLogPos[0] >= RLOG_SZ || rtcLogPos[1] >= RLOG_SZ) {
+    memset(rtcLog, 0, sizeof(rtcLog)); rtcLogPos[0] = rtcLogPos[1] = 0; rtcLogWrap[0] = rtcLogWrap[1] = 0; rtcLogCur = 0;
+  } else rtcLogCur ^= 1;                               // vorige Sitzung bleibt im anderen Puffer stehen
+  rtcLogPos[rtcLogCur] = 0; rtcLogWrap[rtcLogCur] = 0;
+  rtcLogMagic = 0x4C4F4731u;
+}
+static void rlogf(const char* fmt, ...) {
+  char b[150];
+  const uint32_t s = millis() / 1000;
+  int n = snprintf(b, sizeof(b), "%lu:%02lu ", (unsigned long)(s / 60), (unsigned long)(s % 60));
+  va_list ap; va_start(ap, fmt);
+  vsnprintf(b + n, sizeof(b) - n, fmt, ap);
+  va_end(ap);
 #if DEBUG_SERIAL
-#define LOGF(...) Serial.printf(__VA_ARGS__)
-#else
-#define LOGF(...) do {} while (0)
+  Serial.print(b);
 #endif
+  portENTER_CRITICAL(&gLogMux);
+  const uint32_t c = rtcLogCur & 1;
+  for (const char* p = b; *p; p++) {
+    rtcLog[c][rtcLogPos[c]] = *p;
+    if (++rtcLogPos[c] >= RLOG_SZ) { rtcLogPos[c] = 0; rtcLogWrap[c] = 1; }
+  }
+  portEXIT_CRITICAL(&gLogMux);
+}
+static void rlogRead(String& out, uint32_t which) {       // which: 0 = aktuelle, 1 = vorige Sitzung
+  const uint32_t c = (rtcLogCur ^ which) & 1;
+  portENTER_CRITICAL(&gLogMux);
+  const uint32_t pos = rtcLogPos[c], wrap = rtcLogWrap[c];
+  portEXIT_CRITICAL(&gLogMux);
+  if (wrap) for (uint32_t i = pos; i < RLOG_SZ; i++) { const char ch = rtcLog[c][i]; if (ch) out += ch; }
+  for (uint32_t i = 0; i < pos; i++) { const char ch = rtcLog[c][i]; if (ch) out += ch; }
+}
+#define LOGF(...) rlogf(__VA_ARGS__)
+static volatile uint32_t gNetOkAt = 0;    // letzter erfolgreicher Netzabruf (Wetter, Radar, ISS, NTP)
+static volatile uint32_t gWebReq = 0;     // Anzahl Browser-Anfragen
 
 // =====================================================================
 // Globale Objekte und Zustand
@@ -692,6 +730,17 @@ static void heapGuard(uint32_t now) {
   last = now;
   rtcMinHeap = esp_get_minimum_free_heap_size();
   rtcUpMin = now / 60000UL;
+  static uint8_t k = 0;
+  if (++k >= 30) {                                     // alle 5 Minuten: Zustand ins Protokoll
+    k = 0;
+    const time_t t = time(nullptr);
+    struct tm lt; localtime_r(&t, &lt);
+    Weather w; const bool wv = getWeather(w);
+    LOGF("Zustand: Speicher %u/%u (min %u), WLAN %d %d dBm, Zeit %02d.%02d.%d %02d:%02d, Wetter %s, Netz-ok vor %lu s, Web %lu\n",
+         (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), (unsigned)esp_get_minimum_free_heap_size(),
+         (int)WiFi.status(), (int)WiFi.RSSI(), lt.tm_mday, lt.tm_mon + 1, lt.tm_year + 1900, lt.tm_hour, lt.tm_min,
+         wv ? "ok" : "fehlt", gNetOkAt ? (unsigned long)((now - gNetOkAt) / 1000) : 0UL, (unsigned long)gWebReq);
+  }
   if (ESP.getMaxAllocHeap() >= 16000) { lowSince = 0; return; }
   if (!lowSince) { lowSince = now ? now : 1; LOGF("Speicher knapp: groesster Block %u\n", (unsigned)ESP.getMaxAllocHeap()); return; }
   if (now - lowSince > 10UL * 60000UL && !gAlarmRinging && !bz::busy()) {
@@ -917,12 +966,22 @@ static void wifiLoop(uint32_t now) {
         gTimeManual = false;
       }
       ntpStarted = true;
+      gNetOkAt = now ? now : 1;
 #if ARDUINO_OTA
       if (!gArduinoOtaOn) arduinoOtaBegin();
 #endif
       LOGF("WLAN ok: %s\n", WiFi.localIP().toString().c_str());
     }
     if (apActive) stopAp();               // Fallback-AP beenden, sobald das WLAN wieder da ist
+    // Selbstheilung: WLAN gilt als verbunden, aber seit 20 Minuten klappt kein einziger Abruf (Wetter, Radar, ISS,
+    // Zeit) - dann haengt die Verbindung (z. B. IP-Adresse verloren). Neu verbinden.
+    if (gNetOkAt && now - gNetOkAt > 20UL * 60000UL && !webBusy()) {
+      LOGF("Netz: seit 20 min kein Abruf erfolgreich - WLAN neu verbinden\n");
+      gNetOkAt = now ? now : 1;
+      WiFi.disconnect();
+      WiFi.begin(gSet.ssid, gSet.pass);
+      lastWifiTry = now;
+    }
     return;
   }
 
@@ -1022,6 +1081,7 @@ static void weatherStep() {
           xSemaphoreGive(gMutex);
           lastOk = true;
           LOGF("Wetter aktualisiert: %.1f C\n", nw.temp);
+          gNetOkAt = millis() | 1;
         } else {
           lastOk = false;   // alte Daten bleiben erhalten und werden als veraltet markiert
         }
@@ -1204,7 +1264,8 @@ static void radarStep() {
       else    { gPlanes.status = 2; }                  // alte Flugzeuge bleiben sichtbar (werden als veraltet markiert)
       gPlanesVer++;
       xSemaphoreGive(gMutex);
-      LOGF("Radar: %s, %d Flugzeuge\n", ok ? "ok" : "Fehler", ok ? (int)nl.n : -1);
+      if (ok) gNetOkAt = millis() | 1;
+      else LOGF("Radar: Fehler\n");
     }
     if (!wanted && gRadarClient && gRadarClient->connected() && now - wa > 20000UL)
       gRadarClient->stop();                         // Radar nicht mehr gebraucht: TLS-Speicher freigeben
@@ -1305,7 +1366,8 @@ static void issStep() {
       else    { gIss.status = 2; }
       gIssVer++;
       xSemaphoreGive(gMutex);
-      LOGF("ISS: %s\n", ok ? "ok" : "Fehler");
+      if (ok) gNetOkAt = millis() | 1;
+      else LOGF("ISS: Fehler\n");
     }
   }
 }
@@ -1959,6 +2021,16 @@ void setup() {
 #endif
   bz::init();                    // Summer-Pin sofort auf "aus"
   crumbsBoot();
+  rlogBoot();
+  {
+    const time_t t = time(nullptr);
+    LOGF("Start %s, Neustart-Grund %d, Systemzeit %lld\n", FW_VERSION, (int)esp_reset_reason(), (long long)t);
+  }
+  sntp_set_time_sync_notification_cb([](struct timeval* tv) {
+    gNetOkAt = millis() | 1;
+    struct tm lt; time_t t = tv->tv_sec; localtime_r(&t, &lt);
+    LOGF("NTP: Zeit gesetzt %02d.%02d.%d %02d:%02d:%02d\n", lt.tm_mday, lt.tm_mon + 1, lt.tm_year + 1900, lt.tm_hour, lt.tm_min, lt.tm_sec);
+  });
   settingsLoad();
   bz::setVolume(gSet.sndVol);
   bz::setIdleOff(!(gSet.sndFx & FXB_HOLD));

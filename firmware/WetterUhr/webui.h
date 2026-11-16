@@ -81,6 +81,7 @@ static bool parseHhmm(const String& s, uint16_t& out) {
 
 static bool authOk() {
   gWebAt = millis() | 1;                             // Browser aktiv: Netzabrufe im Hintergrund pausieren
+  gWebReq = gWebReq + 1;
   {                                                  // Spur: welche Seite (erste 3 Zeichen nach "/")
     const String& u = server.uri();
     uint32_t c = 2;
@@ -631,7 +632,9 @@ static void handleRoot() {
     snprintf(b, sizeof(b), "%s, %s %lu min", r >= 0 && r < (int)(sizeof(RR) / sizeof(RR[0])) ? RR[r] : "?", TR(W_UPTIME),
              (unsigned long)(millis() / 60000UL));
     rowh(W_R_RESET, b);
-    if (gPrevValid && (r == ESP_RST_PANIC || r == ESP_RST_INT_WDT || r == ESP_RST_TASK_WDT || r == ESP_RST_WDT)) {
+    if (!(gPrevValid && (r == ESP_RST_PANIC || r == ESP_RST_INT_WDT || r == ESP_RST_TASK_WDT || r == ESP_RST_WDT))) {
+      rowh(W_R_CRASH, "&ndash; (kein Absturz seit dem letzten Start) &middot; <a href=/log>Protokoll</a>");
+    } else {
       // Spur vom Absturz: was lief gerade (Hauptschleife / Netz-Task)
       static const char* const LS[] = {"?", "WLAN", "Browser", "Dimmung/Design", "Ton", "Laufschrift/Touch/LED", "Zeichnen", "nach dem Zeichnen"};
       String t = "Schleife: ";
@@ -651,6 +654,7 @@ static void handleRoot() {
       }
       t += ", min. freier Speicher "; t += String(gPrevMinHeap); t += " B, nach "; t += String(gPrevUpMin); t += " min";
       row(W_R_CRASH, t);
+      rowh(W_R_LOG, "<a href=/log>Protokoll ansehen</a> (auch vor dem Absturz)");
     }
   }
   p += F("</table>");
@@ -1609,6 +1613,16 @@ static void webBegin() {
   server.on("/reset", HTTP_POST, handleReset);
   server.on("/settime", HTTP_POST, handleSetTime);
   server.on("/beep", HTTP_POST, handleBeep);
+  server.on("/log", HTTP_GET, []() {                  // Protokoll: vorige und aktuelle Sitzung (Fehlersuche)
+    if (!authOk()) return;
+    String o;
+    o.reserve(4300);
+    o += F("WetterUhr " FW_VERSION " - Protokoll (Zeit = Minuten:Sekunden seit dem Start)\n\n=== Vorige Sitzung (vor dem letzten Neustart) ===\n");
+    rlogRead(o, 1);
+    o += F("\n=== Aktuelle Sitzung ===\n");
+    rlogRead(o, 0);
+    server.send(200, "text/plain; charset=utf-8", o);
+  });
 #if SND_RICH
   server.on("/sndtest", HTTP_POST, []() {             // Klang anhoeren (ohne Speichern), v = Lautstaerke vom Regler
     if (!authOk()) return;

@@ -4,6 +4,19 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-4 - Protokoll ueber Neustarts hinweg, Selbstheilung des Netzes
+
+- Gemeldet: Uhr im Browser nicht erreichbar, Designs laufen weiter, Wetter "noch keine Daten"; erst ein Neustart hilft.
+- Neues Protokoll im RTC-Speicher (uebersteht Neustart und Absturz): http://<uhr>/log zeigt die vorige und die
+  aktuelle Sitzung - Start mit Grund, WLAN, NTP-Zeit, Fehler bei Wetter/Radar/ISS und alle 5 Minuten den Zustand
+  (Speicher, WLAN, Uhrzeit, Wetter, letzter erfolgreicher Abruf, Anzahl Browser-Anfragen).
+- Selbstheilung: Gilt das WLAN als verbunden, klappt aber 20 Minuten lang kein einziger Abruf (Wetter, Radar, ISS,
+  Zeit), verbindet die Uhr das WLAN neu.
+- Status: "Absturz-Spur" wird immer angezeigt (auch "kein Absturz"), mit Link zum Protokoll.
+- Radar- und ISS-Abrufe schreiben nur noch Fehler ins Protokoll (sonst alle paar Sekunden eine Zeile).
+
+Geaenderte Dateien: `WetterUhr.ino`, `webui.h`, `lang_web.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-3 - Mehr freier Speicher, Absturz-Spur im Status
 
 - Wetter, Kalender, Flugradar und ISS holen ihre Daten jetzt in einem gemeinsamen Netz-Task (Kern 0) statt in drei
