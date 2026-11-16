@@ -4,6 +4,20 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16 - Uhr bleibt nach langer Laufzeit im Browser erreichbar
+
+- Ursache (sehr wahrscheinlich): Bei jedem Designwechsel wurden die Bildpuffer der Designs (19 KB, mit feiner Schrift
+  zusaetzlich 38 KB) freigegeben und neu geholt, dazwischen TLS-Abrufe (Wetter, Radar). Mit der Zeit zerstueckelte
+  der Speicher; nach Stunden fehlte ein grosser Block fuer Netz und Browser-Seite.
+  Jetzt werden die Puffer einmal beim Start (vor dem WLAN) geholt und behalten. Auch der Puffer der Laufschrift
+  bleibt fest (960 x 8).
+- Browser-Seite: Haengt die Verbindung, wird sofort abgebrochen (vorher wartete jedes der rund 15 Stuecke bis zu
+  10 s - die Uhr stand dann fast eine Minute still).
+- Notbremse: Bleibt der groesste freie Speicherblock 10 Minuten unter 16 KB, startet die Uhr in einem ruhigen Moment
+  neu (nicht waehrend der Wecker klingelt). Status zeigt dann "Software (Neustart)".
+
+Geaenderte Dateien: `faces.h`, `ticker.h`, `webui.h`, `WetterUhr.ino`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.13-4 - Keine Stoergeraeusche mehr im Lautsprecher (CYD)
 
 - Hintergrundbeleuchtung (PWM 2 kHz) und RGB-LED (5 kHz) wurden mit hoerbaren Frequenzen gedimmt. Der Strom
