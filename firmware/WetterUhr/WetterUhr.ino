@@ -83,6 +83,11 @@ static const bool HW_DIM = false;
 static Weather           gWeather;
 static SemaphoreHandle_t gMutex = nullptr;
 static SemaphoreHandle_t gNetMutex = nullptr;     // immer nur ein HTTPS-Abruf gleichzeitig (spart RAM)
+// Zuletzt eine Browser-Anfrage bearbeitet (millis). Solange der Browser die Uhr benutzt, pausieren Radar- und
+// ISS-Abrufe und die offene TLS-Verbindung wird geschlossen: der Speicher (rund 40-70 KB) fehlt sonst dem Netz,
+// die Seite kommt nur noch tropfenweise an und die Uhr steht bis zu einer Minute still.
+static volatile uint32_t gWebAt = 0;
+static bool webBusy() { const uint32_t w = gWebAt; return w && millis() - w < 6000; }
 
 static volatile uint32_t gDiagSec[4] = {0,0,0,0}, gDiagSecLast[4] = {0,0,0,0};   // wifi, web, render, delay(2)
 static volatile uint32_t gDiagGapMax = 0, gDiagFrameMax = 0, gDiagGapLast = 0, gDiagFrameLast = 0;
@@ -983,7 +988,7 @@ static void weatherTask(void*) {
     uint32_t now = millis();
     if (WiFi.status() == WL_CONNECTED) {
       uint32_t interval = lastOk ? (uint32_t)gSet.updMin * 60000UL : WEATHER_RETRY_MS;
-      if (gRefreshNow || !haveAttempt || now - lastAttempt >= interval) {
+      if ((gRefreshNow || !haveAttempt || now - lastAttempt >= interval) && (!webBusy() || gRefreshNow)) {
         gRefreshNow = false;
         haveAttempt = true;
         lastAttempt = now;
@@ -1164,7 +1169,9 @@ static void radarTask(void*) {
     static bool wasWanted = false;
     if (wanted && !wasWanted) have = false;           // gerade eingeschaltet: sofort abrufen
     wasWanted = wanted;
-    if (wanted && WiFi.status() == WL_CONNECTED && (!have || now - lastTry >= RADAR_POLL_MS)) {
+    if (webBusy()) {                                  // Browser aktiv: nicht abrufen, TLS-Speicher freigeben
+      if (gRadarClient && gRadarClient->connected()) gRadarClient->stop();
+    } else if (wanted && WiFi.status() == WL_CONNECTED && (!have || now - lastTry >= RADAR_POLL_MS)) {
       lastTry = now; have = true;
       bool ok = false;
       xSemaphoreTake(gNetMutex, portMAX_DELAY);
@@ -1269,7 +1276,7 @@ static void issTask(void*) {
     const bool wanted = wa != 0 && now - wa < 4000;
     if (wanted && !wasWanted) have = false;
     wasWanted = wanted;
-    if (wanted && WiFi.status() == WL_CONNECTED && (!have || now - lastTry >= ISS_POLL_MS)) {
+    if (wanted && !webBusy() && WiFi.status() == WL_CONNECTED && (!have || now - lastTry >= ISS_POLL_MS)) {
       lastTry = now; have = true;
       xSemaphoreTake(gMutex, portMAX_DELAY); nd = gIss; xSemaphoreGive(gMutex);
       const bool ok = fetchIss(nd);

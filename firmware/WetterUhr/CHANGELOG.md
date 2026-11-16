@@ -4,6 +4,16 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-2 - Browser-Seite auch bei Flugradar und ISS-Tracker erreichbar
+
+- Flugradar und ISS-Tracker holen staendig Daten aus dem Internet; das Radar haelt dazu eine TLS-Verbindung offen
+  (rund 40 KB) und braucht beim Auswerten weiteren Speicher. Kam dann eine Browser-Anfrage, fehlte dem Netz der
+  Speicher: die Seite kam nur tropfenweise an, die Uhr stand bis zu einer Minute still.
+- Jetzt: Solange der Browser die Uhr benutzt (6 s nach jeder Anfrage), pausieren Radar-, ISS- und Wetterabruf,
+  und die offene Radar-Verbindung wird geschlossen. Danach laeuft alles normal weiter.
+
+Geaenderte Dateien: `WetterUhr.ino`, `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16 - Uhr bleibt nach langer Laufzeit im Browser erreichbar
 
 - Ursache (sehr wahrscheinlich): Bei jedem Designwechsel wurden die Bildpuffer der Designs (19 KB, mit feiner Schrift

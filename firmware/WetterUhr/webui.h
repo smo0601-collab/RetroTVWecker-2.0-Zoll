@@ -80,6 +80,7 @@ static bool parseHhmm(const String& s, uint16_t& out) {
 }
 
 static bool authOk() {
+  gWebAt = millis() | 1;                             // Browser aktiv: Netzabrufe im Hintergrund pausieren
   if (gSet.webPw[0] == 0) return true;
   if (server.authenticate("admin", gSet.webPw)) return true;
   server.requestAuthentication();
@@ -511,6 +512,7 @@ static void handleRoot() {
   auto fl = [&]() {
     if (p.length() <= 1200) return;
     if (!dead) {
+      gWebAt = millis() | 1;
       server.sendContent(p);
       if (!server.client().connected() || millis() - tStart > 8000) dead = true;
     }
