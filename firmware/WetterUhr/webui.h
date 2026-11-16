@@ -504,7 +504,18 @@ static void handleRoot() {
   server.send(200, "text/html; charset=utf-8", "");
   String p;
   p.reserve(4096);
-  auto fl = [&]() { if (p.length() > 1200) { server.sendContent(p); p = ""; } };
+  // Haengt die Verbindung (Browser weg, Netz gestoert), wird nicht weiter gesendet: sonst wartet jedes Stueck
+  // bis zu 10 s und die Uhr steht fast eine Minute still.
+  const uint32_t tStart = millis();
+  bool dead = false;
+  auto fl = [&]() {
+    if (p.length() <= 1200) return;
+    if (!dead) {
+      server.sendContent(p);
+      if (!server.client().connected() || millis() - tStart > 8000) dead = true;
+    }
+    p = "";
+  };
   auto T  = [&](uint16_t id) { p += TR(id); };                       // Text in der eingestellten Sprache anhaengen
   auto sel = [&](bool on) { p += on ? F(" selected") : F(""); };
   auto chk = [&](bool on) { p += on ? F(" checked") : F(""); };
@@ -1087,8 +1098,12 @@ static void handleRoot() {
   p += F("glang:\""); p += LANG_CODE[LANG_IDX]; p += F("\",");
   p += F("};</script>");
   p += FPSTR(PAGE_JS);
-  server.sendContent(p);
-  server.sendContent("");               // Ende der Antwort
+  if (!dead) {
+    server.sendContent(p);
+    server.sendContent("");               // Ende der Antwort
+  } else {
+    server.client().stop();
+  }
 }
 
 // Ortssuche ueber die Uhr (nur wenn der Browser Open-Meteo nicht selbst erreicht)

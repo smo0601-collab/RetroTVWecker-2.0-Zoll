@@ -84,8 +84,7 @@ static int utf8ToCp(const char* s, uint8_t* out, int cap) {
 }
 
 static void stop() {
-  if (cv) { delete cv; cv = nullptr; }
-  active = false;
+  active = false;                    // Puffer bleibt (fest 960x8): kein Zerstueckeln des Speichers
   manual = false;
 }
 
@@ -97,8 +96,11 @@ static bool start(const char* text, const Cfg& c, uint32_t now, bool byButton) {
   const int n = utf8ToCp(text, cp, 160);
   if (n <= 0) return false;
   textW = n * 6;
-  cv = new (std::nothrow) GFXcanvas1(textW, 8);
-  if (!cv || !cv->getBuffer()) { if (cv) { delete cv; cv = nullptr; } return false; }
+  if (!cv) {
+    cv = new (std::nothrow) GFXcanvas1(960, 8);   // 160 Zeichen x 6 Pixel
+    if (cv && !cv->getBuffer()) { delete cv; cv = nullptr; }
+  }
+  if (!cv) return false;
   cv->fillScreen(0);
   cv->cp437(true);
   for (int i = 0; i < n; i++) {
@@ -114,7 +116,7 @@ static bool start(const char* text, const Cfg& c, uint32_t now, bool byButton) {
 
 static inline bool colOn(int m, int y) {
   const uint8_t* b = cv->getBuffer();
-  return b[y * ((textW + 7) >> 3) + (m >> 3)] & (0x80 >> (m & 7));
+  return b[y * ((cv->width() + 7) >> 3) + (m >> 3)] & (0x80 >> (m & 7));
 }
 
 // Vorschub; true = Durchlauf ist zu Ende (Puffer wurde freigegeben)

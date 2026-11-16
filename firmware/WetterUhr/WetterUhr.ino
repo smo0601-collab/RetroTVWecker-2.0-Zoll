@@ -665,6 +665,21 @@ static void soundFx(const struct tm* t) {
 }
 #endif
 
+// Notbremse: Bleibt der groesste freie Speicherblock lange zu klein (TLS und Browser-Seite brauchen ihn),
+// startet die Uhr in einem ruhigen Moment neu - besser als stundenlang nicht erreichbar zu sein.
+static void heapGuard(uint32_t now) {
+  static uint32_t last = 0, lowSince = 0;
+  if (now - last < 10000) return;
+  last = now;
+  if (ESP.getMaxAllocHeap() >= 16000) { lowSince = 0; return; }
+  if (!lowSince) { lowSince = now ? now : 1; LOGF("Speicher knapp: groesster Block %u\n", (unsigned)ESP.getMaxAllocHeap()); return; }
+  if (now - lowSince > 10UL * 60000UL && !gAlarmRinging && !bz::busy()) {
+    LOGF("Speicher seit 10 min knapp - Neustart\n");
+    delay(100);
+    ESP.restart();
+  }
+}
+
 static void soundTick(uint32_t now) {
   bz::tick(now);
   if (gAlarmRinging && now - gAlarmSince >= ALARM_MAX_MS) alarmStop();
@@ -1920,6 +1935,8 @@ void setup() {
 
   displayInit();
   blApply();
+  fc::prealloc();                // Bildpuffer der Designs jetzt holen (vor WLAN/TLS) und dauerhaft behalten
+  if (gSet.fine & 2) fc::hiAlloc();
 #if BOARD_CYD
   (void)*(volatile const char*)CYD_SELF_MARK;   // Kennung sicher im Programm behalten
   {                              // erkannten Display-Controller merken (RetroCYD uebernimmt ihn beim ersten Start)
@@ -1971,6 +1988,7 @@ void loop() {
   dimTick(now, false);
   styleTick(now);
   soundTick(now);
+  heapGuard(now);
 #if BOARD_CYD
   const bool dualUi = dual::tick(now);   // Menue oder Kalibrierung auf dem Bildschirm
 #else

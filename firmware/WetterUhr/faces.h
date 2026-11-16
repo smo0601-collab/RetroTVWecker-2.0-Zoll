@@ -148,9 +148,17 @@ static bool begin(int idx, uint32_t now, bool intro, uint8_t pct) {
   return true;
 }
 
+// Bildpuffer bleiben dauerhaft belegt: staendiges Freigeben und Neuholen von 19 KB (Bild) und 38 KB (feine Schrift)
+// bei jedem Designwechsel zerstueckelt sonst mit der Zeit den Speicher - nach Stunden fehlte dann ein grosser
+// Block fuer TLS und Browser-Seite (Uhr nicht mehr erreichbar).
+static void prealloc() {
+  if (!fb) {
+    fb = new (std::nothrow) GFXcanvas8(FB_W, FB_H);
+    if (fb && !fb->getBuffer()) { delete fb; fb = nullptr; }
+  }
+}
 static void release() {
-  if (fb) { delete fb; fb = nullptr; }
-  hiFree();
+  if (hiLayer && (hiUsed || hiWasUsed)) memset(hiLayer, 0, HW * HH / 2);
   hiUsed = hiWasUsed = false;
   cur = -1;
   phase = 0;
