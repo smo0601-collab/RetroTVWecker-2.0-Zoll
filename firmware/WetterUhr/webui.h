@@ -1147,6 +1147,7 @@ static void handleRoot() {
 // Ortssuche ueber die Uhr (nur wenn der Browser Open-Meteo nicht selbst erreicht)
 static void handleGeo() {
   if (!authOk()) return;
+  struct MemGuard { MemGuard() { gNetNeedMem = true; hiPolicy(); } ~MemGuard() { gNetNeedMem = false; } } memGuard;   // TLS braucht Speicher
   String q = server.arg("q"); q.trim();
   if (q.length() < 2 || q.length() > 60 || WiFi.status() != WL_CONNECTED) { server.send(502, "application/json", "{\"error\":true}"); return; }
   String u = F("https://geocoding-api.open-meteo.com/v1/search?count=8&format=json&language=");

@@ -4,6 +4,19 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.16-6 - Wetterabruf: Speicher fuer die verschluesselte Verbindung freimachen
+
+- Protokoll vom Geraet: "Wetter: HTTP -1 (connection refused)", DNS in Ordnung, kleinster freier Speicher 40 Bytes.
+  Der verschluesselte Abruf (TLS) braucht kurzzeitig rund 60-70 KB; seit 2026.11.16 war der Puffer der feinen
+  Schrift (38 KB) dauerhaft belegt - damit reichte der Speicher nie mehr und das Wetter kam nicht.
+- Jetzt gibt die Anzeige den Puffer der feinen Schrift fuer die Dauer eines TLS-Abrufs frei (Wetter, Schulferien,
+  Ortssuche) und holt ihn danach wieder; die Schrift ist dabei 1-2 Sekunden grob. Beim Start wird er nicht mehr
+  vorab belegt.
+- Flugradar: feine Schrift aus (die offene TLS-Verbindung braucht den Speicher dauerhaft).
+- Protokoll: genauer TLS-Fehler beim Wetterabruf; die Diag-Zeilen (alle 10 s) fuellen das Protokoll nicht mehr.
+
+Geaenderte Dateien: `WetterUhr.ino`, `cal.h`, `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-5 - Wetterabruf: Fehler sichtbar, Namensaufloesung abgesichert
 
 - Gemeldet: Es werden keine Wetterdaten geladen (Browser-Seite erreichbar, Uhrzeit falsch).

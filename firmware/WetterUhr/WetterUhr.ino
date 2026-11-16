@@ -90,7 +90,26 @@ static void rlogRead(String& out, uint32_t which) {       // which: 0 = aktuelle
 #define LOGF(...) rlogf(__VA_ARGS__)
 static volatile uint32_t gNetOkAt = 0;    // letzter erfolgreicher Netzabruf (Wetter, Radar, ISS, NTP)
 static volatile uint32_t gWebReq = 0;     // Anzahl Browser-Anfragen
-static char gWxErr[48] = "";              // letzter Fehler beim Wetterabruf (Anzeige im Status)
+static char gWxErr[80] = "";              // letzter Fehler beim Wetterabruf (Anzeige im Status)
+// Ein verschluesselter Abruf (TLS) braucht kurzzeitig rund 60-70 KB. Zusammen mit dem Puffer der feinen Schrift
+// (38 KB) reicht der Speicher nicht: der Abruf scheitert ("connection refused"). Deshalb gibt die Anzeige den
+// Puffer fuer die Dauer des Abrufs frei (Schrift ist 1-2 s lang grob) und holt ihn danach wieder.
+static volatile bool gNetNeedMem = false;
+static uint8_t  gStyle        = 0;       // gerade angezeigtes Design (bei Auto-Wechsel != gSet.clockStyle)
+static bool wantHiText() { return (gSet.fine & 2) && !gNetNeedMem && gStyle != RADAR_STYLE; }
+static void hiPolicy() {                  // nur aus der Hauptschleife aufrufen
+  const bool sm = gSet.fine & 1, ht = wantHiText();
+  if (sm != fc::hiSmooth || ht != fc::hiTextOn) {
+    fc::hiSmooth = sm; fc::hiTextOn = ht;
+    if (!ht) fc::hiFree();
+    fc::invalidate();
+  }
+}
+static void netMem(bool on) {             // aus dem Netz-Task
+  gNetNeedMem = on;
+  if (!on) return;
+  for (int i = 0; i < 100 && fc::hiLayer; i++) vTaskDelay(pdMS_TO_TICKS(20));   // bis zu 2 s auf die Hauptschleife warten
+}
 
 // =====================================================================
 // Globale Objekte und Zustand
@@ -101,7 +120,6 @@ static bool     wakePending   = false;   // Sleep-Out laeuft (120 ms Wartezeit)
 static uint32_t wakeAt        = 0;
 static bool     showAfterDraw = false;   // Display erst nach dem Zeichnen einschalten
 static bool     needFull      = true;
-static uint8_t  gStyle        = 0;       // gerade angezeigtes Design (bei Auto-Wechsel != gSet.clockStyle)
 static uint32_t gStyleSince   = 0;
 static uint32_t bootMs        = 0;
 
@@ -1043,9 +1061,11 @@ static bool fetchWeather(Weather& out) {
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
-    LOGF("Wetter: HTTP %d (%s), Speicher %u/%u, DNS %s\n", code, http.errorToString(code).c_str(),
-         (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), WiFi.dnsIP(0).toString().c_str());
-    snprintf(gWxErr, sizeof(gWxErr), "HTTP %d %s", code, code < 0 ? http.errorToString(code).c_str() : "");
+    char te[64] = "";
+    const int tc = client.lastError(te, sizeof(te));     // genauer TLS-Fehler (z. B. Speicher, Zertifikat, Zeit)
+    LOGF("Wetter: HTTP %d (%s), TLS %d %s, Speicher %u/%u (min %u)\n", code, http.errorToString(code).c_str(), tc, te,
+         (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), (unsigned)esp_get_minimum_free_heap_size());
+    snprintf(gWxErr, sizeof(gWxErr), "HTTP %d, TLS %d %s", code, tc, te);
     http.end();
     return false;
   }
@@ -1099,7 +1119,9 @@ static void weatherStep() {
         Weather nw;
         xSemaphoreTake(gNetMutex, portMAX_DELAY);
         gCrumbNet = 11;
+        netMem(true);
         const bool wxOk = fetchWeather(nw);
+        netMem(false);
         xSemaphoreGive(gNetMutex);
         if (wxOk) {
           nw.valid = true;
@@ -1962,14 +1984,7 @@ static bool themedTick(uint32_t now) {
     c.planes = &view;
   }
 
-  {                                            // Kantenglaettung / feine Schrift (Browser: Anzeige > Darstellung)
-    const bool sm = gSet.fine & 1, ht = (gSet.fine & 2) != 0;
-    if (sm != fc::hiSmooth || ht != fc::hiTextOn) {
-      fc::hiSmooth = sm; fc::hiTextOn = ht;
-      if (!ht) fc::hiFree();
-      fc::invalidate();
-    }
-  }
+  hiPolicy();                                  // Kantenglaettung / feine Schrift (Browser: Anzeige > Darstellung)
   const uint32_t t0 = micros();
   const bool drew = fc::frame(tft, c);
   if (drew) {
@@ -2076,7 +2091,6 @@ void setup() {
   displayInit();
   blApply();
   fc::prealloc();                // Bildpuffer der Designs jetzt holen (vor WLAN/TLS) und dauerhaft behalten
-  if (gSet.fine & 2) fc::hiAlloc();
 #if BOARD_CYD
   (void)*(volatile const char*)CYD_SELF_MARK;   // Kennung sicher im Programm behalten
   {                              // erkannten Display-Controller merken (RetroCYD uebernimmt ihn beim ersten Start)
@@ -2108,9 +2122,9 @@ void loop() {
     if (now - win >= 10000) {            // Zehn-Sekunden-Fenster auswerten
       win = now;
       gDiagGapLast = gDiagGapMax; gDiagFrameLast = gDiagFrameMax;
-      LOGF("Diag: max Schleifenluecke %lu ms, max Bildzeit %lu us\n", (unsigned long)gDiagGapMax, (unsigned long)gDiagFrameMax);
+      Serial.printf("Diag: max Schleifenluecke %lu ms, max Bildzeit %lu us\n", (unsigned long)gDiagGapMax, (unsigned long)gDiagFrameMax);
       for (int k = 0; k < 4; k++) { gDiagSecLast[k] = gDiagSec[k]; gDiagSec[k] = 0; }
-      LOGF("Diag: wlan %lu web %lu zeichnen %lu delay %lu us\n", (unsigned long)gDiagSecLast[0], (unsigned long)gDiagSecLast[1], (unsigned long)gDiagSecLast[2], (unsigned long)gDiagSecLast[3]);
+      Serial.printf("Diag: wlan %lu web %lu zeichnen %lu delay %lu us\n", (unsigned long)gDiagSecLast[0], (unsigned long)gDiagSecLast[1], (unsigned long)gDiagSecLast[2], (unsigned long)gDiagSecLast[3]);
       gDiagGapMax = 0; gDiagFrameMax = 0;
     }
   }
@@ -2153,6 +2167,7 @@ void loop() {
 #else
   const bool uiOpen = dualUi;
 #endif
+  hiPolicy();                                  // auch im Standby/Menue: Speicher fuer Netzabrufe freigeben
   gCrumbLoop = 6 | ((uint32_t)gStyle << 8);
   if (!standby && !wakePending && !gOtaActive && !uiOpen) renderTick(now);
   gCrumbLoop = 7;

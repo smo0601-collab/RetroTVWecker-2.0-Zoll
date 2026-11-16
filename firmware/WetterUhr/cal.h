@@ -13,6 +13,8 @@
 */
 #include "cal_text.h"
 
+static void netMem(bool on);     // WetterUhr.ino: Speicher fuer einen TLS-Abruf freimachen (feine Schrift kurz aus)
+
 namespace cal {
 
 enum CalId : uint8_t {
@@ -284,7 +286,9 @@ static void netTick(bool timeOk) {
   if (!need) return;
   if (ferTriedMs && ms - ferTriedMs < (ferBl != calBl() ? 60000UL : 3600000UL)) return;   // bei Fehler spaeter wieder
   ferTriedMs = ms ? ms : 1;
+  netMem(true);
   fetch();
+  netMem(false);
 }
 
 static bool ferOk() { return (gSet.calFlags & CF_SCHOOL) && calBl() && ferBl == calBl() && ferN > 0; }
