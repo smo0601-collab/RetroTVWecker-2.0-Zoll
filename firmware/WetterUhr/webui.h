@@ -1167,6 +1167,7 @@ static void handleGeo() {
   HTTPClient http;
   http.setConnectTimeout(8000);
   http.setTimeout(8000);
+  http.useHTTP10(true);                              // keine "chunked"-Antwort (deren Kopfzeilen werden ohne Pause gelesen)
   if (!http.begin(client, u)) { server.send(502, "application/json", "{\"error\":true}"); return; }
   const int code = http.GET();
   if (code != HTTP_CODE_OK) { http.end(); server.send(502, "application/json", "{\"error\":true}"); return; }

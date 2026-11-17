@@ -235,6 +235,7 @@ static bool fetch() {
   http.setConnectTimeout(10000);
   http.setTimeout(10000);
   http.setUserAgent("WetterUhr");
+  http.useHTTP10(true);                              // keine "chunked"-Antwort (deren Kopfzeilen werden ohne Pause gelesen)
   if (!http.begin(client, url)) { strlcpy(ferErr, "begin", sizeof(ferErr)); return false; }
   http.addHeader("accept", "text/json");
   const int code = http.GET();

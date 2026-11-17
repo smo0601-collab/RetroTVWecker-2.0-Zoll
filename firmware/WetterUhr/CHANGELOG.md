@@ -4,6 +4,20 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.17 - Ursache des Task-Watchdogs beim Flugradar behoben
+
+- Absturz-Spur vom Geraet: "Netz: Flugradar (Daten lesen), Watchdog: Kern 0 'net'". Der Netz-Task hing also beim
+  Lesen der Radar-Antwort. Ursache: Die Lesefunktionen der Bibliothek (Stream::readStringUntil/readBytes, vom
+  JSON-Leser benutzt) warten auf das naechste Byte in einer Schleife ohne Pause - bis zu 8 s. Stockt die Verbindung
+  (kurz vorher "Radar: HTTP -1/403"), laeuft der Task durch und der Watchdog startet die Uhr nach 5 s neu.
+- Neuer Leser `NetStream` fuer Radar, ISS und ISS-Besatzung: wartet mit Pause (2 ms), hat eine Gesamtfrist
+  (Radar 10 s, ISS 6 s) und entpackt "chunked"-Antworten selbst. Der Rest der Antwort wird hoechstens 2 s gelesen;
+  danach wird die Verbindung nicht wiederverwendet.
+- Wetter, Schulferien und Ortssuche fordern Antworten ohne "chunked" an (HTTP/1.0): deren Blockkoepfe liest die
+  Bibliothek ebenfalls ohne Pause.
+
+Geaenderte Dateien: `WetterUhr.ino`, `cal.h`, `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.16-9 - Task-Watchdog beim Flugradar: Netz-Task ohne Kernbindung, genauere Spur
 
 - Gemeldet: auch mit 2026.11.16-8 nach rund einer Stunde Neustart durch den Task-Watchdog, wieder kurz nachdem das

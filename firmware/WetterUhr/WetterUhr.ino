@@ -1076,6 +1076,7 @@ static bool fetchWeather(Weather& out) {
   HTTPClient http;
   http.setConnectTimeout(WEATHER_HTTP_TIMEOUT_MS);
   http.setTimeout(WEATHER_HTTP_TIMEOUT_MS);
+  http.useHTTP10(true);                              // keine "chunked"-Antwort (deren Kopfzeilen werden ohne Pause gelesen)
   if (!http.begin(client, url)) { LOGF("Wetter: begin() fehlgeschlagen\n"); strlcpy(gWxErr, "begin", sizeof(gWxErr)); return false; }
 
   int code = http.GET();
@@ -1203,33 +1204,72 @@ static WiFiClientSecure* gRadarClient = nullptr;   // dauerhaft (Keep-Alive), nu
 static void radarDrop() { if (gRadarClient && gRadarClient->connected()) gRadarClient->stop(); }
 
 // Liest einen HTTP-"chunked"-Rumpf als gewoehnlichen Stream.
-class ChunkStream : public Stream {
+// Warten auf das naechste Byte - immer mit Pause (delay) und mit Gesamtfrist.
+// Wichtig: Stream::readStringUntil/readBytes der Bibliothek warten in einer Schleife OHNE Pause (bis zum
+// Zeitlimit). Haengt die Verbindung, laeuft der Netz-Task dann sekundenlang durch und der Task-Watchdog
+// startet die Uhr neu (gemeldet: Absturz-Spur "Flugradar (Daten lesen)", Watchdog: Kern 0 'net').
+static int waitByte(Client& c, uint32_t deadline) {
+  while (!c.available()) {
+    if (!c.connected() || (int32_t)(millis() - deadline) > 0) return -1;
+    delay(2);
+  }
+  return c.read();
+}
+
+// Liest die Antwort eines Servers fuer den JSON-Leser: ohne Leerlauf-Schleifen, mit Gesamtfrist.
+// chunked = Antwort in Bloecken ("Transfer-Encoding: chunked"), sonst einfach bis zum Ende/Laengenangabe.
+class NetStream : public Stream {
  public:
-  explicit ChunkStream(WiFiClient& c) : c_(c) {}
+  NetStream(Client& c, bool chunked, int len, uint32_t maxMs) : c_(c), chunked_(chunked), left_(len), deadline_(millis() + maxMs) {}
   int available() override { return done_ ? 0 : 1; }
   int read() override {
     if (done_) return -1;
+    if (!chunked_) {
+      if (left_ == 0) { done_ = true; return -1; }
+      const int b = waitByte(c_, deadline_);
+      if (b < 0) { done_ = true; return -1; }
+      if (left_ > 0) left_--;
+      return b;
+    }
     if (remain_ == 0) {
-      String l = c_.readStringUntil('\n');
-      if (l.length() == 0) { done_ = true; return -1; }
-      remain_ = (int)strtol(l.c_str(), nullptr, 16);
-      if (remain_ <= 0) { done_ = true; c_.readStringUntil('\n'); return -1; }
+      const long n = readHexLine();
+      if (n <= 0) { done_ = true; if (n == 0) skipLine(); return -1; }
+      remain_ = n;
     }
-    uint32_t t0 = millis();
-    while (!c_.available()) {
-      if (!c_.connected() || millis() - t0 > 8000) { done_ = true; return -1; }
-      delay(1);
-    }
-    const int b = c_.read();
-    if (--remain_ == 0) c_.readStringUntil('\n');   // CRLF hinter dem Block
+    const int b = waitByte(c_, deadline_);
+    if (b < 0) { done_ = true; return -1; }
+    if (--remain_ == 0) skipLine();                   // CRLF hinter dem Block
     return b;
   }
   int peek() override { return -1; }                  // wird vom JSON-Leser nicht benoetigt
   size_t write(uint8_t) override { return 0; }
-  void drain() { while (!done_) { if (read() < 0) break; } }
+  // Rest lesen (damit die Verbindung wiederverwendbar bleibt) - hoechstens 2 s und 16 KB, sonst false
+  bool drain() {
+    const uint32_t d = millis() + 2000;
+    if ((int32_t)(deadline_ - d) > 0) deadline_ = d;
+    for (int i = 0; i < 16384 && !done_; i++) if (read() < 0) break;
+    return done_ && !timedOut();
+  }
+  bool timedOut() const { return (int32_t)(millis() - deadline_) > 0; }
  private:
-  WiFiClient& c_;
-  int remain_ = 0;
+  long readHexLine() {                                // Blockgroesse (hex) bis zum Zeilenende
+    long v = 0; int digits = 0;
+    for (int i = 0; i < 40; i++) {
+      const int ch = waitByte(c_, deadline_);
+      if (ch < 0) return -1;
+      if (ch == '\n') return digits ? v : -1;
+      if (ch == ';') { skipLine(); return digits ? v : -1; }   // Erweiterungen hinter der Groesse
+      const int h = (ch >= '0' && ch <= '9') ? ch - '0' : (ch >= 'a' && ch <= 'f') ? ch - 'a' + 10 : (ch >= 'A' && ch <= 'F') ? ch - 'A' + 10 : -1;
+      if (h >= 0) { v = v * 16 + h; digits++; }
+    }
+    return -1;
+  }
+  void skipLine() { for (int i = 0; i < 200; i++) { const int ch = waitByte(c_, deadline_); if (ch < 0 || ch == '\n') return; } }
+  Client& c_;
+  bool chunked_;
+  int left_;                                          // Restlaenge bei bekannter Groesse, -1 = bis zum Ende
+  long remain_ = 0;
+  uint32_t deadline_;
   bool done_ = false;
 };
 
@@ -1261,15 +1301,13 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
                                      "baro_rate", "geom_rate", "seen_pos"};
   for (const char* k : KEYS) { filter["ac"][0][k] = true; filter["aircraft"][0][k] = true; }
   JsonDocument doc;
-  DeserializationError err;
-  if (http.getSize() < 0) {                          // "chunked": Bloecke selbst entpacken
-    ChunkStream cs(*gRadarClient);
-    err = deserializeJson(doc, cs, DeserializationOption::Filter(filter));
-    cs.drain();                                      // Rest lesen, damit die Verbindung wiederverwendbar bleibt
-  } else {
-    err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
-  }
+  const int size = http.getSize();                   // < 0: "chunked" (Bloecke selbst entpacken)
+  NetStream ns(*gRadarClient, size < 0, size, 10000);   // hoechstens 10 s fuer die ganze Antwort
+  const DeserializationError err = deserializeJson(doc, ns, DeserializationOption::Filter(filter));
+  const bool clean = ns.drain();                     // Rest lesen, damit die Verbindung wiederverwendbar bleibt
+  if (ns.timedOut()) LOGF("Radar: Antwort zu langsam - abgebrochen\n");
   http.end();                                        // Verbindung bleibt wegen setReuse(true) offen
+  if (!clean) gRadarClient->stop();                  // Rest nicht sauber gelesen: Verbindung nicht wiederverwenden
   // Wenig freier Speicher: TLS-Verbindung schliessen (gibt rund 40 KB frei), damit die Browser-Seite
   // weiter erreichbar bleibt. Der naechste Abruf baut sie neu auf.
   if (err || ESP.getFreeHeap() < 60000 || ESP.getMaxAllocHeap() < 24000) gRadarClient->stop();
@@ -1384,11 +1422,13 @@ static bool fetchIss(IssData& d) {
   http.setConnectTimeout(5000);
   http.setTimeout(5000);
   gIssCode = 0;
+  http.useHTTP10(true);                              // ohne "chunked": Antwort kann direkt gelesen werden
   if (!http.begin(client, "http://api.open-notify.org/iss-now.json")) return false;
   gIssCode = http.GET();
   if (gIssCode != HTTP_CODE_OK) { http.end(); return false; }
   JsonDocument doc;
-  const DeserializationError err = deserializeJson(doc, http.getStream());
+  NetStream ns(client, false, http.getSize(), 6000);   // mit Pausen lesen (kein Leerlauf fuer den Watchdog)
+  const DeserializationError err = deserializeJson(doc, ns);
   http.end();
   if (err) return false;
   if (!doc["iss_position"]["latitude"].is<const char*>() && !doc["iss_position"]["latitude"].is<float>()) return false;
@@ -1413,12 +1453,14 @@ static uint8_t fetchCrew() {                      // Personen auf der ISS (open-
   HTTPClient http;
   http.setConnectTimeout(5000);
   http.setTimeout(5000);
+  http.useHTTP10(true);
   if (!http.begin(client, "http://api.open-notify.org/astros.json")) return 0;
   if (http.GET() != HTTP_CODE_OK) { http.end(); return 0; }
   JsonDocument filter;
   filter["people"][0]["craft"] = true;
   JsonDocument doc;
-  const DeserializationError err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
+  NetStream ns(client, false, http.getSize(), 6000);
+  const DeserializationError err = deserializeJson(doc, ns, DeserializationOption::Filter(filter));
   http.end();
   if (err) return 0;
   int n = 0;
