@@ -5,6 +5,8 @@ Eine kleine WLAN-Uhr mit Wetter, Wecker und **27 Zifferblättern** im Pixel-Retr
 („Cheap Yellow Display“, ESP32-2432S028R, ganz ohne Löten). Alles wird bequem im Browser eingestellt,
 neue Firmware kommt per WLAN.
 
+**📄 [Kurzanleitung (PDF, 2 Seiten)](docs/Kurzanleitung_WetterUhr.pdf)** – Aufspielen, Einrichten, Bedienung, Updates, Spiele und Hilfe bei Problemen.
+
 ![Alle Themen-Designs](docs/images/designs.png)
 
 *Alle Bilder sind echte Bildschirm-Ausgaben der Firmware (am PC gerendert, 2× vergrößert).*
