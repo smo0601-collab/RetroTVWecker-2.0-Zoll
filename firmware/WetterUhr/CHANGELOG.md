@@ -4,6 +4,24 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.17-4 - Dauerhaftes Protokoll im Flash (mehrere Tage, uebersteht alles)
+
+- Wunsch: mindestens 48 Stunden protokollieren, nichts loeschen bei Neustart oder anderem.
+- Neues Protokoll im Flash (`plog.h`): Ringpuffer in den ersten 31 Sektoren des sonst ungenutzten Bereichs "spiffs"
+  (124 KB, der letzte Sektor bleibt fuer die Einstellungs-Sicherung). Uebersteht Neustart, Absturz, Stromausfall
+  und Firmware-Updates. Kein Dateisystem: ein Stromausfall kostet hoechstens die halbe letzte Zeile.
+- Umfang: etwa 20 KB pro Tag -> rund 5 Tage, aelteste Zeilen werden erst danach ueberschrieben.
+- Jede Zeile mit Datum und Uhrzeit. Alle 10 Minuten eine Zustandszeile (Speicher, WLAN, Wetter, Netz, Browser,
+  Bilder/s, Bildzeit, Kacheln, Schleifen/s, Design, ISS-Aussetzer). Gleiche Meldungen kurz hintereinander werden
+  gezaehlt ("vorige Meldung n-mal wiederholt"). Kurze ISS-Aussetzer nur gezaehlt, Ausfaelle ab 60 s mit Dauer.
+- Zeilen warten im RTC-Speicher, bis die Hauptschleife sie alle 2 s ins Flash schreibt - nach einem Absturz werden
+  sie beim naechsten Start gespeichert.
+- /log zeigt das ganze Flash-Protokoll (aelteste zuerst); /log?rtc=1 die ausfuehrliche Ansicht der letzten zwei
+  Sitzungen wie bisher.
+- Am PC geprueft: 3000 Zeilen mit Neustart mittendrin - lueckenlos, richtige Reihenfolge, Sicherungs-Sektor unberuehrt.
+
+Geaenderte Dateien: `plog.h` (neu), `WetterUhr.ino`, `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.17-3 - Optimierung: weniger RAM, Flugradar mit konstantem Speicher, Messwerte im Protokoll
 
 Ergebnis der Code-Analyse (Bericht: `docs/Optimierung_2026-11.md` im GitHub-Projekt).

@@ -1652,15 +1652,42 @@ static void webBegin() {
     server.sendHeader("Cache-Control", "public, max-age=31536000, immutable");
     server.send_P(200, "application/javascript", st + 8, en - (st + 8));
   });
-  server.on("/log", HTTP_GET, []() {                  // Protokoll: vorige und aktuelle Sitzung (Fehlersuche)
+  server.on("/log", HTTP_GET, []() {                  // dauerhaftes Protokoll (Flash, ueber alle Neustarts)
     if (!authOk()) return;
-    String o;
+    if (server.hasArg("rtc")) {                        // ?rtc=1: ausfuehrlich, nur die letzten zwei Sitzungen (RTC)
+      String o;
     o.reserve(4300);
     o += F("WetterUhr " FW_VERSION " - Protokoll (Zeit = Minuten:Sekunden seit dem Start)\n\n=== Vorige Sitzung (vor dem letzten Neustart) ===\n");
     rlogRead(o, 1);
     o += F("\n=== Aktuelle Sitzung ===\n");
     rlogRead(o, 0);
     server.send(200, "text/plain; charset=utf-8", o);
+      return;
+    }
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.send(200, "text/plain; charset=utf-8", "");
+    gWebAt = millis() | 1;
+    {
+      char h[200];
+      snprintf(h, sizeof(h), "WetterUhr " FW_VERSION " - dauerhaftes Protokoll (Flash, %lu von %lu KB belegt, aelteste Zeilen zuerst)\n"
+               "Ausfuehrlich, nur die letzten zwei Sitzungen: /log?rtc=1\n\n", (unsigned long)plog::usedKB(), (unsigned long)plog::capKB());
+      server.sendContent(h);
+    }
+    String buf;
+    buf.reserve(2200);
+    plog::readAll([&](const char* s, size_t n) {
+      buf.concat(s, n);
+      if (buf.length() >= 2000) { server.sendContent(buf); buf = ""; gWebAt = millis() | 1; }
+    });
+    portENTER_CRITICAL(&gLogMux);                     // noch nicht geschriebene Zeilen (werden gleich gespeichert)
+    const uint32_t pn = rtcPendLen;
+    char pb[RPEND_SZ];
+    memcpy(pb, rtcPend, pn);
+    portEXIT_CRITICAL(&gLogMux);
+    if (pn) buf.concat(pb, pn);
+    buf += F("--- Ende ---\n");
+    server.sendContent(buf);
+    server.sendContent("");
   });
 #if SND_RICH
   server.on("/sndtest", HTTP_POST, []() {             // Klang anhoeren (ohne Speichern), v = Lautstaerke vom Regler

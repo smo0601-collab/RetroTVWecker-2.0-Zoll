@@ -54,20 +54,54 @@
 RTC_NOINIT_ATTR static char rtcLog[2][RLOG_SZ];
 RTC_NOINIT_ATTR static uint32_t rtcLogPos[2], rtcLogWrap[2], rtcLogCur, rtcLogMagic;
 static portMUX_TYPE gLogMux = portMUX_INITIALIZER_UNLOCKED;
+// Zeilen fuer das dauerhafte Protokoll im Flash (plog.h) warten hier, bis die Hauptschleife sie schreibt. Liegt im
+// RTC-Speicher: nach Absturz oder Neustart werden sie beim naechsten Start noch gespeichert.
+#define RPEND_SZ 1536
+RTC_NOINIT_ATTR static char rtcPend[RPEND_SZ];
+RTC_NOINIT_ATTR static uint32_t rtcPendLen, rtcPendLost;
 static void rlogBoot() {
-  if (rtcLogMagic != 0x4C4F4731u || rtcLogCur > 1 || rtcLogPos[0] >= RLOG_SZ || rtcLogPos[1] >= RLOG_SZ) {
+  if (rtcLogMagic != 0x4C4F4731u || rtcLogCur > 1 || rtcLogPos[0] >= RLOG_SZ || rtcLogPos[1] >= RLOG_SZ || rtcPendLen > RPEND_SZ) {
     memset(rtcLog, 0, sizeof(rtcLog)); rtcLogPos[0] = rtcLogPos[1] = 0; rtcLogWrap[0] = rtcLogWrap[1] = 0; rtcLogCur = 0;
+    rtcPendLen = 0; rtcPendLost = 0;
   } else rtcLogCur ^= 1;                               // vorige Sitzung bleibt im anderen Puffer stehen
   rtcLogPos[rtcLogCur] = 0; rtcLogWrap[rtcLogCur] = 0;
   rtcLogMagic = 0x4C4F4731u;
 }
-static void rlogf(const char* fmt, ...) {
-  char b[150];
+// persist: Zeile auch ins dauerhafte Protokoll (Flash). Gleiche Meldungen kurz hintereinander werden dort gezaehlt
+// statt jedes Mal geschrieben (sonst fuellen z. B. Radar-Fehler alle 15 s den Speicher).
+static void rlogf(uint8_t persist, const char* fmt, ...) {   // persist: 0 nur RTC, 1 Flash (gleiche zaehlen), 2 Flash immer
+  char b[200];
   const uint32_t s = millis() / 1000;
   int n = snprintf(b, sizeof(b), "%lu:%02lu ", (unsigned long)(s / 60), (unsigned long)(s % 60));
   va_list ap; va_start(ap, fmt);
   vsnprintf(b + n, sizeof(b) - n, fmt, ap);
   va_end(ap);
+  if (persist) {
+    char q[240];
+    const char* msg = b + n;
+    uint32_t h = 2166136261u;                          // Kennung der Meldung (ohne Zahlen: "HTTP -1" == "HTTP 403")
+    for (const char* p = msg; *p; p++) if (!(*p >= '0' && *p <= '9')) h = (h ^ (uint8_t)*p) * 16777619u;
+    static uint32_t lastH = 0, lastAt = 0, rep = 0;
+    const uint32_t ms = millis();
+    int qn = 0;
+    if (persist == 1 && h == lastH && ms - lastAt < 15UL * 60000UL) { rep++; lastAt = ms; }
+    else {
+      if (rep) qn += snprintf(q, sizeof(q), "    (vorige Meldung %lu-mal wiederholt)\n", (unsigned long)rep);
+      rep = 0; lastH = (persist == 1) ? h : 0; lastAt = ms;
+      const time_t t = time(nullptr);
+      if (t > 1700000000) {
+        struct tm lt; localtime_r(&t, &lt);
+        qn += snprintf(q + qn, sizeof(q) - qn, "%02d.%02d. %02d:%02d:%02d ", lt.tm_mday, lt.tm_mon + 1, lt.tm_hour, lt.tm_min, lt.tm_sec);
+      } else qn += snprintf(q + qn, sizeof(q) - qn, "[+%lu:%02lu] ", (unsigned long)(s / 60), (unsigned long)(s % 60));
+      qn += snprintf(q + qn, sizeof(q) - qn, "%s", msg);
+      if (qn > (int)sizeof(q) - 1) qn = sizeof(q) - 1;
+      for (int i = 0; i < qn; i++) if ((uint8_t)q[i] == 0xFF) q[i] = '?';   // 0xFF markiert im Flash das Ende
+      portENTER_CRITICAL(&gLogMux);
+      if (rtcPendLen + qn <= RPEND_SZ) { memcpy(rtcPend + rtcPendLen, q, qn); rtcPendLen += qn; }
+      else rtcPendLost++;
+      portEXIT_CRITICAL(&gLogMux);
+    }
+  }
 #if DEBUG_SERIAL
   Serial.print(b);
 #endif
@@ -87,9 +121,28 @@ static void rlogRead(String& out, uint32_t which) {       // which: 0 = aktuelle
   if (wrap) for (uint32_t i = pos; i < RLOG_SZ; i++) { const char ch = rtcLog[c][i]; if (ch) out += ch; }
   for (uint32_t i = 0; i < pos; i++) { const char ch = rtcLog[c][i]; if (ch) out += ch; }
 }
-#define LOGF(...) rlogf(__VA_ARGS__)
+#define LOGF(...) rlogf(1, __VA_ARGS__)    // Ereignis: RTC-Protokoll und dauerhaftes Protokoll (Flash)
+#define LOGR(...) rlogf(0, __VA_ARGS__)    // Routine: nur RTC-Protokoll (letzte Sitzungen)
+#define LOGS(...) rlogf(2, __VA_ARGS__)    // Zustandszeile: immer ins Flash (nie zusammengefasst)
+#include "plog.h"
+// Wartende Zeilen ins Flash schreiben (nur aus der Hauptschleife)
+static void plogTick(uint32_t now) {
+  static uint32_t last = 0;
+  if (now - last < 2000) return;
+  last = now;
+  char b[RPEND_SZ];
+  uint32_t n, lost;
+  portENTER_CRITICAL(&gLogMux);
+  n = rtcPendLen; lost = rtcPendLost;
+  memcpy(b, rtcPend, n);
+  rtcPendLen = 0; rtcPendLost = 0;
+  portEXIT_CRITICAL(&gLogMux);
+  if (n) plog::write(b, n);
+  if (lost) { char m[64]; const int k = snprintf(m, sizeof(m), "    (%lu Zeilen verloren: Puffer voll)\n", (unsigned long)lost); plog::write(m, k); }
+}
 static volatile uint32_t gNetOkAt = 0;    // letzter erfolgreicher Netzabruf (Wetter, Radar, ISS, NTP)
 static volatile uint32_t gWebReq = 0;     // Anzahl Browser-Anfragen
+static volatile uint32_t gIssShort = 0;   // kurze ISS-Aussetzer seit der letzten Zustandszeile
 static char gWxErr[80] = "";              // letzter Fehler beim Wetterabruf (Anzeige im Status)
 // Ein verschluesselter Abruf (TLS) braucht kurzzeitig rund 60-70 KB. Zusammen mit dem Puffer der feinen Schrift
 // (38 KB) reicht der Speicher nicht: der Abruf scheitert ("connection refused"). Deshalb gibt die Anzeige den
@@ -182,7 +235,7 @@ static bool webBusy() { const uint32_t w = gWebAt; return w && millis() - w < 60
 static volatile uint32_t gDiagSec[4] = {0,0,0,0}, gDiagSecLast[4] = {0,0,0,0};   // wifi, web, render, delay(2)
 static volatile uint32_t gDiagGapMax = 0, gDiagFrameMax = 0, gDiagGapLast = 0, gDiagFrameLast = 0;
 // Messwerte fuer das Protokoll (je 5 Minuten): Bilder, Summe der Bildzeiten, gesendete Kacheln, Schleifendurchlaeufe
-static uint32_t gMFrames = 0, gMFrameUs = 0, gMTiles = 0, gMLoops = 0;
+static uint32_t gMFrames = 0, gMFrameUs = 0, gMTiles = 0, gMLoops = 0, gMFrameMax = 0;
 
 static bool getWeather(Weather& out) {
   static Weather cache;                                   // bei belegtem Mutex: letzten Stand nehmen, nie warten
@@ -771,20 +824,20 @@ static void heapGuard(uint32_t now) {
   rtcMinHeap = esp_get_minimum_free_heap_size();
   rtcUpMin = now / 60000UL;
   static uint8_t k = 0;
-  if (++k >= 30) {                                     // alle 5 Minuten: Zustand ins Protokoll
+  if (++k >= 60) {                                     // alle 10 Minuten: Zustand und Messwerte ins Protokoll
     k = 0;
-    const time_t t = time(nullptr);
-    struct tm lt; localtime_r(&t, &lt);
+    // eine Zeile (rund 150 Byte): Speicher, WLAN, Wetter, Netz, Browser | Messwerte der letzten 10 Minuten
     Weather w; const bool wv = getWeather(w);
-    LOGF("Zustand: Speicher %u/%u (min %u), WLAN %d %d dBm, Zeit %02d.%02d.%d %02d:%02d, Wetter %s, Netz-ok vor %lu s, Web %lu\n",
+    const uint32_t fr = gMFrames;
+    LOGS("Zustand: Speicher %u/%u min %u, WLAN %d %d dBm, Wetter %s, Netz-ok vor %lu s, Web %lu | %lu.%lu Bilder/s, "
+         "Bild %lu us max %lu, %lu Kacheln, %lu Schleifen/s, Design %u, ISS-Aussetzer %lu\n",
          (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), (unsigned)esp_get_minimum_free_heap_size(),
-         (int)WiFi.status(), (int)WiFi.RSSI(), lt.tm_mday, lt.tm_mon + 1, lt.tm_year + 1900, lt.tm_hour, lt.tm_min,
-         wv ? "ok" : "fehlt", gNetOkAt ? (unsigned long)((millis() - gNetOkAt) / 1000) : 0UL, (unsigned long)gWebReq);
-    // Messwerte der letzten 5 Minuten (Themen-Designs): Bilder/s, mittlere Bildzeit, Kacheln je Bild, Schleifen/s
-    if (gMFrames) LOGF("Messung: %lu.%lu Bilder/s, Bildzeit Mittel %lu us (max %lu), %lu von 300 Kacheln/Bild, %lu Schleifen/s\n",
-                       (unsigned long)(gMFrames / 300), (unsigned long)(gMFrames % 300 * 10 / 300), (unsigned long)(gMFrameUs / gMFrames),
-                       (unsigned long)gDiagFrameLast, (unsigned long)(gMTiles / gMFrames), (unsigned long)(gMLoops / 300));
-    gMFrames = gMFrameUs = gMTiles = gMLoops = 0;
+         (int)WiFi.status(), (int)WiFi.RSSI(), wv ? "ok" : "fehlt",
+         gNetOkAt ? (unsigned long)((millis() - gNetOkAt) / 1000) : 0UL, (unsigned long)gWebReq,
+         (unsigned long)(fr / 600), (unsigned long)(fr % 600 * 10 / 600), fr ? (unsigned long)(gMFrameUs / fr) : 0UL,
+         (unsigned long)gMFrameMax, fr ? (unsigned long)(gMTiles / fr) : 0UL, (unsigned long)(gMLoops / 600),
+         (unsigned)gStyle, (unsigned long)gIssShort);
+    gMFrames = gMFrameUs = gMTiles = gMLoops = gMFrameMax = 0; gIssShort = 0;
   }
   if (ESP.getMaxAllocHeap() >= 16000) { lowSince = 0; return; }
   if (!lowSince) { lowSince = now ? now : 1; LOGF("Speicher knapp: groesster Block %u\n", (unsigned)ESP.getMaxAllocHeap()); return; }
@@ -849,7 +902,7 @@ static void touchTick(uint32_t now) {
     else if (!down && now - hiSince >= TOUCH_MIN_MS) {
       down = true; downAt = now; longDone = false;
       gTouchCount++; gTouchLastMs = now;
-      LOGF("Touch: Beruehrung erkannt (%lu)\n", (unsigned long)gTouchCount);
+      LOGR("Touch: Beruehrung erkannt (%lu)\n", (unsigned long)gTouchCount);
       if (gAlarmRinging) { alarmStop(); longDone = true; return; }   // klingelnder Wecker: nur abstellen
       if (gSet.bzTouch && !bz::busy()) bz::click();
       if (standby) { startWake(); longDone = true; }   // Beruehrung weckt, ohne weitere Aktion
@@ -1160,7 +1213,7 @@ static void weatherStep() {
           gWeather = nw;
           xSemaphoreGive(gMutex);
           lastOk = true;
-          LOGF("Wetter aktualisiert: %.1f C\n", nw.temp);
+          LOGR("Wetter aktualisiert: %.1f C\n", nw.temp);
           gWxErr[0] = 0;
           gNetOkAt = millis() | 1;
         } else {
@@ -1547,14 +1600,23 @@ static void issStep() {
       else if (!lastOkMs || millis() - lastOkMs > 120000UL) { gIss.status = 2; }   // kurze Aussetzer: Bahn weiterrechnen
       gIssVer++;
       xSemaphoreGive(gMutex);
+      static uint32_t failSince = 0;
+      static bool longLogged = false;
       if (ok) {
         gNetOkAt = millis() | 1;
         lastOkMs = millis() | 1;
-        if (fails) LOGF("ISS: wieder ok (nach %u Fehlversuchen)\n", (unsigned)fails);
-        fails = 0;
+        if (fails) {
+          const uint32_t d = (millis() - failSince) / 1000;
+          if (d >= 60) LOGF("ISS: Dienst %lu s nicht erreichbar (%u Fehlversuche), wieder ok\n", (unsigned long)d, (unsigned)fails);
+          else { gIssShort = gIssShort + 1; LOGR("ISS: kurzer Aussetzer (%u Fehlversuche)\n", (unsigned)fails); }
+        }
+        fails = 0; longLogged = false;
       } else {
-        if (!fails) LOGF("ISS: Fehler HTTP %d (%s) - weitere Versuche seltener\n", gIssCode,
-                         gIssCode < 0 ? HTTPClient::errorToString(gIssCode).c_str() : "Dienst");
+        if (!fails) { failSince = millis(); LOGR("ISS: Fehler HTTP %d\n", gIssCode); }
+        if (!longLogged && millis() - failSince > 600000UL) {
+          longLogged = true;
+          LOGF("ISS: seit 10 min keine Daten (HTTP %d %s)\n", gIssCode, gIssCode < 0 ? HTTPClient::errorToString(gIssCode).c_str() : "");
+        }
         if (fails < 60000) fails++;
       }
     }
@@ -2128,6 +2190,7 @@ static bool themedTick(uint32_t now) {
     const uint32_t dt = micros() - t0;
     if (dt > gDiagFrameMax) gDiagFrameMax = dt;
     gMFrames++; gMFrameUs += dt; gMTiles += (uint32_t)fc::lastTiles;
+    if (dt > gMFrameMax) gMFrameMax = dt;
   }
   if (showAfterDraw) {
     boardTftDisplay(true);
@@ -2205,9 +2268,13 @@ void setup() {
   bz::init();                    // Summer-Pin sofort auf "aus"
   crumbsBoot();
   rlogBoot();
+  const bool plogOk = plog::begin();             // dauerhaftes Protokoll im Flash (rund 6 Tage)
   {
-    const time_t t = time(nullptr);
-    LOGF("Start %s, Neustart-Grund %d, Systemzeit %lld\n", FW_VERSION, (int)esp_reset_reason(), (long long)t);
+    static const char* const RR[] = {"?", "Einschalten", "Reset-Taste", "Software", "Absturz (PANIC)", "Interrupt-Watchdog",
+                                     "Task-Watchdog", "Watchdog", "Tiefschlaf", "Spannungseinbruch (Brownout)", "SDIO"};
+    const int rr = (int)esp_reset_reason();
+    LOGS("=== Start %s, Grund: %s%s\n", FW_VERSION, rr >= 0 && rr < 11 ? RR[rr] : "?",
+         plogOk ? "" : " (Flash-Protokoll nicht verfuegbar)");
     if (gPrevValid) LOGF("Vorher: Schleife %08lx, Netz %lu, min. Speicher %lu, nach %lu min\n", (unsigned long)gPrevLoop,
                          (unsigned long)gPrevNet, (unsigned long)gPrevMinHeap, (unsigned long)gPrevUpMin);
     if (gPrevWdt[0][0]) LOGF("Watchdog: auf Kern 0 lief '%s', auf Kern 1 '%s'\n", gPrevWdt[0], gPrevWdt[1]);
@@ -2292,6 +2359,7 @@ void loop() {
   gCrumbLoop = 4;
   soundTick(now);
   heapGuard(now);
+  plogTick(now);                         // wartende Protokollzeilen ins Flash
   gCrumbLoop = 5;
 #if BOARD_CYD
   const bool dualUi = dual::tick(now);   // Menue oder Kalibrierung auf dem Bildschirm
