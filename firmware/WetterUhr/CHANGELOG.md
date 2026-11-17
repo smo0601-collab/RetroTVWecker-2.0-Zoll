@@ -4,6 +4,17 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.17-2 - Browser-Seite laedt schnell, Bild stockt nicht mehr
+
+- Gemeldet: Beim Aufruf der Browser-Seite stockt das Bild, die Seite braucht etwa 10 s (bei jedem Design).
+- Ursache: Die Seite ging in rund 40 kleinen Stuecken (je 1,2 KB) raus. Mit Nagle-Algorithmus und verzoegerter
+  Bestaetigung des Browsers wartet jedes Stueck rund 200 ms - in der Zeit steht die Hauptschleife und damit das Bild.
+- Jetzt: Verzoegerung aus (setNoDelay), Stuecke bis 5 KB. Formatvorlage und Programm der Seite (zusammen ~16 KB)
+  kommen als /app.css und /app.js und bleiben im Browser-Speicher (Adresse mit Firmware-Version, nach einem Update
+  automatisch neu geladen).
+
+Geaenderte Dateien: `webui.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.17 - Ursache des Task-Watchdogs beim Flugradar behoben
 
 - Absturz-Spur vom Geraet: "Netz: Flugradar (Daten lesen), Watchdog: Kern 0 'net'". Der Netz-Task hing also beim

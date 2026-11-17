@@ -511,13 +511,16 @@ static void handleRoot() {
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html; charset=utf-8", "");
   String p;
-  p.reserve(4096);
+  p.reserve(6144);
+  // Kleine Stuecke + Nagle-Algorithmus + verzoegerte Bestaetigung des Browsers = je Stueck ~200 ms Wartezeit.
+  // Darum: Verzoegerung aus und Stuecke bis ~5 KB (gemeldet: Seite brauchte ~10 s, Bild stockte so lange).
+  server.client().setNoDelay(true);
   // Haengt die Verbindung (Browser weg, Netz gestoert), wird nicht weiter gesendet: sonst wartet jedes Stueck
   // bis zu 10 s und die Uhr steht fast eine Minute still.
   const uint32_t tStart = millis();
   bool dead = false;
   auto fl = [&]() {
-    if (p.length() <= 1200) return;
+    if (p.length() <= 5000) return;
     if (!dead) {
       gWebAt = millis() | 1;
       server.sendContent(p);
@@ -529,7 +532,16 @@ static void handleRoot() {
   auto sel = [&](bool on) { p += on ? F(" selected") : F(""); };
   auto chk = [&](bool on) { p += on ? F(" checked") : F(""); };
   p += F("<!doctype html><html lang="); p += LANG_CODE[LANG_IDX]; p += '>';
-  p += FPSTR(PAGE_HEAD);
+  {                                     // Kopf ohne die Formatvorlage: die kommt als /app.css aus dem Browser-Speicher
+    const char* h = PAGE_HEAD;
+    const char* st = strstr(h, "<style>");
+    const char* en = st ? strstr(st, "</style>") : nullptr;
+    if (st && en) {
+      p.concat(h, st - h);
+      p += F("<link rel=stylesheet href=\"/app.css?v=" FW_VERSION "\">");
+      p += (en + 8);                        // "</head><body>"
+    } else p += FPSTR(PAGE_HEAD);
+  }
 
   // ---- Navigation (Kategorien) ----
   p += F("<div class=app><nav id=nav><a data-t=status>"); T(W_STATUS);
@@ -1139,7 +1151,7 @@ static void handleRoot() {
   js("gw", J_GEO_WAIT); js("gn", J_GEO_NONE); js("ge", J_GEO_ERR); js("gok", J_GEO_OK); js("gsv", J_GEO_SAVE);
   p += F("glang:\""); p += LANG_CODE[LANG_IDX]; p += F("\",");
   p += F("};</script>");
-  p += FPSTR(PAGE_JS);
+  p += F("<script src=\"/app.js?v=" FW_VERSION "\"></script></body></html>");   // Programm der Seite: aus dem Browser-Speicher
   if (!dead) {
     server.sendContent(p);
     server.sendContent("");               // Ende der Antwort
@@ -1624,6 +1636,22 @@ static void webBegin() {
   server.on("/reset", HTTP_POST, handleReset);
   server.on("/settime", HTTP_POST, handleSetTime);
   server.on("/beep", HTTP_POST, handleBeep);
+  // Formatvorlage und Programm der Seite: unveraenderlich je Firmware-Version, der Browser behaelt sie ein Jahr
+  // (die Adresse enthaelt die Version, ein Update laedt also automatisch neu). Ohne Passwort: nichts Geheimes darin.
+  server.on("/app.css", HTTP_GET, []() {
+    const char* st = strstr(PAGE_HEAD, "<style>");
+    const char* en = st ? strstr(st, "</style>") : nullptr;
+    if (!st || !en) { server.send(404); return; }
+    server.sendHeader("Cache-Control", "public, max-age=31536000, immutable");
+    server.send_P(200, "text/css", st + 7, en - (st + 7));
+  });
+  server.on("/app.js", HTTP_GET, []() {
+    const char* st = strstr(PAGE_JS, "<script>");
+    const char* en = st ? strstr(st, "</script>") : nullptr;
+    if (!st || !en) { server.send(404); return; }
+    server.sendHeader("Cache-Control", "public, max-age=31536000, immutable");
+    server.send_P(200, "application/javascript", st + 8, en - (st + 8));
+  });
   server.on("/log", HTTP_GET, []() {                  // Protokoll: vorige und aktuelle Sitzung (Fehlersuche)
     if (!authOk()) return;
     String o;
