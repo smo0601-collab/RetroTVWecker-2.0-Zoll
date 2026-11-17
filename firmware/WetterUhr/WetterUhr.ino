@@ -39,6 +39,7 @@
 #include <Fonts/FreeSansBold24pt7b.h>
 
 #include "config.h"
+#include "sdcard.h"       // Micro-SD (nur CYD): Protokoll, Wetter- und Messwerte, Einstellungs-Sicherung
 #include "board.h"        // Display, Touch und LED je nach Board (CYD oder ESP32-C3)
 #include "icons.h"
 #include "settings.h"
@@ -76,6 +77,21 @@ static void rlogf(uint8_t persist, const char* fmt, ...) {   // persist: 0 nur R
   va_list ap; va_start(ap, fmt);
   vsnprintf(b + n, sizeof(b) - n, fmt, ap);
   va_end(ap);
+  char dp[24];                                       // Datum/Uhrzeit fuer Flash und SD-Karte
+  {
+    const time_t t = time(nullptr);
+    if (t > 1700000000) {
+      struct tm lt; localtime_r(&t, &lt);
+      snprintf(dp, sizeof(dp), "%02d.%02d. %02d:%02d:%02d ", lt.tm_mday, lt.tm_mon + 1, lt.tm_hour, lt.tm_min, lt.tm_sec);
+    } else snprintf(dp, sizeof(dp), "[+%lu:%02lu] ", (unsigned long)(s / 60), (unsigned long)(s % 60));
+  }
+#if HAS_SD
+  {                                                  // SD-Karte: alles, auch Routine-Meldungen
+    char sl[230];
+    snprintf(sl, sizeof(sl), "%s%s", dp, b + n);
+    sd::put(sd::T_LOG, sl);
+  }
+#endif
   if (persist) {
     char q[240];
     const char* msg = b + n;
@@ -88,12 +104,7 @@ static void rlogf(uint8_t persist, const char* fmt, ...) {   // persist: 0 nur R
     else {
       if (rep) qn += snprintf(q, sizeof(q), "    (vorige Meldung %lu-mal wiederholt)\n", (unsigned long)rep);
       rep = 0; lastH = (persist == 1) ? h : 0; lastAt = ms;
-      const time_t t = time(nullptr);
-      if (t > 1700000000) {
-        struct tm lt; localtime_r(&t, &lt);
-        qn += snprintf(q + qn, sizeof(q) - qn, "%02d.%02d. %02d:%02d:%02d ", lt.tm_mday, lt.tm_mon + 1, lt.tm_hour, lt.tm_min, lt.tm_sec);
-      } else qn += snprintf(q + qn, sizeof(q) - qn, "[+%lu:%02lu] ", (unsigned long)(s / 60), (unsigned long)(s % 60));
-      qn += snprintf(q + qn, sizeof(q) - qn, "%s", msg);
+      qn += snprintf(q + qn, sizeof(q) - qn, "%s%s", dp, msg);
       if (qn > (int)sizeof(q) - 1) qn = sizeof(q) - 1;
       for (int i = 0; i < qn; i++) if ((uint8_t)q[i] == 0xFF) q[i] = '?';   // 0xFF markiert im Flash das Ende
       portENTER_CRITICAL(&gLogMux);
@@ -837,6 +848,21 @@ static void heapGuard(uint32_t now) {
          (unsigned long)(fr / 600), (unsigned long)(fr % 600 * 10 / 600), fr ? (unsigned long)(gMFrameUs / fr) : 0UL,
          (unsigned long)gMFrameMax, fr ? (unsigned long)(gMTiles / fr) : 0UL, (unsigned long)(gMLoops / 600),
          (unsigned)gStyle, (unsigned long)gIssShort);
+#if HAS_SD
+    {
+      const time_t t = time(nullptr);
+      struct tm lt; localtime_r(&t, &lt);
+      char c[200];
+      snprintf(c, sizeof(c), "%02d.%02d.%04d;%02d:%02d;%lu;%u;%u;%u;%d;%d;%lu;%lu;%lu,%lu;%lu;%lu;%lu;%lu;%u;%lu",
+               lt.tm_mday, lt.tm_mon + 1, lt.tm_year + 1900, lt.tm_hour, lt.tm_min, (unsigned long)(now / 60000UL),
+               (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), (unsigned)esp_get_minimum_free_heap_size(),
+               (int)WiFi.RSSI(), wv ? 1 : 0, gNetOkAt ? (unsigned long)((millis() - gNetOkAt) / 1000) : 0UL, (unsigned long)gWebReq,
+               (unsigned long)(fr / 600), (unsigned long)(fr % 600 * 10 / 600), fr ? (unsigned long)(gMFrameUs / fr) : 0UL,
+               (unsigned long)gMFrameMax, fr ? (unsigned long)(gMTiles / fr) : 0UL, (unsigned long)(gMLoops / 600),
+               (unsigned)gStyle, (unsigned long)gIssShort);
+      sd::put(sd::T_STATE, c);
+    }
+#endif
     gMFrames = gMFrameUs = gMTiles = gMLoops = gMFrameMax = 0; gIssShort = 0;
   }
   if (ESP.getMaxAllocHeap() >= 16000) { lowSince = 0; return; }
@@ -1214,6 +1240,18 @@ static void weatherStep() {
           xSemaphoreGive(gMutex);
           lastOk = true;
           LOGR("Wetter aktualisiert: %.1f C\n", nw.temp);
+#if HAS_SD
+          {                                      // Wetterverlauf auf der SD-Karte (CSV, Dezimalkomma)
+            const time_t t = time(nullptr);
+            struct tm lt; localtime_r(&t, &lt);
+            char c[128];
+            snprintf(c, sizeof(c), "%02d.%02d.%04d;%02d:%02d;%.1f;%.1f;%d;%.1f;%d;%d;%.1f;%.1f", lt.tm_mday, lt.tm_mon + 1,
+                     lt.tm_year + 1900, lt.tm_hour, lt.tm_min, nw.temp, nw.feels, nw.hum, nw.wind, nw.code, nw.isDay ? 1 : 0,
+                     nw.nDays ? nw.dMin[0] : 0.0f, nw.nDays ? nw.dMax[0] : 0.0f);
+            for (char* p = c; *p; p++) if (*p == '.' && p > c + 16) *p = ',';   // Dezimalkomma (Datum bleibt)
+            sd::put(sd::T_WX, c);
+          }
+#endif
           gWxErr[0] = 0;
           gNetOkAt = millis() | 1;
         } else {
@@ -2266,6 +2304,7 @@ void setup() {
 #endif
 #endif
   bz::init();                    // Summer-Pin sofort auf "aus"
+  const bool sdOk = sd::begin();  // vor den Einstellungen: dient auch als Sicherung
   crumbsBoot();
   rlogBoot();
   const bool plogOk = plog::begin();             // dauerhaftes Protokoll im Flash (rund 6 Tage)
@@ -2275,6 +2314,7 @@ void setup() {
     const int rr = (int)esp_reset_reason();
     LOGS("=== Start %s, Grund: %s%s\n", FW_VERSION, rr >= 0 && rr < 11 ? RR[rr] : "?",
          plogOk ? "" : " (Flash-Protokoll nicht verfuegbar)");
+    if (HAS_SD) LOGF("SD-Karte: %s\n", sdOk ? "bereit (Protokoll, Wetter- und Messwerte unter /wetteruhr)" : "keine");
     if (gPrevValid) LOGF("Vorher: Schleife %08lx, Netz %lu, min. Speicher %lu, nach %lu min\n", (unsigned long)gPrevLoop,
                          (unsigned long)gPrevNet, (unsigned long)gPrevMinHeap, (unsigned long)gPrevUpMin);
     if (gPrevWdt[0][0]) LOGF("Watchdog: auf Kern 0 lief '%s', auf Kern 1 '%s'\n", gPrevWdt[0], gPrevWdt[1]);
@@ -2360,6 +2400,7 @@ void loop() {
   soundTick(now);
   heapGuard(now);
   plogTick(now);                         // wartende Protokollzeilen ins Flash
+  sd::tick(now);                         // SD-Karte: Protokoll und Messwerte (alle 10 s)
   gCrumbLoop = 5;
 #if BOARD_CYD
   const bool dualUi = dual::tick(now);   // Menue oder Kalibrierung auf dem Bildschirm
