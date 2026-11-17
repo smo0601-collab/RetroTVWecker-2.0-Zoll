@@ -640,9 +640,6 @@ static void handleRoot() {
   }
 #endif
   row(W_R_FW, String(FW_VERSION) + "  (" + TR(W_BUILT) + " " + __DATE__ + " " + __TIME__ + ")");
-#if HAS_SD
-  rowh(W_R_SD, esc(sd::status()) + (sd::ok() ? " &middot; <a href=/sd>Dateien</a>" : ""));
-#endif
   {                                                   // Grund des letzten Neustarts (Fehlersuche: Absturz, Spannungseinbruch ...)
     static const char* const RR[] = {"?", "Einschalten / Power-on", "extern", "Software (Neustart)", "PANIC (Absturz)",
                                      "Interrupt-Watchdog", "Task-Watchdog", "Watchdog", "Deep-Sleep",
@@ -1639,53 +1636,6 @@ static void webBegin() {
   server.on("/reset", HTTP_POST, handleReset);
   server.on("/settime", HTTP_POST, handleSetTime);
   server.on("/beep", HTTP_POST, handleBeep);
-#if HAS_SD
-  server.on("/sd", HTTP_GET, []() {                   // Dateien der Uhr auf der SD-Karte (Ordner /wetteruhr)
-    if (!authOk()) return;
-    String o;
-    o.reserve(3000);
-    o += F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>SD-Karte</title>"
-           "<style>body{font:15px system-ui,sans-serif;margin:16px;max-width:720px}td{padding:3px 10px 3px 0}"
-           "td.r{text-align:right}a{color:#1f6f5c}</style><h2>SD-Karte: /wetteruhr</h2><p>");
-    o += esc(sd::status());
-    o += F("</p><table>");
-    if (sd::ok()) {
-      auto list = [&](const char* dir) {
-        File d = SD.open(dir);
-        if (!d || !d.isDirectory()) return;
-        for (File f = d.openNextFile(); f; f = d.openNextFile()) {
-          if (f.isDirectory()) continue;
-          String path = String(dir) + "/" + f.name();
-          o += F("<tr><td><a href=\"/sdget?f="); o += path; o += F("\">"); o += esc(path.substring(11)); o += F("</a></td><td class=r>");
-          o += String((unsigned long)((f.size() + 1023) / 1024)); o += F(" KB</td></tr>");
-          if (o.length() > 2500) { server.sendContent(o); o = ""; }
-        }
-      };
-      server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-      server.send(200, "text/html; charset=utf-8", "");
-      list("/wetteruhr");
-      list("/wetteruhr/log");
-      o += F("</table><p><a href=/>Zur&uuml;ck</a></p>");
-      server.sendContent(o);
-      server.sendContent("");
-      return;
-    }
-    o += F("</table><p><a href=/>Zur&uuml;ck</a></p>");
-    server.send(200, "text/html; charset=utf-8", o);
-  });
-  server.on("/sdget", HTTP_GET, []() {                // eine Datei herunterladen (nur unterhalb von /wetteruhr)
-    if (!authOk()) return;
-    const String f = server.arg("f");
-    if (!sd::ok() || !f.startsWith("/wetteruhr/") || f.indexOf("..") >= 0) { server.send(404, "text/plain", "nicht gefunden"); return; }
-    File fh = SD.open(f, FILE_READ);
-    if (!fh || fh.isDirectory()) { server.send(404, "text/plain", "nicht gefunden"); return; }
-    gWebAt = millis() | 1;
-    const char* type = f.endsWith(".csv") ? "text/csv; charset=utf-8" : f.endsWith(".txt") ? "text/plain; charset=utf-8" : "application/octet-stream";
-    server.sendHeader("Content-Disposition", String("inline; filename=\"") + f.substring(f.lastIndexOf('/') + 1) + "\"");
-    server.streamFile(fh, type);
-    fh.close();
-  });
-#endif
   // Formatvorlage und Programm der Seite: unveraenderlich je Firmware-Version, der Browser behaelt sie ein Jahr
   // (die Adresse enthaelt die Version, ein Update laedt also automatisch neu). Ohne Passwort: nichts Geheimes darin.
   server.on("/app.css", HTTP_GET, []() {

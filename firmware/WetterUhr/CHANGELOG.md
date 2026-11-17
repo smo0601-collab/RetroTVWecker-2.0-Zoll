@@ -4,24 +4,15 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
-## 2026.11.17-5 - SD-Karte (CYD): komplettes Protokoll, Wetterverlauf, Messwerte, Einstellungs-Sicherung
+## 2026.11.17-6 - SD-Karte wieder entfernt (Stand wie 2026.11.17-4)
 
-- Neu (nur CYD, Steckplatz auf der Rueckseite, FAT32): Ordner /wetteruhr auf der Karte
-  - log/JJJJ-MM-TT.txt: komplettes Protokoll je Tag, auch Routine-Meldungen (Wetter aktualisiert, Touch,
-    ISS-Aussetzer), unbegrenzt bis die Karte voll ist
-  - wetter_JJJJ-MM.csv: jede Wetter-Aktualisierung (Temperatur, gefuehlt, Feuchte, Wind, Wettercode, Tag/Nacht,
-    Min/Max heute)
-  - zustand_JJJJ-MM.csv: alle 10 min Speicher, WLAN, Netz, Browser, Bilder/s, Bildzeit, Kacheln, Schleifen/s,
-    Design, ISS-Aussetzer
-  - einstellungen.bin: Sicherung bei jedem Speichern; wird benutzt, wenn NVS und Flash-Sicherung leer sind
-    (z. B. nach einer USB-Erstinstallation). Enthaelt auch das WLAN-Passwort.
-- CSV mit ";" und Dezimalkomma (Excel/LibreOffice). Schreiben gesammelt alle 10 s, nur aus der Hauptschleife.
-- Karte gezogen oder keine Karte: alles laeuft weiter; neuer Versuch nach 1, 2, 5 min, dann alle 10 min.
-- Status: Zeile "SD-Karte" (Groesse, belegt, geschrieben) mit Link /sd (Dateiliste zum Herunterladen).
-- Das Flash-Protokoll (rund 5 Tage) bleibt unabhaengig davon bestehen. ESP32-C3: unveraendert (kein Kartenleser).
-- RAM CYD: +4,3 KB (SD-Bibliothek, Warteschlange); Flash CYD: +44 KB.
+- Auf Wunsch zurueckgenommen: die Auslagerung auf die SD-Karte aus 2026.11.17-5 (Protokoll, Wetterverlauf,
+  Messwerte, Einstellungs-Sicherung auf der Karte). Der Quellcode entspricht wieder 2026.11.17-4, nur die
+  Versionsnummer ist neu. Das dauerhafte Protokoll im Flash (rund 5 Tage) bleibt.
+- Dateien, die 2026.11.17-5 auf einer Karte angelegt hat (Ordner /wetteruhr), werden nicht mehr beschrieben und
+  koennen geloescht werden.
 
-Geaenderte Dateien: `sdcard.h` (neu), `WetterUhr.ino`, `settings.h`, `webui.h`, `lang_web.h`, `config.h`, `CHANGELOG.md`
+Geaenderte Dateien: `sdcard.h` (entfernt), `WetterUhr.ino`, `settings.h`, `webui.h`, `lang_web.h`, `config.h`, `CHANGELOG.md`
 
 ## 2026.11.17-4 - Dauerhaftes Protokoll im Flash (mehrere Tage, uebersteht alles)
 

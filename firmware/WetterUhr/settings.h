@@ -215,7 +215,6 @@ static void settingsLoad() {
     Settings b;
     cyd::BakWifi w;
     if (cyd::bakRead(cyd::BAK_SET, &b, sizeof(Settings), STYLE_VERSION)) { gSet = b; gSetRestored = true; }
-    else if (sd::loadBlob("/wetteruhr/einstellungen.bin", &b, sizeof(Settings), STYLE_VERSION)) { gSet = b; gSetRestored = true; }
     else if (cyd::bakRead(cyd::BAK_WIFI, &w, sizeof(w)) && w.ssid[0]) {
       strlcpy(gSet.ssid, w.ssid, sizeof(gSet.ssid)); strlcpy(gSet.pass, w.pass, sizeof(gSet.pass)); gSetRestored = true;
     }
@@ -307,7 +306,6 @@ static void settingsSave() {
   strlcpy(w.ssid, gSet.ssid, sizeof(w.ssid)); strlcpy(w.pass, gSet.pass, sizeof(w.pass));
   cyd::bakWrite(cyd::BAK_WIFI, &w, sizeof(w));
   cyd::bakWrite(cyd::BAK_SET, &gSet, sizeof(Settings), STYLE_VERSION);
-  sd::saveBlob("/wetteruhr/einstellungen.bin", &gSet, sizeof(Settings), STYLE_VERSION);   // zweite Sicherung (SD)
 #endif
 }
 
