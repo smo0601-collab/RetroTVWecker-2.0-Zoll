@@ -25,9 +25,13 @@ enum : uint8_t {
 };
 
 static uint32_t t0, lastT;
-static Sparks<60> sp;
-static float     fx[12], fy[12], fv[12];
-static uint8_t   fc_[12];
+struct State { Sparks<60> sp; float fx[12], fy[12], fv[12]; uint8_t fc_[12]; };   // im gemeinsamen Speicher
+FC_POOL_STATE(State);
+static Sparks<60>& sp  = S_.sp;
+static float  (&fx)[12] = S_.fx;
+static float  (&fy)[12] = S_.fy;
+static float  (&fv)[12] = S_.fv;
+static uint8_t (&fc_)[12] = S_.fc_;
 
 static void enter(uint32_t now) {
   pal(P_SKY, 110, 180, 255); pal(P_SKY2, 170, 215, 255); pal(P_NIGHT, 10, 14, 48); pal(P_NIGHT2, 30, 30, 80);

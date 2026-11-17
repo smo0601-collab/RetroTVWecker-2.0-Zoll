@@ -69,7 +69,9 @@ static float    px[2], tx[2], fdir[2], trailX[4], trailY[4];
 static uint8_t  lastMm;
 static char     flash[24];
 static uint8_t  flashCol;
-static Sparks<40> sp;
+struct State { Sparks<40> sp; };                   // im gemeinsamen Speicher der Designs
+FC_POOL_STATE(State);
+static Sparks<40>& sp = S_.sp;
 
 // ---- Spielstand sichern (RAM beim Designwechsel, Flash fuer Neustart/Stromausfall) ----
 static bool     live = false;                      // Match laeuft (Zustand im RAM gueltig)

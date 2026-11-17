@@ -18,14 +18,16 @@ struct Rock { float x, y, vx, vy, r, a, w; uint8_t v[9]; bool on; };
 struct Bul  { float x, y, vx, vy, life; int8_t tgt; bool on; };
 struct Frag { float x, y, vx, vy, life, a; };
 
-static Rock rock[8];
-static Bul  bul[3];
-static Frag frag[24];
+struct State { Rock rock[8]; Bul bul[3]; Frag frag[24]; float starX[36]; uint8_t starY[36]; };   // gemeinsamer Speicher
+FC_POOL_STATE(State);
+static Rock (&rock)[8]  = S_.rock;
+static Bul  (&bul)[3]   = S_.bul;
+static Frag (&frag)[24] = S_.frag;
 static float sx = 80, sa = 0;
 static uint32_t lastT, nextFire, nextSpawn, hideUntil, scoreV;
 static uint8_t lives, lastMm, lastHh;
-static float starX[36];
-static uint8_t starY[36];
+static float   (&starX)[36] = S_.starX;
+static uint8_t (&starY)[36] = S_.starY;
 static const uint8_t SEG[11] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x40};
 
 static void spawnRock(float x, float y, float r) {

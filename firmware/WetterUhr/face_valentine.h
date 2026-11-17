@@ -17,8 +17,10 @@ enum : uint8_t { V_BG1 = 1, V_BG2, V_BG3, V_H1, V_H2, V_H3, V_H4, V_BRANCH, V_LE
                  V_BEAK, V_EYE, V_ENV, V_ENV2, V_SEAL, V_ARROW, V_FEATH, V_DIG, V_SH, V_TXT, V_DIM, V_WHITE };
 
 struct Heart { float x, y, v, ph; uint8_t s, col; };
-static Heart    hs[10];
-static Sparks<40> burst;
+struct State { Heart hs[10]; Sparks<40> burst; };   // im gemeinsamen Speicher der Designs
+FC_POOL_STATE(State);
+static Heart (&hs)[10]   = S_.hs;
+static Sparks<40>& burst = S_.burst;
 static uint32_t lastT, letterT, arrowT, kissT;
 static uint8_t  lastMm;
 

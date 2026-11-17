@@ -21,8 +21,10 @@ enum : uint8_t { N_SKY1 = 1, N_SKY2, N_SKY3, N_ST, N_CITY, N_CITY2, N_WIN, N_WIN
 struct Part { float x, y, vx, vy, age, life; uint8_t col, dim, kind; };   // kind 0 normal, 1 Weide, 2 Knister
 struct Rocket { float x, y, vy, top; uint8_t col, kind; bool on; };
 #define NPART 280
-static Part     ps[NPART];
-static Rocket   rk[6];
+struct State { Part ps[NPART]; Rocket rk[6]; };   // im gemeinsamen Speicher der Designs (faces_core.h)
+FC_POOL_STATE(State);
+static Part   (&ps)[NPART] = S_.ps;
+static Rocket (&rk)[6]     = S_.rk;
 static uint32_t lastT, nextLaunch, flashT;
 static uint8_t  lastMm, lastSs;
 

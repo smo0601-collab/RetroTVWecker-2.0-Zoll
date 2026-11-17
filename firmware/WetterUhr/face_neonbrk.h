@@ -23,7 +23,9 @@ static uint8_t lastMm, rowsBuilt;
 static int hits;
 static float capX, capY;
 static bool capOn, padSet;
-static Sparks<28> sp;
+struct State { Sparks<28> sp; };                   // im gemeinsamen Speicher der Designs
+FC_POOL_STATE(State);
+static Sparks<28>& sp = S_.sp;
 
 static void enter(uint32_t now) {
   static const uint8_t C[4][3] = {{0, 230, 255}, {255, 40, 200}, {255, 230, 40}, {60, 255, 120}};

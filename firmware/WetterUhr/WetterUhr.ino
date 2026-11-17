@@ -181,6 +181,8 @@ static bool webBusy() { const uint32_t w = gWebAt; return w && millis() - w < 60
 
 static volatile uint32_t gDiagSec[4] = {0,0,0,0}, gDiagSecLast[4] = {0,0,0,0};   // wifi, web, render, delay(2)
 static volatile uint32_t gDiagGapMax = 0, gDiagFrameMax = 0, gDiagGapLast = 0, gDiagFrameLast = 0;
+// Messwerte fuer das Protokoll (je 5 Minuten): Bilder, Summe der Bildzeiten, gesendete Kacheln, Schleifendurchlaeufe
+static uint32_t gMFrames = 0, gMFrameUs = 0, gMTiles = 0, gMLoops = 0;
 
 static bool getWeather(Weather& out) {
   static Weather cache;                                   // bei belegtem Mutex: letzten Stand nehmen, nie warten
@@ -778,6 +780,11 @@ static void heapGuard(uint32_t now) {
          (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), (unsigned)esp_get_minimum_free_heap_size(),
          (int)WiFi.status(), (int)WiFi.RSSI(), lt.tm_mday, lt.tm_mon + 1, lt.tm_year + 1900, lt.tm_hour, lt.tm_min,
          wv ? "ok" : "fehlt", gNetOkAt ? (unsigned long)((millis() - gNetOkAt) / 1000) : 0UL, (unsigned long)gWebReq);
+    // Messwerte der letzten 5 Minuten (Themen-Designs): Bilder/s, mittlere Bildzeit, Kacheln je Bild, Schleifen/s
+    if (gMFrames) LOGF("Messung: %lu.%lu Bilder/s, Bildzeit Mittel %lu us (max %lu), %lu von 300 Kacheln/Bild, %lu Schleifen/s\n",
+                       (unsigned long)(gMFrames / 300), (unsigned long)(gMFrames % 300 * 10 / 300), (unsigned long)(gMFrameUs / gMFrames),
+                       (unsigned long)gDiagFrameLast, (unsigned long)(gMTiles / gMFrames), (unsigned long)(gMLoops / 300));
+    gMFrames = gMFrameUs = gMTiles = gMLoops = 0;
   }
   if (ESP.getMaxAllocHeap() >= 16000) { lowSince = 0; return; }
   if (!lowSince) { lowSince = now ? now : 1; LOGF("Speicher knapp: groesster Block %u\n", (unsigned)ESP.getMaxAllocHeap()); return; }
@@ -1273,6 +1280,36 @@ class NetStream : public Stream {
   bool done_ = false;
 };
 
+// Bis hinter "[" der Flugzeugliste lesen: Schluessel "ac" (adsb.lol, airplanes.live) oder "aircraft" (adsb.fi).
+static bool findPlaneList(Stream& s) {
+  static const char* const K1 = "\"ac\"";
+  static const char* const K2 = "\"aircraft\"";
+  int m1 = 0, m2 = 0;
+  bool key = false;
+  for (int n = 0; n < 4096; n++) {                   // die Liste steht weit vorn in der Antwort
+    const int ch = s.read();
+    if (ch < 0) return false;
+    if (key) {                                       // nach dem Schluessel: ":" und "[" (Leerzeichen erlaubt)
+      if (ch == '[') return true;
+      if (ch == ':' || ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t') continue;
+      key = false;                                   // doch kein Listenanfang: weitersuchen
+    }
+    m1 = (ch == K1[m1]) ? m1 + 1 : (ch == K1[0] ? 1 : 0);
+    m2 = (ch == K2[m2]) ? m2 + 1 : (ch == K2[0] ? 1 : 0);
+    if (!K1[m1] || !K2[m2]) { key = true; m1 = m2 = 0; }
+  }
+  return false;
+}
+
+// Leser mit einem Zeichen "Ruecklage": damit laesst sich vor jedem Flugzeug pruefen, ob die Liste zu Ende ist.
+struct BackReader {
+  Stream& s;
+  int pb = -1;
+  int read() { if (pb >= 0) { const int c = pb; pb = -1; return c; } return s.read(); }
+  size_t readBytes(char* b, size_t n) { size_t k = 0; while (k < n) { const int c = read(); if (c < 0) break; b[k++] = (char)c; } return k; }
+  int nextNonSpace() { int c; do { c = read(); } while (c == ' ' || c == '\n' || c == '\r' || c == '\t'); return c; }
+};
+
 static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
   const float km = (float)gSet.radarKm;
   int nm = (int)ceilf(km / 1.852f);
@@ -1296,38 +1333,27 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
   gCrumbNet = 25;                                     // Antwort lesen und auswerten
   if (code != HTTP_CODE_OK) { LOGF("Radar: HTTP %d\n", code); http.end(); gRadarClient->stop(); return false; }
 
+  // Antwort Flugzeug fuer Flugzeug lesen: jedes Flugzeug kommt in ein kleines eigenes JSON-Dokument, das danach
+  // wieder frei wird. Vorher stand die ganze Liste (bei vollem Himmel 100+ Flugzeuge) gleichzeitig im Speicher -
+  // zusammen mit der TLS-Verbindung fiel der freie Speicher dabei bis auf rund 2 KB (Protokoll vom Geraet).
   JsonDocument filter;                               // nur die noetigen Felder behalten (spart RAM)
   static const char* const KEYS[] = {"flight", "hex", "lat", "lon", "alt_baro", "alt_geom", "gs", "track", "t",
                                      "baro_rate", "geom_rate", "seen_pos"};
-  for (const char* k : KEYS) { filter["ac"][0][k] = true; filter["aircraft"][0][k] = true; }
-  JsonDocument doc;
+  for (const char* k : KEYS) filter[k] = true;
   const int size = http.getSize();                   // < 0: "chunked" (Bloecke selbst entpacken)
   NetStream ns(*gRadarClient, size < 0, size, 10000);   // hoechstens 10 s fuer die ganze Antwort
-  const DeserializationError err = deserializeJson(doc, ns, DeserializationOption::Filter(filter));
-  const bool clean = ns.drain();                     // Rest lesen, damit die Verbindung wiederverwendbar bleibt
-  if (ns.timedOut()) LOGF("Radar: Antwort zu langsam - abgebrochen\n");
-  http.end();                                        // Verbindung bleibt wegen setReuse(true) offen
-  if (!clean) gRadarClient->stop();                  // Rest nicht sauber gelesen: Verbindung nicht wiederverwenden
-  // Wenig freier Speicher: TLS-Verbindung schliessen (gibt rund 40 KB frei), damit die Browser-Seite
-  // weiter erreichbar bleibt. Der naechste Abruf baut sie neu auf.
-  if (err || ESP.getFreeHeap() < 60000 || ESP.getMaxAllocHeap() < 24000) gRadarClient->stop();
-  if (err) { LOGF("Radar: JSON %s\n", err.c_str()); return false; }
-  gCrumbNet = 26;                                     // Flugzeuge uebernehmen
-  JsonArray arr = doc["ac"].as<JsonArray>();
-  if (arr.isNull()) arr = doc["aircraft"].as<JsonArray>();
-  if (arr.isNull()) return false;
+  ns.setTimeout(0);                                  // Stream-Hilfen nicht zusaetzlich warten lassen (NetStream wartet selbst)
 
-  out.n = 0;
   const double lat0 = gSet.lat, lon0 = gSet.lon;
   const double kx = 111.32 * cos(lat0 * 0.0174533);
   const float maxD2 = km * km * 1.1f;
-  for (JsonObject a : arr) {
-    if (!a["lat"].is<double>() || !a["lon"].is<double>()) continue;
+  auto take = [&](JsonObject a) {
+    if (!a["lat"].is<double>() || !a["lon"].is<double>()) return;
     Plane p;
     memset(&p, 0, sizeof(p));
     p.x = (float)((a["lon"].as<double>() - lon0) * kx);
     p.y = (float)((a["lat"].as<double>() - lat0) * 111.0);
-    if (p.x * p.x + p.y * p.y > maxD2) continue;
+    if (p.x * p.x + p.y * p.y > maxD2) return;
     JsonVariant ab = a["alt_baro"];
     if (ab.is<const char*>()) p.ground = 1;                              // "ground"
     else p.alt = ab.is<int>() ? ab.as<int>() : (int)(a["alt_geom"] | 0);
@@ -1348,8 +1374,36 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
       if (sp > 0.0f && sp < 20.0f) { p.x += p.vx * sp; p.y += p.vy * sp; }
     }
     planeInsert(out, p);
-  }
-  return true;
+  };
+
+  out.n = 0;
+  int count = 0;
+  bool listOk = false;
+  if (findPlaneList(ns)) {
+    BackReader br{ns};
+    JsonDocument item;                               // ein Flugzeug (wird fuer jedes neu gefuellt)
+    int ch = br.nextNonSpace();
+    if (ch == ']') listOk = true;                    // leere Liste (Himmel frei)
+    else br.pb = ch;
+    while (!listOk && ch >= 0) {
+      const DeserializationError e = deserializeJson(item, br, DeserializationOption::Filter(filter));
+      if (e) { LOGF("Radar: JSON %s\n", e.c_str()); break; }
+      count++;
+      if (item.is<JsonObject>()) take(item.as<JsonObject>());
+      ch = br.nextNonSpace();
+      if (ch == ']') listOk = true;
+      else if (ch != ',') break;
+    }
+  } else LOGF("Radar: keine Flugzeugliste in der Antwort\n");
+  const bool clean = ns.drain();                     // Rest lesen, damit die Verbindung wiederverwendbar bleibt
+  if (ns.timedOut()) LOGF("Radar: Antwort zu langsam - abgebrochen\n");
+  http.end();                                        // Verbindung bleibt wegen setReuse(true) offen
+  if (!clean) gRadarClient->stop();                  // Rest nicht sauber gelesen: Verbindung nicht wiederverwenden
+  // Wenig freier Speicher: TLS-Verbindung schliessen (gibt rund 40 KB frei), damit die Browser-Seite
+  // weiter erreichbar bleibt. Der naechste Abruf baut sie neu auf.
+  if (!listOk || ESP.getFreeHeap() < 60000 || ESP.getMaxAllocHeap() < 24000) gRadarClient->stop();
+  gCrumbNet = 26;
+  return listOk;
 }
 
 static void radarStep() {
@@ -2073,6 +2127,7 @@ static bool themedTick(uint32_t now) {
   if (drew) {
     const uint32_t dt = micros() - t0;
     if (dt > gDiagFrameMax) gDiagFrameMax = dt;
+    gMFrames++; gMFrameUs += dt; gMTiles += (uint32_t)fc::lastTiles;
   }
   if (showAfterDraw) {
     boardTftDisplay(true);
@@ -2211,12 +2266,15 @@ void loop() {
     if (now - win >= 10000) {            // Zehn-Sekunden-Fenster auswerten
       win = now;
       gDiagGapLast = gDiagGapMax; gDiagFrameLast = gDiagFrameMax;
-      Serial.printf("Diag: max Schleifenluecke %lu ms, max Bildzeit %lu us\n", (unsigned long)gDiagGapMax, (unsigned long)gDiagFrameMax);
       for (int k = 0; k < 4; k++) { gDiagSecLast[k] = gDiagSec[k]; gDiagSec[k] = 0; }
+#if DEBUG_SERIAL
+      Serial.printf("Diag: max Schleifenluecke %lu ms, max Bildzeit %lu us\n", (unsigned long)gDiagGapMax, (unsigned long)gDiagFrameMax);
       Serial.printf("Diag: wlan %lu web %lu zeichnen %lu delay %lu us\n", (unsigned long)gDiagSecLast[0], (unsigned long)gDiagSecLast[1], (unsigned long)gDiagSecLast[2], (unsigned long)gDiagSecLast[3]);
+#endif
       gDiagGapMax = 0; gDiagFrameMax = 0;
     }
   }
+  gMLoops++;
   uint32_t m0 = micros();
   auto lap = [&](int k) { const uint32_t t = micros(); const uint32_t d = t - m0; m0 = t; if (d > gDiagSec[k]) gDiagSec[k] = d; };
   gCrumbLoop = 1;

@@ -83,6 +83,16 @@ struct FaceCtx {
 namespace fc {
 
 static GFXcanvas8* fb = nullptr;
+
+// Gemeinsamer Arbeitsspeicher der Designs (Partikel, Sterne, Schneeflocken ...). Es laeuft immer nur ein Design,
+// und jedes stellt in enter() alles ein, was es spaeter liest (fc::begin ruft enter bei jedem Wechsel). Vorher
+// hatte jedes dieser Designs eigene Felder, die dauerhaft RAM belegten, auch wenn das Design nie gezeigt wurde.
+// Benutzt mit FC_POOL_STATE (unten); die Groesse prueft der Compiler.
+#define FC_POOL_SIZE 8192
+alignas(16) static uint8_t pool[FC_POOL_SIZE];
+#define FC_POOL_STATE(Type) \
+  static_assert(sizeof(Type) <= FC_POOL_SIZE, "fc::pool zu klein fuer " #Type); \
+  static Type& S_ = *reinterpret_cast<Type*>(fc::pool)
 static uint16_t    PAL[256];
 
 // Reservierte Palettenplaetze (Index 0 ist immer Schwarz)

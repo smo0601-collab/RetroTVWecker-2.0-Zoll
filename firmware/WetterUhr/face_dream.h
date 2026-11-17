@@ -16,7 +16,9 @@ enum : uint8_t { D_SKY1 = 1, D_SKY2, D_SKY3, D_ST1, D_ST2, D_MOON, D_CLOUD, D_CL
                  D_SKIN, D_BEARD, D_SAND1, D_SAND2, D_SAND3, D_DIG, D_SH, D_DIM, D_EYE, D_SACK };
 
 struct Grain { float x, y, vx, vy; uint32_t t0; bool on; };
-static Grain    gr[48];
+struct State { Grain gr[48]; };                     // im gemeinsamen Speicher der Designs
+FC_POOL_STATE(State);
+static Grain (&gr)[48] = S_.gr;
 static uint32_t lastT, lastSpawn, shootAt, burstUntil;
 static uint8_t  lastMm;
 static float    spawnAcc;

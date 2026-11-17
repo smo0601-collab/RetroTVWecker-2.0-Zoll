@@ -28,7 +28,9 @@ static bool hopping;
 static int hopFrom;
 static uint8_t state;       // 0 normal, 1 tot (Auto), 2 tot (Wasser)
 static uint8_t lastMm;
-static Sparks<20> sp;
+struct State { Sparks<20> sp; };                   // im gemeinsamen Speicher der Designs
+FC_POOL_STATE(State);
+static Sparks<20>& sp = S_.sp;
 
 static void enter(uint32_t now) {
   pal(F_GRASS, 30, 110, 40); pal(F_GRASS2, 20, 70, 30); pal(F_ROAD, 50, 50, 62); pal(F_LINE, 200, 200, 70);

@@ -4,6 +4,25 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.17-3 - Optimierung: weniger RAM, Flugradar mit konstantem Speicher, Messwerte im Protokoll
+
+Ergebnis der Code-Analyse (Bericht: `docs/Optimierung_2026-11.md` im GitHub-Projekt).
+- Flugradar: Die Antwort wird jetzt Flugzeug fuer Flugzeug gelesen statt als ein JSON-Dokument fuer die ganze Liste.
+  Am PC gemessen (150 Flugzeuge, synthetische Antwort im adsb.lol-Format): JSON-Speicherspitze 65 263 B -> 2 675 B.
+  Auf dem Geraet war der freie Speicher waehrend des Radars bis auf rund 2 KB gefallen.
+- Gemeinsamer Arbeitsspeicher der Designs (`fc::pool`, 8 KB): Partikel, Sterne, Schneeflocken usw. von 11 Designs
+  (Silvester, Asteroiden, Sandmann, Valentin, Weihnachten, Feiertag, Aquarium, Breakout, Frogger, Neon-Breakout,
+  Badminton) belegten bisher jedes eigenen Speicher, auch wenn das Design nie lief. Statischer RAM laut Compiler:
+  ESP32-C3 80 992 -> 71 560 B, CYD 93 416 -> 84 008 B (je rund 9,4 KB mehr freier Heap). Am PC geprueft: jedes
+  umgestellte Design zeichnet mit vorher absichtlich verschmutztem Speicher Bild fuer Bild exakt dasselbe.
+- Protokoll: alle 5 Minuten eine Zeile "Messung" (Bilder/s, mittlere und maximale Bildzeit, gesendete Kacheln je
+  Bild, Schleifendurchlaeufe/s) - damit lassen sich Aenderungen auf dem Geraet nachmessen.
+- Diag-Ausgaben alle 10 s nur noch mit DEBUG_SERIAL.
+
+Geaenderte Dateien: `WetterUhr.ino`, `faces.h`, `faces_core.h`, `face_newyear.h`, `face_space.h`, `face_dream.h`,
+`face_valentine.h`, `face_xmas.h`, `face_party.h`, `face_aqua.h`, `face_bricks.h`, `face_frog.h`, `face_neonbrk.h`,
+`face_badminton.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.17-2 - Browser-Seite laedt schnell, Bild stockt nicht mehr
 
 - Gemeldet: Beim Aufruf der Browser-Seite stockt das Bild, die Seite braucht etwa 10 s (bei jedem Design).

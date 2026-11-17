@@ -164,6 +164,7 @@ static void release() {
   phase = 0;
 }
 
+static int lastTiles = 0;                 // Messung: gesendete Kacheln (32 x 16) im letzten Bild, von 300
 static void setBrightness(uint8_t pct) { if (cur >= 0) lutBuild(pct); }
 static void invalidate() { forceAll = true; }
 static void startOutro(uint32_t now) { phase = 1; pStart = now; }
@@ -255,7 +256,7 @@ static bool frame(TFT& tft, const FaceCtx& c) {
     else F.cover(p, true, c.now);
   }
 
-  push(tft);
+  lastTiles = push(tft);
   return true;
 }
 

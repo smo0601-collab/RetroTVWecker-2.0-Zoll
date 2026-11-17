@@ -18,7 +18,9 @@ enum : uint8_t { X_SKY1 = 1, X_SKY2, X_SKY3, X_ST1, X_ST2, X_SNOW, X_SNOW2, X_TR
                  X_TXT, X_DIM, X_GOLD, X_CAND, X_CAND2, X_FL1, X_FL2, X_WR, X_WR2, X_GTXT, X_RED };
 
 struct Flake { float x, y, v, ph; uint8_t big; };
-static Flake    fl[40];
+struct State { Flake fl[40]; };                     // im gemeinsamen Speicher der Designs
+FC_POOL_STATE(State);
+static Flake (&fl)[40] = S_.fl;
 static uint32_t lastT, chaseUntil;
 static uint8_t  lastMm;
 

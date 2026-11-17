@@ -15,13 +15,15 @@ using namespace fc;
 
 enum : uint8_t { B_R1 = 1, B_R2, B_R3, B_R4, B_R5, B_H1, B_H2, B_H3, B_H4, B_H5, B_PAD, B_DIM, B_PAD2 };
 
-static uint8_t alive[5][10];
+struct State { uint8_t alive[5][10]; Sparks<28> sp; };   // im gemeinsamen Speicher der Designs
+FC_POOL_STATE(State);
+static uint8_t (&alive)[5][10] = S_.alive;
 static Ball ball;
 static float padX, padOff;
 static uint32_t lastT, flashUntil, nextRow, missAt;
 static uint8_t lastMm, rowsBuilt;
 static int hits;
-static Sparks<28> sp;
+static Sparks<28>& sp = S_.sp;
 
 static void enter(uint32_t now) {
   static const uint8_t C[5][3] = {{230, 40, 40}, {250, 140, 30}, {240, 220, 40}, {50, 200, 70}, {60, 110, 240}};
