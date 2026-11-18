@@ -21,6 +21,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include <esp_heap_caps.h>
 #include <SPI.h>
 #include <time.h>
 #include <Adafruit_GFX.h>
@@ -69,15 +70,17 @@ static void rlogBoot() {
 }
 // persist: Zeile auch ins dauerhafte Protokoll (Flash). Gleiche Meldungen kurz hintereinander werden dort gezaehlt
 // statt jedes Mal geschrieben (sonst fuellen z. B. Radar-Fehler alle 15 s den Speicher).
+static volatile bool gTimeSet = false;     // Uhrzeit per NTP gesetzt (vorher: Zeit seit dem Start ins Protokoll)
 static void rlogf(uint8_t persist, const char* fmt, ...) {   // persist: 0 nur RTC, 1 Flash (gleiche zaehlen), 2 Flash immer
-  char b[200];
+  char b[320];                                         // die Zustandszeile hat rund 230 Zeichen
   const uint32_t s = millis() / 1000;
   int n = snprintf(b, sizeof(b), "%lu:%02lu ", (unsigned long)(s / 60), (unsigned long)(s % 60));
   va_list ap; va_start(ap, fmt);
-  vsnprintf(b + n, sizeof(b) - n, fmt, ap);
+  const int m = vsnprintf(b + n, sizeof(b) - n, fmt, ap);
   va_end(ap);
+  if (m >= (int)sizeof(b) - n) b[sizeof(b) - 2] = '\n';  // zu lang: abschneiden, Zeilenende aber behalten
   if (persist) {
-    char q[240];
+    char q[380];
     const char* msg = b + n;
     uint32_t h = 2166136261u;                          // Kennung der Meldung (ohne Zahlen: "HTTP -1" == "HTTP 403")
     for (const char* p = msg; *p; p++) if (!(*p >= '0' && *p <= '9')) h = (h ^ (uint8_t)*p) * 16777619u;
@@ -89,12 +92,12 @@ static void rlogf(uint8_t persist, const char* fmt, ...) {   // persist: 0 nur R
       if (rep) qn += snprintf(q, sizeof(q), "    (vorige Meldung %lu-mal wiederholt)\n", (unsigned long)rep);
       rep = 0; lastH = (persist == 1) ? h : 0; lastAt = ms;
       const time_t t = time(nullptr);
-      if (t > 1700000000) {
+      if (gTimeSet && t > 1700000000) {
         struct tm lt; localtime_r(&t, &lt);
         qn += snprintf(q + qn, sizeof(q) - qn, "%02d.%02d. %02d:%02d:%02d ", lt.tm_mday, lt.tm_mon + 1, lt.tm_hour, lt.tm_min, lt.tm_sec);
       } else qn += snprintf(q + qn, sizeof(q) - qn, "[+%lu:%02lu] ", (unsigned long)(s / 60), (unsigned long)(s % 60));
       qn += snprintf(q + qn, sizeof(q) - qn, "%s", msg);
-      if (qn > (int)sizeof(q) - 1) qn = sizeof(q) - 1;
+      if (qn > (int)sizeof(q) - 1) { qn = sizeof(q) - 1; q[qn - 1] = '\n'; }
       for (int i = 0; i < qn; i++) if ((uint8_t)q[i] == 0xFF) q[i] = '?';   // 0xFF markiert im Flash das Ende
       portENTER_CRITICAL(&gLogMux);
       if (rtcPendLen + qn <= RPEND_SZ) { memcpy(rtcPend + rtcPendLen, q, qn); rtcPendLen += qn; }
@@ -230,6 +233,22 @@ static void crumbsBoot() {
   rtcWdtMagic = 0;
   rtcMagic = 0x57554852u; rtcCrumbLoop = 0; rtcCrumbNet = 0; rtcMinHeap = 0; rtcUpMin = 0;
 }
+// Gescheiterte Speicheranforderungen merken (Hook der Speicherverwaltung; hier nur Werte ablegen, das Protokoll
+// schreibt heapGuard). Damit laesst sich klaeren, wer den freien Speicher zeitweise bis auf wenige Bytes aufbraucht.
+static volatile uint32_t gAllocFail = 0, gAllocFailSize = 0, gAllocFailNet = 0, gAllocFailLoop = 0;
+static char gAllocFailTask[16] = "";
+static void allocFailHook(size_t size, uint32_t caps, const char*) {
+  if (caps & MALLOC_CAP_EXEC) return;
+  gAllocFail = gAllocFail + 1;
+  if (size >= gAllocFailSize) {                        // die groesste gescheiterte Anforderung zaehlt
+    gAllocFailSize = size; gAllocFailNet = gCrumbNet; gAllocFailLoop = gCrumbLoop;
+    const char* n = pcTaskGetName(nullptr);
+    int i = 0;
+    for (; n && n[i] && i < 15; i++) gAllocFailTask[i] = n[i];
+    gAllocFailTask[i] = 0;
+  }
+}
+static volatile uint32_t gSlowFrameUs = 0, gSlowFrameTiles = 0, gSlowFrameStyle = 0, gSlowFrameNet = 0;
 static bool webBusy() { const uint32_t w = gWebAt; return w && millis() - w < 6000; }
 
 static volatile uint32_t gDiagSec[4] = {0,0,0,0}, gDiagSecLast[4] = {0,0,0,0};   // wifi, web, render, delay(2)
@@ -823,6 +842,25 @@ static void heapGuard(uint32_t now) {
   last = now;
   rtcMinHeap = esp_get_minimum_free_heap_size();
   rtcUpMin = now / 60000UL;
+  if (gAllocFail) {
+    LOGF("Speicher: %lu Anforderung(en) gescheitert, groesste %lu Bytes (Task '%s', Netz-Schritt %lu, Schleife %lu, Design %u)\n",
+         (unsigned long)gAllocFail, (unsigned long)gAllocFailSize, gAllocFailTask, (unsigned long)gAllocFailNet,
+         (unsigned long)gAllocFailLoop, (unsigned)gStyle);
+    gAllocFail = 0; gAllocFailSize = 0;
+  }
+  {                                                    // neuer Tiefstand unter 8 KB: einmal melden, mit Spur
+    static uint32_t lowRep = 8192;
+    if (rtcMinHeap < lowRep) {
+      lowRep = rtcMinHeap / 2;
+      LOGF("Speicher-Tiefstand %lu Bytes (gerade: Netz-Schritt %lu, Design %u, Web %lu)\n", (unsigned long)rtcMinHeap,
+           (unsigned long)gCrumbNet, (unsigned)gStyle, (unsigned long)gWebReq);
+    }
+  }
+  if (gSlowFrameUs) {
+    LOGF("Langsames Bild: %lu ms, Design %lu, %lu Kacheln, Netz-Schritt %lu\n", (unsigned long)(gSlowFrameUs / 1000),
+         (unsigned long)gSlowFrameStyle, (unsigned long)gSlowFrameTiles, (unsigned long)gSlowFrameNet);
+    gSlowFrameUs = 0;
+  }
   static uint8_t k = 0;
   if (++k >= 60) {                                     // alle 10 Minuten: Zustand und Messwerte ins Protokoll
     k = 0;
@@ -1380,6 +1418,10 @@ static bool fetchPlanesFrom(const char* fmt, PlaneList& out) {
   http.setConnectTimeout(8000);
   http.setTimeout(8000);
   http.setUserAgent("WetterUhr/1.0");
+  if (!gRadarClient->connected() && ESP.getMaxAllocHeap() < 36000) {   // neuer TLS-Aufbau braucht einen grossen Block
+    LOGR("Radar: zu wenig Speicher fuer die Verbindung (%u)\n", (unsigned)ESP.getMaxAllocHeap());
+    return false;
+  }
   if (!http.begin(*gRadarClient, url)) return false;
   gCrumbNet = 24;                                     // Verbindung/TLS/Anfrage
   const int code = http.GET();
@@ -1580,11 +1622,16 @@ static void issStep() {
   static uint32_t lastTry = 0, lastCrew = 0, lastOkMs = 0;
   static bool have = false, wasWanted = false;
   static uint16_t fails = 0;                          // Fehlversuche in Folge (Dienst open-notify ist oft kurz weg)
+  static uint32_t failSince = 0;
+  static bool longLogged = false;
   {
     const uint32_t now = millis();
     const uint32_t wa = gIssWantedAt;
     const bool wanted = wa != 0 && now - wa < 4000;
-    if (wanted && !wasWanted) have = false;
+    if (wanted && !wasWanted) {                       // Design wieder sichtbar: neue Zaehlung (die Zeit dazwischen,
+      have = false;                                   // in der gar nicht gefragt wurde, ist kein Ausfall des Dienstes)
+      fails = 0; longLogged = false;
+    }
     wasWanted = wanted;
     // nach Fehlern seltener fragen: 5 s, 10 s, 20 s, 40 s, dann jede Minute
     const uint32_t every = fails ? min(60000UL, ISS_POLL_MS << min<uint16_t>(fails, 4)) : ISS_POLL_MS;
@@ -1600,8 +1647,6 @@ static void issStep() {
       else if (!lastOkMs || millis() - lastOkMs > 120000UL) { gIss.status = 2; }   // kurze Aussetzer: Bahn weiterrechnen
       gIssVer++;
       xSemaphoreGive(gMutex);
-      static uint32_t failSince = 0;
-      static bool longLogged = false;
       if (ok) {
         gNetOkAt = millis() | 1;
         lastOkMs = millis() | 1;
@@ -2191,6 +2236,9 @@ static bool themedTick(uint32_t now) {
     if (dt > gDiagFrameMax) gDiagFrameMax = dt;
     gMFrames++; gMFrameUs += dt; gMTiles += (uint32_t)fc::lastTiles;
     if (dt > gMFrameMax) gMFrameMax = dt;
+    if (dt > 300000UL && dt > gSlowFrameUs) {          // ueber 0,3 s: fuer das Protokoll merken (heapGuard schreibt)
+      gSlowFrameUs = dt; gSlowFrameTiles = (uint32_t)fc::lastTiles; gSlowFrameStyle = gStyle; gSlowFrameNet = gCrumbNet;
+    }
   }
   if (showAfterDraw) {
     boardTftDisplay(true);
@@ -2268,6 +2316,7 @@ void setup() {
   bz::init();                    // Summer-Pin sofort auf "aus"
   crumbsBoot();
   rlogBoot();
+  heap_caps_register_failed_alloc_callback(allocFailHook);
   const bool plogOk = plog::begin();             // dauerhaftes Protokoll im Flash (rund 6 Tage)
   {
     static const char* const RR[] = {"?", "Einschalten", "Reset-Taste", "Software", "Absturz (PANIC)", "Interrupt-Watchdog",
@@ -2281,6 +2330,7 @@ void setup() {
   }
   sntp_set_time_sync_notification_cb([](struct timeval* tv) {
     gNetOkAt = millis() | 1;
+    gTimeSet = true;
     struct tm lt; time_t t = tv->tv_sec; localtime_r(&t, &lt);
     LOGF("NTP: Zeit gesetzt %02d.%02d.%d %02d:%02d:%02d\n", lt.tm_mday, lt.tm_mon + 1, lt.tm_year + 1900, lt.tm_hour, lt.tm_min, lt.tm_sec);
   });

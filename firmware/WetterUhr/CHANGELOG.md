@@ -4,6 +4,26 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.18-1 - Protokoll-Fehler behoben, mehr Spuren fuer Speicher-Engpaesse
+
+Auswertung des 22-Stunden-Protokolls (CYD, 2026.11.17-6): kein Absturz, Wetter durchgehend ok. Gefunden:
+- Zustandszeilen waren laenger als der Zeilenpuffer (200 Zeichen) und wurden abgeschnitten - samt Zeilenende,
+  dadurch klebte die naechste Zeile dran ("ISS-Aussetz18.11. ..."). Puffer vergroessert, Zeilenende bleibt immer.
+- Zeilen vor dem ersten NTP-Abgleich hatten ein falsches Datum ("20.05."). Bis zur Zeitsynchronisation steht
+  jetzt die Zeit seit dem Start ("[+0:02]").
+- ISS: "Dienst 7976 s nicht erreichbar" zaehlte auch die Stunden mit, in denen das ISS-Design gar nicht lief
+  (dann wird nicht gefragt). Die Zaehlung beginnt jetzt bei jedem Erscheinen des Designs neu; ebenso die
+  Meldung "seit 10 min keine Daten".
+- Der kleinste freie Speicher fiel einmal (18.11. gegen 11 Uhr, Flugradar) auf 152 Bytes. Die Ursache steht
+  nicht im Protokoll. Neu: gescheiterte Speicheranforderungen werden mit Groesse, Task und Netz-Schritt
+  protokolliert; ebenso jeder neue Tiefstand unter 8 KB.
+- Flugradar baut eine neue TLS-Verbindung nur noch auf, wenn ein Speicherblock von mindestens 36 KB frei ist
+  (sonst naechster Versuch beim naechsten Abruf).
+- Etwa einmal pro Stunde dauerte ein Bild rund 0,6 s (meist beim Flugradar). Bilder ueber 0,3 s werden jetzt
+  mit Design, Kacheln und Netz-Schritt protokolliert, um die Ursache einzugrenzen.
+
+Geaenderte Dateien: `WetterUhr.ino`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.17-6 - SD-Karte wieder entfernt (Stand wie 2026.11.17-4)
 
 - Auf Wunsch zurueckgenommen: die Auslagerung auf die SD-Karte aus 2026.11.17-5 (Protokoll, Wetterverlauf,
