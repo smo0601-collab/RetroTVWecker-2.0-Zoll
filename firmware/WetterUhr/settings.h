@@ -72,6 +72,7 @@ struct Settings {
   uint8_t  calFlags;   // Kalender: Bit 0 Feiertage, 1 besondere Tage, 2 Schulferien, 3 Einblendung, 4 Laufschrift
   uint8_t  calPop;     // Minuten zwischen den Einblendungen am Feiertag (5..60)
   uint8_t  calTick;    // Minuten zwischen den Kalender-Laufschriften (5..240)
+  bool     dimOff;     // im Dimm-Zeitfenster das Display ganz ausschalten (statt dimmen)
 };
 
 static Settings    gSet;
@@ -113,6 +114,7 @@ static void settingsLoad() {
   gSet.dimEnd     = prefs.getUShort("dime", DEFAULT_DIM_END);
   gSet.dimLevel   = prefs.getUChar("diml", DEFAULT_DIM_LEVEL);
   gSet.dimTv      = prefs.getBool("dimtv", DEFAULT_DIM_TESTCARD != 0);
+  gSet.dimOff     = prefs.getBool("dimoff", false);
   gSet.autoOn   = prefs.getBool("auto", DEFAULT_AUTO_ON != 0);
   gSet.autoRnd  = prefs.getBool("arnd", false);
   gSet.autoMask = (uint64_t)prefs.getUInt("amask", DEFAULT_AUTO_MASK) | ((uint64_t)prefs.getUInt("amaskh", 0) << 32);
@@ -255,6 +257,7 @@ static void settingsSave() {
   prefs.putUShort("dime", gSet.dimEnd);
   prefs.putUChar("diml", gSet.dimLevel);
   prefs.putBool("dimtv", gSet.dimTv);
+  prefs.putBool("dimoff", gSet.dimOff);
   prefs.putBool("auto", gSet.autoOn);
   prefs.putBool("arnd", gSet.autoRnd);
   prefs.putUInt("amask", (uint32_t)gSet.autoMask);

@@ -4,6 +4,20 @@ Jede Version nennt die geaenderten Dateien. Fuer ein Update genuegt es, genau di
 zu ersetzen (neue hinzufuegen, entfernte loeschen), die Binaerdatei zu exportieren und per WLAN einzuspielen
 (README, "Update ueber WLAN"). Die installierte Version steht im Browser unter Status > Firmware.
 
+## 2026.11.19-1 - Display im Zeitfenster ausschalten, Netz-Task auf Kern 0
+
+- Neu (Browser > Anzeige > Zeitplan-Dimmung): "Display im Zeitfenster ganz ausschalten (statt dimmen)". Zu Beginn
+  des Fensters geht das Display aus, am Ende wieder an. Eine Beruehrung, der Browser oder der Wecker schalten es
+  zwischendurch ein; es bleibt dann bis zum naechsten Fenster an. Wetter, Wecker und Browser laufen weiter.
+- Protokoll 2026.11.18-1: Jedes "Langsame Bild" (rund 0,64 s) fiel in einen TLS-Verbindungsaufbau (Netz-Schritt 11
+  = Wetter, 24 = Flugradar). Der Netz-Task durfte bisher auf beiden Kernen laufen; er ist jetzt fest auf Kern 0
+  (wie das WLAN), Kern 1 bleibt der Anzeige. Ob das die Haenger beseitigt, zeigt das naechste Protokoll.
+- Protokoll 2026.11.18-1: Die beiden Speicher-Engpaesse (Tiefstand 3972 und 988 Bytes) entstanden im WLAN-Treiber
+  (Task "wifi", gescheiterte Anforderungen von 2308 Bytes), nicht in der Uhr selbst. Die Tiefstand-Meldung nennt
+  jetzt zusaetzlich den freien Speicher im Moment der Meldung.
+
+Geaenderte Dateien: `WetterUhr.ino`, `settings.h`, `webui.h`, `lang_web.h`, `config.h`, `CHANGELOG.md`
+
 ## 2026.11.18-1 - Protokoll-Fehler behoben, mehr Spuren fuer Speicher-Engpaesse
 
 Auswertung des 22-Stunden-Protokolls (CYD, 2026.11.17-6): kein Absturz, Wetter durchgehend ok. Gefunden:

@@ -539,15 +539,26 @@ static bool dimWindowNow() {
   return (m >= a || m < b);   // Fenster ueber Mitternacht
 }
 
+static void enterStandby();
+static void startWake();
 static void dimTick(uint32_t now, bool force) {
   static uint32_t last = 0;
+  static bool offBySchedule = false;                 // Display wurde vom Zeitplan ausgeschaltet
+  static bool lastOffSet = false;                    // Einstellung "Display aus" beim letzten Durchlauf
   if (!force && now - last < 1000) return;
   last = now;
   const bool want = dimWindowNow();
+  // Display ganz aus statt dimmen: zu Beginn des Fensters aus, am Ende wieder an. Wer es zwischendurch per
+  // Beruehrung, Browser oder Wecker einschaltet, behaelt es bis zum naechsten Fenster. Wird die Einstellung
+  // waehrend des Fensters eingeschaltet, geht das Display gleich aus; wird sie ausgeschaltet, gleich wieder an.
+  if (offBySchedule && !standby) offBySchedule = false;               // zwischendurch eingeschaltet
+  if (want && gSet.dimOff && !standby && (want != gDimActive || !lastOffSet)) { enterStandby(); offBySchedule = true; }
+  else if ((!want || !gSet.dimOff) && offBySchedule) { offBySchedule = false; if (standby) startWake(); }
+  lastOffSet = gSet.dimOff;
   if (want == gDimActive) return;
   gDimActive = want;
   if (!want) gNightTvBlocked = false;
-  LOGF("Dimm-Zeitfenster: %s\n", want ? "an" : "aus");
+  LOGF("Dimm-Zeitfenster: %s%s\n", want ? "an" : "aus", want && gSet.dimOff ? " (Display aus)" : "");
   if (HW_DIM) {
     blApply();
   } else {
@@ -852,8 +863,9 @@ static void heapGuard(uint32_t now) {
     static uint32_t lowRep = 8192;
     if (rtcMinHeap < lowRep) {
       lowRep = rtcMinHeap / 2;
-      LOGF("Speicher-Tiefstand %lu Bytes (gerade: Netz-Schritt %lu, Design %u, Web %lu)\n", (unsigned long)rtcMinHeap,
-           (unsigned long)gCrumbNet, (unsigned)gStyle, (unsigned long)gWebReq);
+      LOGF("Speicher-Tiefstand %lu Bytes (gerade: Netz-Schritt %lu, Design %u, Web %lu, jetzt frei %u/%u)\n",
+           (unsigned long)rtcMinHeap, (unsigned long)gCrumbNet, (unsigned)gStyle, (unsigned long)gWebReq,
+           (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
     }
   }
   if (gSlowFrameUs) {
@@ -2368,7 +2380,9 @@ void setup() {
   // Prioritaet 0 (wie der Leerlauf-Task): Warteschleifen beim Lesen (HTTP-Zeitlimit bis 8 s, ohne Pause) duerfen den
   // Leerlauf-Task von Kern 0 nicht aushungern - sonst schlaegt der Task-Watchdog zu (gemeldet beim Flugradar).
   // Ohne feste Kernbindung (wie frueher der Radar-Task): kann auch auf Kern 1 laufen, dessen Leerlauf nicht ueberwacht wird.
-  xTaskCreatePinnedToCore(netTask, "net", 12288, nullptr, tskIDLE_PRIORITY, nullptr, tskNO_AFFINITY);   // Wetter, Kalender, Radar, ISS
+  // Kern 0 (wie WLAN): Protokoll 2026.11.18-1 zeigte bei jedem TLS-Verbindungsaufbau (Wetter, Radar) ein Bild,
+  // das rund 0,64 s brauchte. Auf Kern 1 laeuft die Anzeige; dort soll der Netz-Task nicht mehr hin.
+  xTaskCreatePinnedToCore(netTask, "net", 12288, nullptr, tskIDLE_PRIORITY, nullptr, 0);   // Wetter, Kalender, Radar, ISS
 
   resetCaches();
   needFull = true;

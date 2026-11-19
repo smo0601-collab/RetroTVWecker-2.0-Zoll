@@ -32,7 +32,7 @@ neue Firmware kommt per WLAN.
 - **Kleine Überraschungen**: ab und zu ein UFO im Flugradar, im Dezember der Weihnachtsschlitten statt der ISS,
   im Aquarium Besuch von einer Seeschlange oder einem U-Boot.
 - **Laufschrift** mit eigenem Text (Umlaute und Sonderzeichen).
-- **Helligkeit und Nachtmodus**: Dimmen nach Zeitplan, nachts optional das TV-Testbild.
+- **Helligkeit und Nachtmodus**: Dimmen nach Zeitplan, nachts optional das TV-Testbild oder Display ganz aus.
 - **Wecker und Stundensignal** mit einem aktiven Piezo-Summer (optional).
 - **Klänge auf dem CYD** (kleiner Lautsprecher an „SPEAK“): Lautstärke, 9 Wecktöne, 6 Stundengongs (Kuckuck und
   Glockenschlag zählen die Stunde), Melodie zur Feiertags-Einblendung, Silvester-Countdown mit Feuerwerk, UFO,
@@ -169,7 +169,7 @@ Dabei werden vorhandene Einstellungen gelöscht.
 ## Updates über WLAN
 
 Jede neue Version liegt im Ordner [**`releases/`**](releases)
-(aktuell: [`releases/2026.11.18-1`](releases/2026.11.18-1): Uhr 2026.11.18-1 mit RetroCYD 4.0.3), außerdem unter [**Releases**](../../releases):
+(aktuell: [`releases/2026.11.19-1`](releases/2026.11.19-1): Uhr 2026.11.19-1 mit RetroCYD 4.0.3), außerdem unter [**Releases**](../../releases):
 
 | Datei | Wofür |
 |---|---|
@@ -205,7 +205,7 @@ Was sich in jeder Version geändert hat, steht im [CHANGELOG](firmware/WetterUhr
 |---|---|
 | Status | WLAN, IP, Uhrzeit, Wetter, aktuelles Design, Dimmung, Wecker, Firmware-Version |
 | Anzeige | Designs mit Vorschaubildern, Akzentfarbe, automatischer Wechsel, Extras (Feiertage, Silvester-Automatik, Weihnachtsschlitten, UFO, Aquarium), Sprache |
-| Helligkeit | Helligkeit, Standby, Zeitplan-Dimmung, Nachtmodus mit Testbild |
+| Helligkeit | Helligkeit, Standby, Zeitplan-Dimmung, Nachtmodus mit Testbild oder Display aus |
 | Laufschrift | Text, Position, Größe, Farbe, Tempo, Dauerschleife |
 | Summer & Wecker | Stundensignal, Nachtruhe, Weckzeit mit Wochentagen, Summer-Test |
 | WLAN | Netzwerk suchen und eintragen |

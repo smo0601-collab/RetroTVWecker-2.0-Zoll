@@ -47,6 +47,15 @@
   X(W_DIM_WAIT,   "wartet: ", "waiting: ", "en attente : ", "en espera: ", "in attesa: ") \
   X(W_DIM_FMT,    "%u %% von %s bis %s", "%u %% from %s to %s", "%u %% de %s à %s", "%u %% de %s a %s", "%u %% dalle %s alle %s") \
   X(W_WITH_TV,    ", mit Testbild", ", with test card", ", avec mire", ", con carta de ajuste", ", con monoscopio") \
+  X(W_WITH_OFF,   ", Display aus", ", display off", ", écran éteint", ", pantalla apagada", ", display spento") \
+  X(W_DIMOFF_CB,  "Display im Zeitfenster ganz ausschalten (statt dimmen)", "Switch the display off completely in the window (instead of dimming)", \
+                  "Éteindre complètement l'écran pendant la plage (au lieu d'atténuer)", "Apagar la pantalla por completo en la franja (en lugar de atenuar)", \
+                  "Spegnere del tutto il display nella fascia (invece di attenuare)") \
+  X(W_DIMOFF_HINT, "Display aus: zu Beginn des Fensters geht das Display aus, am Ende wieder an. Eine Ber&uuml;hrung oder der Wecker schaltet es zwischendurch ein; es bleibt dann bis zum n&auml;chsten Fenster an.", \
+                  "Display off: the display turns off at the start of the window and back on at the end. A touch or the alarm turns it on in between; it then stays on until the next window.", \
+                  "Écran éteint : l'écran s'éteint au début de la plage et se rallume à la fin. Un toucher ou le réveil le rallume entre-temps ; il reste alors allumé jusqu'à la prochaine plage.", \
+                  "Pantalla apagada: se apaga al inicio de la franja y se enciende al final. Un toque o la alarma la encienden entretanto; sigue encendida hasta la próxima franja.", \
+                  "Display spento: si spegne all'inizio della fascia e si riaccende alla fine. Un tocco o la sveglia lo riaccendono nel frattempo; resta acceso fino alla fascia successiva.") \
   X(W_OFF,        "aus", "off", "désactivé", "apagado", "spento") \
   X(W_ON,         "an", "on", "allumé", "encendido", "acceso") \
   X(W_R_DIM,      "Dimmung", "Dimming", "Atténuation", "Atenuación", "Attenuazione") \

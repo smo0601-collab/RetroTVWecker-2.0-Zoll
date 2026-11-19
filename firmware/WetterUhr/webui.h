@@ -595,7 +595,7 @@ static void handleRoot() {
                    ", " + TR(W_AC0 + (gSet.accent < ACCENT_COUNT ? gSet.accent : 0)));
   if (gSet.dimOn) {
     snprintf(fb, sizeof(fb), TR(W_DIM_FMT), (unsigned)gSet.dimLevel, hhmm(gSet.dimStart).c_str(), hhmm(gSet.dimEnd).c_str());
-    rowh(W_R_DIMSCH, String(TR(gDimActive ? W_DIM_ACT : W_DIM_WAIT)) + fb + (gSet.dimTv ? TR(W_WITH_TV) : ""));
+    rowh(W_R_DIMSCH, String(TR(gDimActive ? W_DIM_ACT : W_DIM_WAIT)) + fb + (gSet.dimOff ? TR(W_WITH_OFF) : gSet.dimTv ? TR(W_WITH_TV) : ""));
   } else rowh(W_R_DIMSCH, TR(W_OFF));
   rowh(W_R_DIM, TR(HW_DIM ? W_DIM_HW : W_DIM_SW));
   rowh(W_R_DISP, TR(standby ? W_STANDBY_S : W_ON));
@@ -791,7 +791,8 @@ static void handleRoot() {
   p += F("\"><label>"); T(W_DIM_LEVEL); p += F("</label><input name=diml type=number min=5 max=100 value=");
   p += String(gSet.dimLevel);
   p += F("><label><input type=checkbox name=dimtv value=1"); chk(gSet.dimTv);
-  p += F(">"); T(W_DIMTV_CB); p += F("</label><small>"); T(W_DIM_HINT); p += F("</small>");
+  p += F(">"); T(W_DIMTV_CB); p += F("</label><label><input type=checkbox name=dimoff value=1"); chk(gSet.dimOff);
+  p += F(">"); T(W_DIMOFF_CB); p += F("</label><small>"); T(W_DIM_HINT); p += F(" "); T(W_DIMOFF_HINT); p += F("</small>");
 #if PIN_LED_R >= 0
   {                                                     // RGB-LED des CYD (led.h)
     p += F("<h2>"); T(W_H_LED); p += F("</h2><label>"); T(W_LED_MODE); p += F("</label><select name=ledm id=ledm>");
@@ -1248,6 +1249,7 @@ static void handleSave() {
 
   n.dimOn = server.hasArg("dim");
   n.dimTv = server.hasArg("dimtv");
+  n.dimOff = server.hasArg("dimoff");
   n.ntpOn   = server.hasArg("ntpon");
   n.bzHour  = server.hasArg("bzhr");
   n.bzQuiet = server.hasArg("bzq");
